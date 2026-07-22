@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>AJP Poker</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --verde:#16A34A;--verde-dark:#14532D;--verde-light:#DCFCE7;
+  --vermelho:#DC2626;--vermelho-light:#FEE2E2;
+  --azul:#2563EB;--azul-light:#DBEAFE;
+  --amarelo:#D97706;--amarelo-light:#FEF3C7;
+  --roxo:#7C3AED;--roxo-light:#EDE9FE;
+  --cinza:#6B7280;--cinza2:#F3F4F6;--cinza3:#E5E7EB;
+  --texto:#111827;--texto2:#374151;--texto3:#6B7280;
+  --card:#FFFFFF;--fundo:#F9FAFB;--borda:#E5E7EB;
+  --radius:12px;--shadow:0 1px 3px rgba(0,0,0,.1),0 1px 2px rgba(0,0,0,.06);
+  --shadow-lg:0 4px 6px rgba(0,0,0,.07),0 10px 15px rgba(0,0,0,.05);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'Inter',sans-serif;background:var(--fundo);color:var(--texto);min-height:100vh}
+
+/* LOADING */
+#loading{position:fixed;inset:0;background:#0F172A;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;z-index:9999;gap:16px}
+.bspin{width:48px;height:48px;border:4px solid rgba(255,255,255,.15);
+  border-top-color:#16A34A;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#loading p{color:rgba(255,255,255,.6);font-size:14px}
+
+/* TELA LOGIN */
+#tela-login{display:none;min-height:100vh;background:linear-gradient(135deg,#0F172A,#1a2744);
+  align-items:center;justify-content:center;padding:20px}
+.login-box{background:#1E293B;border-radius:20px;padding:32px 24px;
+  width:100%;max-width:380px;box-shadow:0 25px 50px rgba(0,0,0,.5)}
+.login-logo{text-align:center;margin-bottom:24px}
+.login-logo .emoji{font-size:48px;display:block;margin-bottom:8px}
+.login-logo h1{font-family:'Barlow Condensed',sans-serif;font-size:32px;
+  font-weight:900;color:#fff;letter-spacing:1px}
+.login-logo p{color:rgba(255,255,255,.5);font-size:13px;margin-top:4px}
+.login-tabs{display:flex;background:#0F172A;border-radius:10px;padding:4px;margin-bottom:20px;gap:4px}
+.login-tab{flex:1;padding:9px;border:none;border-radius:8px;font-size:13px;font-weight:600;
+  cursor:pointer;transition:.2s;background:transparent;color:rgba(255,255,255,.5)}
+.login-tab.on{background:#16A34A;color:#fff}
+.linput{width:100%;padding:13px 16px;border-radius:10px;border:1.5px solid #334155;
+  background:#0F172A;color:#fff;font-size:15px;outline:none;margin-bottom:12px;transition:.2s}
+.linput:focus{border-color:#16A34A}
+.linput::placeholder{color:#475569}
+.lbtn{width:100%;padding:14px;border-radius:10px;border:none;
+  background:linear-gradient(135deg,#16A34A,#15803D);color:#fff;
+  font-size:16px;font-weight:700;cursor:pointer;margin-top:4px;transition:.2s}
+.lbtn:hover{opacity:.9}
+.lerro{color:#F87171;font-size:13px;margin-top:8px;min-height:20px;text-align:center}
+
+/* APP */
+#app{display:none;padding-bottom:80px}
+
+/* HEADER */
+.header{background:linear-gradient(135deg,#0F172A,#1a2744);padding:16px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.header-logo{display:flex;align-items:center;gap:10px}
+.header-logo span{font-size:24px}
+.header-logo h2{font-family:'Barlow Condensed',sans-serif;font-size:22px;
+  font-weight:900;color:#fff;letter-spacing:.5px}
+.header-user{display:flex;align-items:center;gap:8px}
+.avatar{width:34px;height:34px;border-radius:50%;
+  background:linear-gradient(135deg,#16A34A,#15803D);
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-weight:700;font-size:14px}
+.btn-sair{background:rgba(255,255,255,.1);border:none;color:rgba(255,255,255,.7);
+  font-size:12px;padding:6px 12px;border-radius:8px;cursor:pointer}
+
+/* NAVBAR */
+.navbar{position:fixed;bottom:0;left:0;right:0;background:#fff;
+  border-top:1px solid var(--borda);display:flex;z-index:100;
+  box-shadow:0 -2px 10px rgba(0,0,0,.08)}
+.nav-btn{flex:1;padding:10px 4px 8px;border:none;background:none;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  color:var(--texto3);font-size:10px;font-weight:500;transition:.15s}
+.nav-btn.on{color:var(--verde)}
+.nav-btn svg{width:22px;height:22px}
+.nav-btn.on svg{stroke:var(--verde)}
+
+/* SECOES */
+.secao{display:none;padding:16px}
+.secao.on{display:block}
+
+/* CARDS */
+.card{background:var(--card);border-radius:var(--radius);padding:16px;
+  box-shadow:var(--shadow);margin-bottom:12px;border:1px solid var(--borda)}
+.card-title{font-size:13px;font-weight:700;color:var(--texto2);
+  text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px}
+
+/* HERO GRID */
+.hero-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.hero-card{background:var(--card);border-radius:var(--radius);padding:14px;
+  box-shadow:var(--shadow);border:1px solid var(--borda);
+  display:flex;flex-direction:column;align-items:center;text-align:center}
+.hero-card.destaque{background:linear-gradient(135deg,#16A34A,#15803D);border:none}
+.hero-label{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+  color:var(--texto3);margin-bottom:4px}
+.hero-card.destaque .hero-label{color:rgba(255,255,255,.7)}
+.hero-valor{font-family:'Barlow Condensed',sans-serif;font-size:32px;
+  font-weight:900;color:var(--texto);line-height:1}
+.hero-card.destaque .hero-valor{color:#fff}
+.hero-sub{font-size:11px;color:var(--texto3);margin-top:3px}
+.hero-card.destaque .hero-sub{color:rgba(255,255,255,.6)}
+
+/* PRÓXIMA RODADA */
+.prox-card{background:linear-gradient(135deg,#1a1f35,#0F172A);
+  border-radius:var(--radius);padding:20px;margin-bottom:16px;color:#fff;
+  border:1px solid #334155}
+.prox-label{font-size:11px;color:#94A3B8;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+.prox-titulo{font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:900;
+  color:#fff;margin-bottom:4px}
+.prox-data{font-size:14px;color:#94A3B8;margin-bottom:16px}
+.prox-local{font-size:13px;color:#CBD5E1;margin-bottom:16px}
+.presenca-btns{display:flex;gap:10px}
+.btn-in{flex:1;padding:12px;border:none;border-radius:10px;
+  background:linear-gradient(135deg,#16A34A,#15803D);color:#fff;
+  font-size:14px;font-weight:700;cursor:pointer;display:flex;
+  align-items:center;justify-content:center;gap:6px}
+.btn-fold{flex:1;padding:12px;border:none;border-radius:10px;
+  background:rgba(220,38,38,.15);color:#F87171;border:1.5px solid rgba(220,38,38,.3);
+  font-size:14px;font-weight:700;cursor:pointer;display:flex;
+  align-items:center;justify-content:center;gap:6px}
+.btn-in.ativo{box-shadow:0 0 0 3px rgba(22,163,74,.4)}
+.btn-fold.ativo{box-shadow:0 0 0 3px rgba(220,38,38,.3)}
+
+/* CONFIRMADOS */
+.confirmados{margin-top:12px}
+.confirmados-label{font-size:11px;color:#94A3B8;margin-bottom:8px}
+.chips-row{display:flex;flex-wrap:wrap;gap:6px}
+.chip-in{background:rgba(22,163,74,.15);color:#4ADE80;
+  border:1px solid rgba(22,163,74,.3);
+  border-radius:20px;padding:4px 10px;font-size:12px;font-weight:600}
+.chip-fold{background:rgba(220,38,38,.1);color:#F87171;
+  border:1px solid rgba(220,38,38,.2);
+  border-radius:20px;padding:4px 10px;font-size:12px;font-weight:600}
+
+/* RANKING */
+.rank-item{display:flex;align-items:center;gap:12px;padding:12px;
+  background:var(--card);border-radius:var(--radius);margin-bottom:8px;
+  box-shadow:var(--shadow);border:1px solid var(--borda)}
+.rank-item.me{border-color:var(--verde);background:#F0FDF4}
+.rank-pos{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;
+  min-width:36px;text-align:center}
+.rank-pos.ouro{color:#D97706}
+.rank-pos.prata{color:#6B7280}
+.rank-pos.bronze{color:#92400E}
+.rank-nome{font-size:14px;font-weight:600;color:var(--texto)}
+.rank-info{flex:1}
+.rank-pts{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:900;
+  color:var(--verde);text-align:right}
+.rank-sub{font-size:11px;color:var(--texto3);margin-top:2px}
+
+/* TABS de ranking */
+.rank-tabs{display:flex;background:var(--cinza2);border-radius:10px;
+  padding:4px;gap:4px;margin-bottom:16px}
+.rank-tab{flex:1;padding:8px 4px;border:none;border-radius:8px;
+  font-size:11px;font-weight:700;cursor:pointer;background:transparent;
+  color:var(--texto3);transition:.15s}
+.rank-tab.on{background:#fff;color:var(--verde);box-shadow:var(--shadow)}
+
+/* RODADAS HISTORICO */
+.rodada-item{background:var(--card);border-radius:var(--radius);padding:14px;
+  margin-bottom:10px;box-shadow:var(--shadow);border:1px solid var(--borda)}
+.rodada-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.rodada-num{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:900;color:var(--texto)}
+.rodada-data{font-size:12px;color:var(--texto3)}
+.rodada-badge{font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px}
+.badge-realizada{background:var(--verde-light);color:var(--verde-dark)}
+.badge-proxima{background:var(--azul-light);color:var(--azul)}
+.badge-futura{background:var(--cinza2);color:var(--cinza)}
+.rodada-resultado{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.res-tag{font-size:11px;padding:3px 8px;border-radius:8px;font-weight:600}
+.res-pos{background:var(--amarelo-light);color:var(--amarelo)}
+.res-pts{background:var(--verde-light);color:var(--verde-dark)}
+.res-fin{background:var(--azul-light);color:var(--azul)}
+
+/* ADMIN */
+.admin-card{background:var(--card);border-radius:var(--radius);padding:16px;
+  margin-bottom:12px;box-shadow:var(--shadow);border:1px solid var(--borda)}
+.admin-card h3{font-size:14px;font-weight:700;margin-bottom:12px;color:var(--texto)}
+.aform-row{display:flex;gap:8px;margin-bottom:10px}
+.ainput{flex:1;padding:10px 12px;border-radius:8px;border:1.5px solid var(--borda);
+  background:#fff;color:var(--texto);font-size:13px;outline:none;transition:.2s}
+.ainput:focus{border-color:var(--azul)}
+.ainput-label{font-size:11px;color:var(--texto3);margin-bottom:4px;font-weight:600}
+.btn-sv{padding:10px 16px;border-radius:8px;border:none;background:var(--verde);
+  color:#fff;font-size:13px;font-weight:700;cursor:pointer}
+.btn-danger{background:var(--vermelho)}
+.btn-amarelo{background:var(--amarelo)}
+
+/* TOAST */
+#toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:#1E293B;color:#fff;padding:12px 20px;border-radius:12px;
+  font-size:14px;font-weight:600;opacity:0;transition:.3s;z-index:9999;
+  white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.3);pointer-events:none}
+#toast.ok{background:#16A34A}
+#toast.err{background:#DC2626}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* REGRAS */
+.regra-item{padding:12px;border-left:3px solid var(--verde);
+  margin-bottom:10px;background:var(--card);border-radius:0 var(--radius) var(--radius) 0}
+.regra-num{font-size:11px;font-weight:700;color:var(--verde);margin-bottom:3px}
+.regra-txt{font-size:13px;color:var(--texto2);line-height:1.5}
+
+/* CAMPEOES */
+.camp-item{display:flex;align-items:center;gap:12px;padding:14px;
+  background:var(--card);border-radius:var(--radius);margin-bottom:8px;
+  box-shadow:var(--shadow);border:1px solid var(--borda)}
+.camp-torneio{font-size:12px;font-weight:700;color:var(--texto3);min-width:60px}
+.camp-podio{flex:1}
+.camp-pos{display:flex;align-items:center;gap:6px;margin-bottom:3px}
+.camp-medal{font-size:16px}
+.camp-nome{font-size:13px;font-weight:600}
+
+/* FINANCEIRO */
+.fin-card{background:linear-gradient(135deg,#065F46,#047857);
+  border-radius:var(--radius);padding:16px;color:#fff;margin-bottom:10px}
+.fin-label{font-size:11px;color:rgba(255,255,255,.6);margin-bottom:4px}
+.fin-valor{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:900}
+.fin-valor.positivo{color:#4ADE80}
+.fin-valor.negativo{color:#F87171}
+
+/* JOGADORES RODADA (admin) */
+.jogador-row{display:flex;gap:6px;align-items:flex-end;padding:10px;
+  background:var(--cinza2);border-radius:8px;margin-bottom:8px;flex-wrap:wrap}
+.jogador-row .ainput{min-width:0}
+
+/* RESPONSIVO */
+@media(max-width:380px){
+  .hero-valor{font-size:26px}
+  .presenca-btns{flex-direction:column}
+}
+</style>
+</head>
+<body>
+<div id="loading"><div class="bspin"></div><p>AJP Poker...</p></div>
+<div id="toast"></div>
+
+<!-- LOGIN -->
+<div id="tela-login" style="display:flex">
+  <div class="login-box">
+    <div class="login-logo">
+      <span class="emoji">♠️</span>
+      <h1>AJP POKER</h1>
+      <p>Amigos Juliano of Poker</p>
+    </div>
+    <div class="login-tabs">
+      <button class="login-tab on" id="tab-e" onclick="setTab('e')">Entrar</button>
+      <button class="login-tab" id="tab-c" onclick="setTab('c')">Cadastrar</button>
+    </div>
+    <!-- LOGIN -->
+    <div id="form-e">
+      <input class="linput" id="e-nome" placeholder="Apelido" autocomplete="username">
+      <input class="linput" id="e-senha" type="password" placeholder="Senha" autocomplete="current-password">
+      <button class="lbtn" id="btn-e" onclick="entrar()">ENTRAR</button>
+      <div class="lerro" id="lerro"></div>
+    </div>
+    <!-- CADASTRO -->
+    <div id="form-c" style="display:none">
+      <input class="linput" id="c-nome" placeholder="Apelido (como quer ser chamado)">
+      <input class="linput" id="c-senha" type="password" placeholder="Senha">
+      <input class="linput" id="c-senha2" type="password" placeholder="Confirme a senha">
+      <button class="lbtn" id="btn-c" onclick="cadastrar()">CADASTRAR</button>
+      <div class="lerro" id="cerro"></div>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="header">
+    <div class="header-logo">
+      <span>♠️</span>
+      <h2>AJP POKER</h2>
+    </div>
+    <div class="header-user">
+      <div class="avatar" id="uavatar">?</div>
+      <button class="btn-sair" onclick="sair()">Sair</button>
+    </div>
+  </div>
+
+  <!-- SECOES -->
+  <div class="secao on" id="s-inicio"></div>
+  <div class="secao" id="s-rodadas"></div>
+  <div class="secao" id="s-ranking"></div>
+  <div class="secao" id="s-campeoes"></div>
+  <div class="secao" id="s-regras"></div>
+  <div class="secao" id="s-admin" style="display:none"></div>
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <button class="nav-btn on" id="bn-inicio" onclick="ir('inicio')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+      Início
+    </button>
+    <button class="nav-btn" id="bn-rodadas" onclick="ir('rodadas')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Rodadas
+    </button>
+    <button class="nav-btn" id="bn-ranking" onclick="ir('ranking')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Ranking
+    </button>
+    <button class="nav-btn" id="bn-campeoes" onclick="ir('campeoes')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8.21 13.89L7 23l5-3 5 3-1.21-9.12"/><path d="M15 7c0 2.76-1.34 5-3 5S9 9.76 9 7s1.34-5 3-5 3 2.24 3 5z"/><path d="M5 7H3l1 5h2"/><path d="M19 7h2l-1 5h-2"/></svg>
+      Campeões
+    </button>
+    <button class="nav-btn" id="bn-regras" onclick="ir('regras')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      Regras
+    </button>
+    <button class="nav-btn" id="bn-admin" style="display:none" onclick="ir('admin')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93l-1.41 1.41M4.93 4.93l1.41 1.41M12 2v2M12 20v2M4.93 19.07l1.41-1.41M19.07 19.07l-1.41-1.41M2 12h2M20 12h2"/></svg>
+      Admin
+    </button>
+  </nav>
+</div>
+
+<script>
+// ── SUPABASE ──────────────────────────────────────────────────────────────────
+var SB = window.supabase.createClient(
+  'https://kqtjievcjocjuyswwvow.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtxdGppZXZjam9janV5c3d3dm93Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzNzgwNTcsImV4cCI6MjA5NTk1NDA1N30._52asyQvhmLGJoV6A6PG6FXVzSgIKI1h5-5NWSf0vy8'
+);
+var ADMIN_EMAIL = 'silvaveterinario@gmail.com';
+var APP_VERSION = '2026-ajp-v1';
+
+// ── ESTADO ────────────────────────────────────────────────────────────────────
+var USER = null;
+var RODADAS = [];
+var JOGADORES = []; // participantes cadastrados no torneio
+var PRESENCAS = {}; // {rodada_id: [{nome, status}]}
+var RESULTADOS = {}; // {rodada_id: [{nome, posicao, rebuy, addon, fichas, knockout}]}
+
+// Tabela de pontuação [nJogadores][posicao] = pts
+var PTS_TABLE = {
+  9:  [40,30,25,21,18,15,12,11,10],
+  10: [41,31,26,22,19,17,15,12,11,10],
+  11: [42,32,27,23,20,18,16,14,12,11,10],
+  12: [44,34,29,25,22,20,18,16,14,12,11,10],
+  13: [45,35,30,26,23,21,19,17,15,13,12,11,10],
+  14: [46,36,31,27,24,22,20,18,16,14,13,12,11,10],
+  15: [47,37,32,28,25,23,21,19,17,15,14,13,12,11,10],
+  16: [48,38,33,29,26,24,22,20,18,16,15,14,13,12,11,10],
+  17: [49,39,34,30,27,25,23,21,19,17,16,15,14,13,12,11,10],
+  18: [50,40,35,31,28,26,24,22,20,18,17,16,15,14,13,12,11,10],
+  19: [51,41,36,32,29,27,25,23,21,19,18,17,16,15,14,13,12,11,10],
+  20: [52,42,37,33,30,28,26,24,22,20,19,18,17,16,15,14,13,12,11,10],
+  21: [53,43,38,34,31,29,27,25,23,21,20,19,18,17,16,15,14,13,12,11,10],
+  22: [54,44,39,35,32,30,28,26,24,22,21,20,19,18,17,16,15,14,13,12,11,10],
+  23: [55,45,40,36,33,31,29,27,25,23,22,21,20,19,18,17,16,15,14,13,12,11,10],
+  24: [56,46,41,37,34,32,30,28,26,24,23,22,21,20,19,18,17,16,15,14,13,12,11,10],
+  25: [57,47,42,38,35,33,31,29,27,25,24,23,22,21,20,19,18,17,16,15,14,13,12,11,10],
+};
+
+function getPts(nJogadores, posicao) {
+  var n = Math.min(25, Math.max(9, nJogadores));
+  var arr = PTS_TABLE[n] || PTS_TABLE[9];
+  return arr[posicao-1] || 0;
+}
+
+// ── UTILS ─────────────────────────────────────────────────────────────────────
+function noloading(){ document.getElementById('loading').style.display='none'; }
+function loading(t){ var el=document.getElementById('loading'); el.style.display='flex'; el.querySelector('p').textContent=t||'Carregando...'; }
+
+var TTIMER=null;
+function toast(msg, tipo){
+  var el=document.getElementById('toast');
+  el.textContent=msg; el.className=(tipo==='ok'?'ok':'err')+' show';
+  clearTimeout(TTIMER); TTIMER=setTimeout(function(){el.className='';},2800);
+}
+
+function fmtData(d){
+  if(!d) return '';
+  var dt=new Date(d+'T00:00:00');
+  return dt.toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'2-digit',year:'numeric'});
+}
+
+function fmtMoeda(v){
+  return 'R$ '+v.toFixed(2).replace('.',',');
+}
+
+// ── TABS LOGIN ────────────────────────────────────────────────────────────────
+function setTab(t){
+  document.getElementById('form-e').style.display=t==='e'?'block':'none';
+  document.getElementById('form-c').style.display=t==='c'?'block':'none';
+  document.getElementById('tab-e').classList.toggle('on',t==='e');
+  document.getElementById('tab-c').classList.toggle('on',t==='c');
+}
+
+// ── CADASTRO ──────────────────────────────────────────────────────────────────
+async function cadastrar(){
+  var nome=document.getElementById('c-nome').value.trim();
+  var s1=document.getElementById('c-senha').value;
+  var s2=document.getElementById('c-senha2').value;
+  var erro=document.getElementById('cerro');
+  if(!nome){erro.textContent='Digite seu apelido.';return}
+  if(!s1){erro.textContent='Digite uma senha.';return}
+  if(s1!==s2){erro.textContent='As senhas não conferem.';return}
+  if(s1.length<4){erro.textContent='Senha mínima: 4 caracteres.';return}
+  var btn=document.getElementById('btn-c');
+  btn.disabled=true;btn.textContent='...';
+  var {data:ex}=await SB.from('poker_usuarios').select('nome').eq('nome',nome).maybeSingle();
+  if(ex){erro.textContent='Apelido já em uso.';btn.disabled=false;btn.textContent='CADASTRAR';return}
+  var {error}=await SB.from('poker_usuarios').insert({nome:nome,senha:s1,admin:false});
+  if(error){erro.textContent='Erro: '+error.message;btn.disabled=false;btn.textContent='CADASTRAR';return}
+  toast('Cadastrado! Entrando...','ok');
+  setTimeout(function(){
+    document.getElementById('e-nome').value=nome;
+    document.getElementById('e-senha').value=s1;
+    setTab('e');entrar();
+  },700);
+}
+
+// ── LOGIN ─────────────────────────────────────────────────────────────────────
+async function entrar(){
+  var nome=document.getElementById('e-nome').value.trim();
+  var senha=document.getElementById('e-senha').value;
+  var erro=document.getElementById('lerro');
+  var btn=document.getElementById('btn-e');
+  if(!nome){erro.textContent='Digite seu apelido.';return}
+  if(!senha){erro.textContent='Digite sua senha.';return}
+  btn.disabled=true;btn.innerHTML='<span style="display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px"></span>Entrando...';
+
+  if(nome==='admin'){
+    var authRes=await SB.auth.signInWithPassword({email:ADMIN_EMAIL,password:senha});
+    if(authRes.error){erro.textContent='Senha incorreta.';btn.disabled=false;btn.textContent='ENTRAR';return}
+    USER={nome:'admin',admin:true};
+  } else {
+    var {data:u}=await SB.from('poker_usuarios').select('*').eq('nome',nome).maybeSingle();
+    if(!u){erro.textContent='Apelido não encontrado.';btn.disabled=false;btn.textContent='ENTRAR';return}
+    if(u.senha!==senha){erro.textContent='Senha incorreta.';btn.disabled=false;btn.textContent='ENTRAR';return}
+    USER={nome:u.nome,admin:u.admin||false};
+  }
+
+  localStorage.setItem('poker_user',JSON.stringify(USER));
+  localStorage.setItem('poker_app_version',APP_VERSION);
+  await abrirApp();
+}
+
+async function abrirApp(){
+  document.getElementById('tela-login').style.display='none';
+  document.getElementById('app').style.display='block';
+  document.getElementById('uavatar').textContent=USER.nome[0].toUpperCase();
+  if(USER.admin) document.getElementById('bn-admin').style.display='flex';
+  loading('Carregando dados...');
+  await carregarTudo();
+  noloading();
+  await renderInicio();
+}
+
+function sair(){
+  USER=null;RODADAS=[];JOGADORES=[];PRESENCAS={};RESULTADOS={};
+  localStorage.removeItem('poker_user');
+  SB.auth.signOut();
+  document.getElementById('app').style.display='none';
+  document.getElementById('tela-login').style.display='flex';
+  document.getElementById('lerro').textContent='';
+  document.getElementById('e-senha').value='';
+  document.getElementById('bn-admin').style.display='none';
+}
+
+// ── CARREGAR DADOS ────────────────────────────────────────────────────────────
+async function carregarTudo(){
+  try{
+    var [rR,rJ,rP,rRes] = await Promise.all([
+      SB.from('poker_rodadas').select('*').order('numero'),
+      SB.from('poker_usuarios').select('nome,admin').neq('nome','admin').order('nome'),
+      SB.from('poker_presencas').select('*'),
+      SB.from('poker_resultados').select('*'),
+    ]);
+    RODADAS = rR.data||[];
+    JOGADORES = rJ.data||[];
+    PRESENCAS = {};
+    (rP.data||[]).forEach(function(p){
+      if(!PRESENCAS[p.rodada_id]) PRESENCAS[p.rodada_id]=[];
+      PRESENCAS[p.rodada_id].push({nome:p.nome,status:p.status});
+    });
+    RESULTADOS = {};
+    (rRes.data||[]).forEach(function(r){
+      if(!RESULTADOS[r.rodada_id]) RESULTADOS[r.rodada_id]=[];
+      RESULTADOS[r.rodada_id].push(r);
+    });
+  }catch(e){ console.error('Erro ao carregar:',e); }
+}
+
+// ── NAVEGAÇÃO ─────────────────────────────────────────────────────────────────
+function ir(s){
+  ['inicio','rodadas','ranking','campeoes','regras','admin'].forEach(function(id){
+    var el=document.getElementById('s-'+id);
+    if(el) el.style.display=id===s?'block':'none';
+  });
+  document.querySelectorAll('.nav-btn').forEach(function(b){
+    b.classList.toggle('on',b.id==='bn-'+s);
+  });
+  if(s==='inicio') renderInicio();
+  if(s==='rodadas') renderRodadas();
+  if(s==='ranking') renderRanking('pontos');
+  if(s==='campeoes') renderCampeoes();
+  if(s==='regras') renderRegras();
+  if(s==='admin') renderAdmin();
+  window.scrollTo(0,0);
+}
+
+// ── RENDER INÍCIO ─────────────────────────────────────────────────────────────
+async function renderInicio(){
+  var el=document.getElementById('s-inicio');
+  var proxRodada=RODADAS.find(function(r){return !r.realizada})||null;
+  var minhaPresenca=proxRodada&&PRESENCAS[proxRodada.id]
+    ?PRESENCAS[proxRodada.id].find(function(p){return p.nome===USER.nome})
+    :null;
+
+  // Calcula stats do usuário
+  var stats=calcStats(USER.nome);
+
+  var confirmados=proxRodada&&PRESENCAS[proxRodada.id]
+    ?PRESENCAS[proxRodada.id].filter(function(p){return p.status==='in'})
+    :[];
+  var folds=proxRodada&&PRESENCAS[proxRodada.id]
+    ?PRESENCAS[proxRodada.id].filter(function(p){return p.status==='fold'})
+    :[];
+
+  var html='';
+
+  // Hero cards
+  html+='<div class="hero-grid">';
+  html+='<div class="hero-card destaque">';
+  html+='<div class="hero-label">🏆 Classificação</div>';
+  html+='<div class="hero-valor">'+(stats.rank>0?stats.rank+'º':'--')+'</div>';
+  html+='<div class="hero-sub">'+(stats.rank>0?'de '+JOGADORES.length+' jogadores':'Sem rodadas')+'</div>';
+  html+='</div>';
+  html+='<div class="hero-card">';
+  html+='<div class="hero-label">⭐ Pontos</div>';
+  html+='<div class="hero-valor">'+stats.total+'</div>';
+  html+='<div class="hero-sub">'+stats.totalSem+' sem pior</div>';
+  html+='</div>';
+  html+='<div class="hero-card">';
+  html+='<div class="hero-label">🔄 Rebuys</div>';
+  html+='<div class="hero-valor">'+stats.rebuys+'</div>';
+  html+='<div class="hero-sub">no semestre</div>';
+  html+='</div>';
+  html+='<div class="hero-card">';
+  html+='<div class="hero-label">🎯 Rodadas</div>';
+  html+='<div class="hero-valor">'+stats.rodadasJogadas+'</div>';
+  html+='<div class="hero-sub">de '+RODADAS.filter(function(r){return r.realizada}).length+' realizadas</div>';
+  html+='</div>';
+  html+='</div>';
+
+  // Próxima rodada
+  if(proxRodada){
+    html+='<div class="prox-card">';
+    html+='<div class="prox-label">Próxima Rodada</div>';
+    html+='<div class="prox-titulo">Rodada '+proxRodada.numero+'</div>';
+    html+='<div class="prox-data">📅 '+fmtData(proxRodada.data)+(proxRodada.horario?' às '+proxRodada.horario:'')+'</div>';
+    if(proxRodada.local) html+='<div class="prox-local">📍 '+proxRodada.local+'</div>';
+    html+='<div class="presenca-btns">';
+    html+='<button class="btn-in'+(minhaPresenca&&minhaPresenca.status==='in'?' ativo':'')
+      +'" onclick="confirmarPresenca('+proxRodada.id+',\'in\')">🤚 IN</button>';
+    html+='<button class="btn-fold'+(minhaPresenca&&minhaPresenca.status==='fold'?' ativo':'')
+      +'" onclick="confirmarPresenca('+proxRodada.id+',\'fold\')">🤙 FOLD</button>';
+    html+='</div>';
+    html+='<div class="confirmados">';
+    html+='<div class="confirmados-label">'+confirmados.length+' confirmados · '+folds.length+' fold</div>';
+    html+='<div class="chips-row">';
+    confirmados.forEach(function(p){ html+='<span class="chip-in">'+p.nome+'</span>'; });
+    folds.forEach(function(p){ html+='<span class="chip-fold">'+p.nome+'</span>'; });
+    html+='</div></div>';
+    html+='</div>';
+  } else {
+    html+='<div class="card" style="text-align:center;padding:24px;color:var(--texto3)">🏁 Todas as rodadas foram realizadas!</div>';
+  }
+
+  // Resultado financeiro da última rodada
+  var minhasRodadas=RODADAS.filter(function(r){
+    return r.realizada&&RESULTADOS[r.id]&&RESULTADOS[r.id].find(function(x){return x.nome===USER.nome});
+  });
+  if(minhasRodadas.length>0){
+    var ultRodada=minhasRodadas[minhasRodadas.length-1];
+    var meuRes=RESULTADOS[ultRodada.id].find(function(x){return x.nome===USER.nome});
+    var fin=calcFinanceiro(meuRes,ultRodada);
+    html+='<div class="fin-card">';
+    html+='<div class="fin-label">💰 Resultado — Rodada '+ultRodada.numero+'</div>';
+    html+='<div class="fin-valor '+(fin.saldo>=0?'positivo':'negativo')+'">'+fmtMoeda(fin.saldo)+'</div>';
+    html+='<div style="font-size:12px;color:rgba(255,255,255,.6);margin-top:4px">';
+    html+='Fichas: '+fmtMoeda(fin.premio)+' | Custo: '+fmtMoeda(fin.custo);
+    html+='</div></div>';
+  }
+
+  el.innerHTML=html;
+}
+
+// ── CONFIRMAR PRESENÇA ────────────────────────────────────────────────────────
+async function confirmarPresenca(rodadaId, status){
+  if(!USER) return;
+  var {error}=await SB.from('poker_presencas').upsert(
+    {rodada_id:rodadaId,nome:USER.nome,status:status},
+    {onConflict:'rodada_id,nome'}
+  );
+  if(error){toast('Erro: '+error.message,'err');return}
+  if(!PRESENCAS[rodadaId]) PRESENCAS[rodadaId]=[];
+  var idx=PRESENCAS[rodadaId].findIndex(function(p){return p.nome===USER.nome});
+  if(idx>=0) PRESENCAS[rodadaId][idx].status=status;
+  else PRESENCAS[rodadaId].push({nome:USER.nome,status:status});
+  toast(status==='in'?'✅ Você está IN!':'❌ Fold confirmado',status==='in'?'ok':'err');
+  renderInicio();
+}
+
+// ── CALCULAR STATS ────────────────────────────────────────────────────────────
+function calcStats(nome){
+  var pontosPorRodada=[];
+  var rebuys=0,addons=0,knockouts=0,rodadasJogadas=0;
+  RODADAS.forEach(function(r){
+    if(!r.realizada) return;
+    var res=RESULTADOS[r.id]?RESULTADOS[r.id].find(function(x){return x.nome===nome}):null;
+    if(res){
+      rodadasJogadas++;
+      var nj=RESULTADOS[r.id].length;
+      var pts=getPts(nj,res.posicao);
+      pontosPorRodada.push(pts);
+      rebuys+=(res.rebuy||0);
+      addons+=(res.addon||0);
+      knockouts+=(res.knockout||0);
+    } else {
+      // Não participou — não conta pontos (0 implícito mas não descarta)
+    }
+  });
+  var total=pontosPorRodada.reduce(function(a,b){return a+b},0);
+  // Descarta a pior campanha (1 pior resultado)
+  var ordenado=pontosPorRodada.slice().sort(function(a,b){return a-b});
+  var totalSem=pontosPorRodada.length>1
+    ?total-ordenado[0]
+    :total;
+  return{total:total,totalSem:totalSem,rebuys:rebuys,addons:addons,
+    knockouts:knockouts,rodadasJogadas:rodadasJogadas,rank:0};
+}
+
+function calcStatsAll(){
+  return JOGADORES.map(function(j){
+    var s=calcStats(j.nome);
+    s.nome=j.nome;
+    return s;
+  });
+}
+
+// ── CALCULAR FINANCEIRO ───────────────────────────────────────────────────────
+function calcFinanceiro(res,rodada){
+  if(!res) return{saldo:0,premio:0,custo:0};
+  var buyin=15, rebuyVal=20, addonVal=30;
+  var custo=buyin+(res.rebuy||0)*rebuyVal+(res.addon||0)*addonVal;
+  var premio=(res.fichas||0)*1.5;
+  var rateio=rodada.rateio_intervalo||0;
+  var nJog=RESULTADOS[rodada.id]?RESULTADOS[rodada.id].length:1;
+  var rateioPorJog=nJog>0?rateio/nJog:0;
+  var saldo=premio-custo-rateioPorJog;
+  return{saldo:saldo,premio:premio,custo:custo};
+}
+
+// ── RENDER RODADAS ────────────────────────────────────────────────────────────
+function renderRodadas(){
+  var el=document.getElementById('s-rodadas');
+  var html='<h2 style="font-family:Barlow Condensed,sans-serif;font-size:24px;font-weight:900;margin-bottom:16px">📅 Rodadas do Semestre</h2>';
+
+  RODADAS.forEach(function(r){
+    var pres=PRESENCAS[r.id]||[];
+    var minhaP=pres.find(function(p){return p.nome===USER.nome});
+    var res=RESULTADOS[r.id]||[];
+    var meuRes=res.find(function(x){return x.nome===USER.nome});
+    var status=r.realizada?'realizada':(RODADAS.indexOf(r)===RODADAS.findIndex(function(x){return !x.realizada})?'proxima':'futura');
+
+    html+='<div class="rodada-item">';
+    html+='<div class="rodada-header">';
+    html+='<div>';
+    html+='<div class="rodada-num">Rodada '+r.numero+'</div>';
+    html+='<div class="rodada-data">'+fmtData(r.data)+(r.horario?' às '+r.horario:'')+'</div>';
+    if(r.local) html+='<div style="font-size:11px;color:var(--texto3)">📍 '+r.local+'</div>';
+    html+='</div>';
+    html+='<span class="rodada-badge badge-'+status+'">'+
+      (status==='realizada'?'Realizada':status==='proxima'?'Próxima':'Futura')+'</span>';
+    html+='</div>';
+
+    if(r.realizada&&meuRes){
+      var nj=res.length;
+      var pts=getPts(nj,meuRes.posicao);
+      var fin=calcFinanceiro(meuRes,r);
+      html+='<div class="rodada-resultado">';
+      html+='<span class="res-tag res-pos">'+meuRes.posicao+'º lugar</span>';
+      html+='<span class="res-tag res-pts">'+pts+' pts</span>';
+      html+='<span class="res-tag" style="background:var(--cinza2);color:var(--texto2)">'+meuRes.rebuy||0+' rebuy</span>';
+      if(meuRes.knockout>0) html+='<span class="res-tag" style="background:#FEF9C3;color:#854D0E">💀 '+meuRes.knockout+' KO</span>';
+      html+='<span class="res-tag res-fin">'+(fin.saldo>=0?'+':'')+fmtMoeda(fin.saldo)+'</span>';
+      html+='</div>';
+    } else if(!r.realizada){
+      var conf=pres.filter(function(p){return p.status==='in'}).length;
+      var fold=pres.filter(function(p){return p.status==='fold'}).length;
+      html+='<div style="margin-top:8px">';
+      html+='<div style="font-size:12px;color:var(--texto3);margin-bottom:8px">'+conf+' confirmados · '+fold+' fold</div>';
+      if(status==='proxima'){
+        html+='<div class="presenca-btns">';
+        html+='<button class="btn-in'+(minhaP&&minhaP.status==='in'?' ativo':'')+
+          '" onclick="confirmarPresenca('+r.id+',\'in\')" style="font-size:12px;padding:8px">🤚 IN</button>';
+        html+='<button class="btn-fold'+(minhaP&&minhaP.status==='fold'?' ativo':'')+
+          '" onclick="confirmarPresenca('+r.id+',\'fold\')" style="font-size:12px;padding:8px">🤙 FOLD</button>';
+        html+='</div>';
+      } else if(minhaP){
+        html+='<span class="'+(minhaP.status==='in'?'chip-in':'chip-fold')+'">'+
+          (minhaP.status==='in'?'✅ IN':'❌ FOLD')+'</span>';
+      }
+      html+='</div>';
+    }
+    html+='</div>';
+  });
+
+  if(RODADAS.length===0){
+    html+='<div class="card" style="text-align:center;padding:24px;color:var(--texto3)">Nenhuma rodada cadastrada ainda.</div>';
+  }
+
+  el.innerHTML=html;
+}
+
+// ── RENDER RANKING ────────────────────────────────────────────────────────────
+var RANK_ABA='pontos';
+function renderRanking(aba){
+  RANK_ABA=aba||RANK_ABA;
+  var el=document.getElementById('s-ranking');
+  var stats=calcStatsAll();
+
+  var html='<h2 style="font-family:Barlow Condensed,sans-serif;font-size:24px;font-weight:900;margin-bottom:16px">📊 Classificação</h2>';
+  html+='<div class="rank-tabs">';
+  html+='<button class="rank-tab'+(RANK_ABA==='pontos'?' on':'')+'" onclick="renderRanking(\'pontos\')">🏆 Pontos</button>';
+  html+='<button class="rank-tab'+(RANK_ABA==='rebuy'?' on':'')+'" onclick="renderRanking(\'rebuy\')">👑 King Rebuy</button>';
+  html+='<button class="rank-tab'+(RANK_ABA==='knockout'?' on':'')+'" onclick="renderRanking(\'knockout\')">💀 Knockout</button>';
+  html+='</div>';
+
+  var sorted;
+  if(RANK_ABA==='pontos'){
+    sorted=stats.slice().sort(function(a,b){
+      return b.totalSem-a.totalSem||b.total-a.total||a.rodadasJogadas-b.rodadasJogadas;
+    });
+    sorted.forEach(function(s,i){
+      var pos=i+1;
+      var pc=pos===1?'ouro':pos===2?'prata':pos===3?'bronze':'';
+      var me=s.nome===USER.nome;
+      html+='<div class="rank-item'+(me?' me':'')+'">';
+      html+='<div class="rank-pos '+pc+'">'+pos+'</div>';
+      html+='<div class="rank-info">';
+      html+='<div class="rank-nome">'+s.nome+(me?' <span style="font-size:10px;color:var(--verde)">(você)</span>':'')+'</div>';
+      html+='<div class="rank-sub">'+s.rodadasJogadas+' rodadas · '+s.rebuys+' rebuys · '+s.knockouts+' KOs</div>';
+      html+='</div>';
+      html+='<div style="text-align:right">';
+      html+='<div class="rank-pts">'+s.totalSem+'</div>';
+      html+='<div style="font-size:10px;color:var(--texto3)">'+s.total+' total</div>';
+      html+='</div></div>';
+    });
+  } else if(RANK_ABA==='rebuy'){
+    sorted=stats.slice().sort(function(a,b){
+      return b.rebuys-a.rebuys||a.rodadasJogadas-b.rodadasJogadas;
+    });
+    sorted.forEach(function(s,i){
+      var me=s.nome===USER.nome;
+      html+='<div class="rank-item'+(me?' me':'')+'">';
+      html+='<div class="rank-pos '+(i===0?'ouro':'')+'">'+(i+1)+'</div>';
+      html+='<div class="rank-info">';
+      html+='<div class="rank-nome">'+s.nome+'</div>';
+      html+='<div class="rank-sub">'+s.rodadasJogadas+' rodadas jogadas</div>';
+      html+='</div>';
+      html+='<div style="text-align:right">';
+      html+='<div class="rank-pts" style="color:var(--roxo)">'+s.rebuys+'</div>';
+      html+='<div style="font-size:10px;color:var(--texto3)">rebuys</div>';
+      html+='</div></div>';
+    });
+    html='<div style="background:var(--roxo-light);border:1px solid var(--roxo);border-radius:var(--radius);padding:12px;margin-bottom:12px;color:var(--roxo)">'+
+      '<b>👑 King of Rebuy</b> — Quem mais deu rebuy no semestre</div>'+html;
+    html='<div class="rank-tabs">'+
+      '<button class="rank-tab'+(RANK_ABA==='pontos'?' on':'')+'" onclick="renderRanking(\'pontos\')">🏆 Pontos</button>'+
+      '<button class="rank-tab'+(RANK_ABA==='rebuy'?' on':'')+'" onclick="renderRanking(\'rebuy\')">👑 King Rebuy</button>'+
+      '<button class="rank-tab'+(RANK_ABA==='knockout'?' on':'')+'" onclick="renderRanking(\'knockout\')">💀 Knockout</button>'+
+      '</div>'+html;
+    el.innerHTML='<h2 style="font-family:Barlow Condensed,sans-serif;font-size:24px;font-weight:900;margin-bottom:16px">📊 Classificação</h2>'+html;
+    return;
+  } else {
+    sorted=stats.slice().sort(function(a,b){
+      return b.knockouts-a.knockouts||a.rodadasJogadas-b.rodadasJogadas;
+    });
+    sorted.forEach(function(s,i){
+      var me=s.nome===USER.nome;
+      html+='<div class="rank-item'+(me?' me':'')+'">';
+      html+='<div class="rank-pos '+(i===0?'ouro':'')+'">'+(i+1)+'</div>';
+      html+='<div class="rank-info">';
+      html+='<div class="rank-nome">'+s.nome+'</div>';
+      html+='<div class="rank-sub">'+s.rodadasJogadas+' rodadas jogadas</div>';
+      html+='</div>';
+      html+='<div style="text-align:right">';
+      html+='<div class="rank-pts" style="color:#92400E">'+s.knockouts+'</div>';
+      html+='<div style="font-size:10px;color:var(--texto3)">knockouts</div>';
+      html+='</div></div>';
+    });
+  }
+
+  if(stats.length===0) html+='<div class="card" style="text-align:center;padding:24px;color:var(--texto3)">Sem dados ainda.</div>';
+  el.innerHTML=html;
+}
+
+// ── RENDER CAMPEÕES ───────────────────────────────────────────────────────────
+async function renderCampeoes(){
+  var el=document.getElementById('s-campeoes');
+  var {data:camps}=await SB.from('poker_campeoes').select('*').order('torneio',{ascending:false});
+  camps=camps||[];
+
+  var html='<h2 style="font-family:Barlow Condensed,sans-serif;font-size:24px;font-weight:900;margin-bottom:16px">🏆 Hall of Fame</h2>';
+
+  if(camps.length===0){
+    html+='<div class="card" style="text-align:center;padding:24px;color:var(--texto3)">Nenhum campeão cadastrado ainda.</div>';
+  } else {
+    camps.forEach(function(c){
+      html+='<div class="camp-item">';
+      html+='<div class="camp-torneio" style="font-family:Barlow Condensed,sans-serif;font-size:20px;font-weight:900;color:var(--amarelo)">#'+c.torneio+'</div>';
+      html+='<div class="camp-podio">';
+      if(c.primeiro) html+='<div class="camp-pos"><span class="camp-medal">🥇</span><span class="camp-nome">'+c.primeiro+'</span></div>';
+      if(c.segundo) html+='<div class="camp-pos"><span class="camp-medal">🥈</span><span class="camp-nome">'+c.segundo+'</span></div>';
+      if(c.terceiro) html+='<div class="camp-pos"><span class="camp-medal">🥉</span><span class="camp-nome">'+c.terceiro+'</span></div>';
+      html+='</div></div>';
+    });
+  }
+
+  if(USER.admin){
+    html+='<div class="admin-card" style="margin-top:16px">';
+    html+='<h3>➕ Adicionar Campeão</h3>';
+    html+='<div class="ainput-label">Nº do Torneio</div>';
+    html+='<input class="ainput" id="camp-num" type="number" placeholder="Ex: 22" style="margin-bottom:8px;width:100%">';
+    html+='<div class="ainput-label">1º Lugar</div>';
+    html+='<input class="ainput" id="camp-1" placeholder="Nome" style="margin-bottom:8px;width:100%">';
+    html+='<div class="ainput-label">2º Lugar</div>';
+    html+='<input class="ainput" id="camp-2" placeholder="Nome" style="margin-bottom:8px;width:100%">';
+    html+='<div class="ainput-label">3º Lugar</div>';
+    html+='<input class="ainput" id="camp-3" placeholder="Nome" style="margin-bottom:8px;width:100%">';
+    html+='<button class="btn-sv" onclick="salvarCampeao()">Salvar</button>';
+    html+='</div>';
+  }
+
+  el.innerHTML=html;
+}
+
+async function salvarCampeao(){
+  var num=parseInt(document.getElementById('camp-num').value);
+  var p1=document.getElementById('camp-1').value.trim();
+  var p2=document.getElementById('camp-2').value.trim();
+  var p3=document.getElementById('camp-3').value.trim();
+  if(!num||!p1){toast('Preencha o número e o 1º lugar!','err');return}
+  var {error}=await SB.from('poker_campeoes').upsert(
+    {torneio:num,primeiro:p1,segundo:p2||null,terceiro:p3||null},
+    {onConflict:'torneio'}
+  );
+  if(error){toast('Erro: '+error.message,'err');return}
+  toast('Campeão salvo!','ok');
+  renderCampeoes();
+}
+
+// ── RENDER REGRAS ─────────────────────────────────────────────────────────────
+function renderRegras(){
+  var el=document.getElementById('s-regras');
+  var regras=[
+    ['Modalidade','No Limit Texas Hold\'em com baralho de 52 cartas (sem coringas).'],
+    ['Buy-in','R$ 15,00 por rodada — vai para a premiação.'],
+    ['Rebuy','R$ 20,00 cada. Máximo 4 rebuys nos primeiros 6 níveis. Rebuy duplo a partir do 5º nível conta como 2.'],
+    ['Addon','R$ 30,00 no intervalo (6º nível). Obrigatório para quem fez os 4 rebuys e foi eliminado — recebe 40K fichas.'],
+    ['Fichas iniciais','10.000 em valor de fichas por rodada.'],
+    ['Blinds','Aumentam a cada 15 minutos (8 níveis de 15 min = 2h por rodada). Ante pago no Big Blind.'],
+    ['Punição por atraso','Chegou após início: recebe 9.000 fichas. Cada rebuy: 1ª = 9.500, 2ª = 9.000.'],
+    ['Mesa Final','9 jogadores. Novo sorteio de posições (redraw). Botão inicia no assento 1.'],
+    ['Premiação por Rodada','Rateio proporcional ao total de fichas na mesa final. Múltiplos de R$ 1,00. Fichas: valor × R$ 1,50.'],
+    ['Pontuação','Tabela por posição × nº de jogadores. Mínimo 10 pontos para posições pontuadas.'],
+    ['Descarte','1 pior resultado descartado na somatória final do semestre.'],
+    ['King of Rebuy','Quem mais fez rebuys no semestre. Desempate: quem perdeu menos rodelas.'],
+    ['Knockout','Registrado por rodada. Contagem total no semestre.'],
+    ['Rateio do intervalo','Custo do salão/lanche dividido igualmente entre os participantes da rodada.'],
+    ['Conduta','Sem collusion, sem soft play. Decisão do Diretor é final.'],
+  ];
+  var html='<h2 style="font-family:Barlow Condensed,sans-serif;font-size:24px;font-weight:900;margin-bottom:16px">📋 Regras AJOP</h2>';
+  regras.forEach(function(r,i){
+    html+='<div class="regra-item">';
+    html+='<div class="regra-num">'+String(i+1).padStart(2,'0')+' — '+r[0]+'</div>';
+    html+='<div class="regra-txt">'+r[1]+'</div>';
+    html+='</div>';
+  });
+  el.innerHTML=html;
+}
+
+// ── RENDER ADMIN ──────────────────────────────────────────────────────────────
+async function renderAdmin(){
+  if(!USER||!USER.admin) return;
+  var el=document.getElementById('s-admin');
+  var html='<h2 style="font-family:Barlow Condensed,sans-serif;font-size:24px;font-weight:900;margin-bottom:16px">⚙️ Painel Admin</h2>';
+
+  // RODADAS
+  html+='<div class="admin-card">';
+  html+='<h3>📅 Gerenciar Rodadas</h3>';
+  html+='<div class="aform-row">';
+  html+='<div style="flex:1"><div class="ainput-label">Nº Rodada</div><input class="ainput" id="rod-num" type="number" min="1" max="8" placeholder="1-8"></div>';
+  html+='<div style="flex:2"><div class="ainput-label">Data</div><input class="ainput" id="rod-data" type="date"></div>';
+  html+='</div>';
+  html+='<div class="aform-row">';
+  html+='<div style="flex:1"><div class="ainput-label">Horário</div><input class="ainput" id="rod-hora" type="time" value="20:00"></div>';
+  html+='<div style="flex:2"><div class="ainput-label">Local</div><input class="ainput" id="rod-local" placeholder="Ex: Casa do Juliano"></div>';
+  html+='</div>';
+  html+='<button class="btn-sv" onclick="salvarRodada()">Salvar Rodada</button>';
+  html+='</div>';
+
+  // INSERIR RESULTADO
+  html+='<div class="admin-card">';
+  html+='<h3>🎯 Inserir Resultado da Rodada</h3>';
+  html+='<div class="aform-row">';
+  html+='<div style="flex:1"><div class="ainput-label">Rodada</div>';
+  html+='<select class="ainput" id="res-rodada" onchange="carregarFormResultado()">';
+  html+='<option value="">Selecione...</option>';
+  RODADAS.forEach(function(r){ html+='<option value="'+r.id+'">Rodada '+r.numero+' ('+fmtData(r.data)+')</option>'; });
+  html+='</select></div>';
+  html+='<div style="flex:1"><div class="ainput-label">Nº Jogadores</div><input class="ainput" id="res-njog" type="number" min="9" max="25" placeholder="9-25" onchange="gerarLinhasJogadores()"></div>';
+  html+='</div>';
+  html+='<div class="ainput-label">Rateio Intervalo (R$)</div>';
+  html+='<input class="ainput" id="res-rateio" type="number" step="0.01" placeholder="Ex: 150.00" style="margin-bottom:10px;width:100%">';
+  html+='<div id="linhas-jogadores"></div>';
+  html+='<button class="btn-sv" onclick="salvarResultados()" style="margin-top:8px">💾 Salvar Resultados</button>';
+  html+='</div>';
+
+  el.innerHTML=html;
+}
+
+async function salvarRodada(){
+  var num=parseInt(document.getElementById('rod-num').value);
+  var data=document.getElementById('rod-data').value;
+  var hora=document.getElementById('rod-hora').value;
+  var local=document.getElementById('rod-local').value.trim();
+  if(!num||!data){toast('Preencha número e data!','err');return}
+  var {error}=await SB.from('poker_rodadas').upsert(
+    {numero:num,data:data,horario:hora,local:local,realizada:false},
+    {onConflict:'numero'}
+  );
+  if(error){toast('Erro: '+error.message,'err');return}
+  toast('Rodada '+num+' salva!','ok');
+  await carregarTudo();
+  renderAdmin();
+}
+
+function gerarLinhasJogadores(){
+  var nj=parseInt(document.getElementById('res-njog').value)||0;
+  var el=document.getElementById('linhas-jogadores');
+  if(nj<9||nj>25){el.innerHTML='';return}
+  var opts='<option value="">Selecione...</option>';
+  JOGADORES.forEach(function(j){ opts+='<option value="'+j.nome+'">'+j.nome+'</option>'; });
+  var html='<div style="font-size:12px;font-weight:700;color:var(--texto3);margin-bottom:8px">'+
+    'Posição | Jogador | Rebuy | Addon | Fichas finais | KO</div>';
+  for(var i=1;i<=nj;i++){
+    html+='<div class="jogador-row">';
+    html+='<span style="font-weight:700;min-width:28px;font-size:14px">'+i+'º</span>';
+    html+='<select class="ainput" id="jog-nome-'+i+'" style="flex:2">'+opts+'</select>';
+    html+='<input class="ainput" id="jog-rebuy-'+i+'" type="number" min="0" max="4" placeholder="RB" style="width:48px">';
+    html+='<input class="ainput" id="jog-addon-'+i+'" type="number" min="0" max="1" placeholder="AD" style="width:48px">';
+    html+='<input class="ainput" id="jog-fichas-'+i+'" type="number" min="0" placeholder="Fichas" style="width:80px">';
+    html+='<input class="ainput" id="jog-ko-'+i+'" type="number" min="0" placeholder="KO" style="width:48px">';
+    html+='</div>';
+  }
+  el.innerHTML=html;
+}
+
+async function salvarResultados(){
+  var rodadaId=document.getElementById('res-rodada').value;
+  var nj=parseInt(document.getElementById('res-njog').value)||0;
+  var rateio=parseFloat(document.getElementById('res-rateio').value)||0;
+  if(!rodadaId||nj<9){toast('Selecione a rodada e informe nº de jogadores (mín 9)!','err');return}
+
+  var rows=[];
+  for(var i=1;i<=nj;i++){
+    var nome=document.getElementById('jog-nome-'+i)?document.getElementById('jog-nome-'+i).value:'';
+    if(!nome) continue;
+    rows.push({
+      rodada_id:parseInt(rodadaId),
+      nome:nome,
+      posicao:i,
+      rebuy:parseInt(document.getElementById('jog-rebuy-'+i).value)||0,
+      addon:parseInt(document.getElementById('jog-addon-'+i).value)||0,
+      fichas:parseFloat(document.getElementById('jog-fichas-'+i).value)||0,
+      knockout:parseInt(document.getElementById('jog-ko-'+i).value)||0,
+    });
+  }
+
+  if(rows.length===0){toast('Adicione ao menos um jogador!','err');return}
+
+  // Salva resultados
+  var {error:e1}=await SB.from('poker_resultados').delete().eq('rodada_id',rodadaId);
+  if(e1){toast('Erro: '+e1.message,'err');return}
+  var {error:e2}=await SB.from('poker_resultados').insert(rows);
+  if(e2){toast('Erro: '+e2.message,'err');return}
+
+  // Atualiza rateio e marca como realizada
+  var {error:e3}=await SB.from('poker_rodadas').update({realizada:true,rateio_intervalo:rateio}).eq('id',rodadaId);
+  if(e3){toast('Erro: '+e3.message,'err');return}
+
+  toast('Resultados salvos!','ok');
+  await carregarTudo();
+  renderAdmin();
+}
+
+// ── DOMContentLoaded ──────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async function(){
+  // Versão
+  var savedVer=localStorage.getItem('poker_app_version');
+  if(savedVer!==APP_VERSION){
+    localStorage.removeItem('poker_user');
+    localStorage.setItem('poker_app_version',APP_VERSION);
+  }
+
+  // Tecla Enter no login
+  document.getElementById('e-senha').addEventListener('keydown',function(e){if(e.key==='Enter')entrar();});
+  document.getElementById('e-nome').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('e-senha').focus();});
+
+  // Auto-login
+  var sessao=localStorage.getItem('poker_user');
+  if(sessao){
+    try{
+      var u=JSON.parse(sessao);
+      if(u&&u.nome){
+        USER=u;
+        loading('Entrando automaticamente...');
+        if(u.admin){
+          var {data:{session}}=await SB.auth.getSession();
+          if(!session){ noloading(); document.getElementById('tela-login').style.display='flex'; return; }
+        } else {
+          var {data:ck}=await SB.from('poker_usuarios').select('nome').eq('nome',u.nome).maybeSingle();
+          if(!ck){ noloading(); document.getElementById('tela-login').style.display='flex'; return; }
+        }
+        await abrirApp();
+        return;
+      }
+    }catch(e){}
+  }
+  noloading();
+  document.getElementById('tela-login').style.display='flex';
+});
+</script>
+</body>
+</html>
