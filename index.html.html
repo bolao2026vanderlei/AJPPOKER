@@ -475,8 +475,8 @@ async function cadastrar(){
   var btn=document.getElementById('btn-c');
   btn.disabled=true;btn.textContent='...';
   try{
-    var ck=await SB.from('poker_usuarios').select('nome').eq('nome',nome).maybeSingle();
-    if(ck.data){erro.textContent='Apelido ja em uso.';btn.disabled=false;btn.textContent='CADASTRAR';return}
+    var ckU=await dbGetRest('poker_usuarios','nome=eq.'+encodeURIComponent(nome));
+    if(ckU&&ckU.length>0){erro.textContent='Apelido ja em uso.';btn.disabled=false;btn.textContent='CADASTRAR';return}
     var ins=await dbInsertRest('poker_usuarios',{nome:nome,senha:s1,admin:false});
     if(ins.error){erro.textContent='Erro: '+ins.error.message;btn.disabled=false;btn.textContent='CADASTRAR';return}
     toast('Cadastrado! Entrando...','ok');
@@ -505,8 +505,9 @@ async function entrar(){
     if(authRes.error){erro.textContent='Senha incorreta.';btn.disabled=false;btn.textContent='ENTRAR';return}
     USER={nome:'admin',admin:true};
   } else {
-    var {data:u}=await SB.from('poker_usuarios').select('*').eq('nome',nome).maybeSingle();
-    if(!u){erro.textContent='Apelido não encontrado.';btn.disabled=false;btn.textContent='ENTRAR';return}
+    var usuarios=await dbGetRest('poker_usuarios','nome=eq.'+encodeURIComponent(nome));
+    var u=usuarios&&usuarios[0]?usuarios[0]:null;
+    if(!u){erro.textContent='Apelido nao encontrado.';btn.disabled=false;btn.textContent='ENTRAR';return}
     if(u.senha!==senha){erro.textContent='Senha incorreta.';btn.disabled=false;btn.textContent='ENTRAR';return}
     USER={nome:u.nome,admin:u.admin||false};
   }
@@ -539,7 +540,17 @@ function sair(){
 }
 
 
-// Insert via REST direto (evita schema cache do Supabase SDK)
+// REST helpers — evitam schema cache do Supabase SDK
+var RURL='https://kqtjievcjocjuyswwvow.supabase.co/rest/v1/';
+var RHDR={'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtxdGppZXZjam9janV5c3d3dm93Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzNzgwNTcsImV4cCI6MjA5NTk1NDA1N30._52asyQvhmLGJoV6A6PG6FXVzSgIKI1h5-5NWSf0vy8','Authorization':'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtxdGppZXZjam9janV5c3d3dm93Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzNzgwNTcsImV4cCI6MjA5NTk1NDA1N30._52asyQvhmLGJoV6A6PG6FXVzSgIKI1h5-5NWSf0vy8','Content-Type':'application/json'};
+
+async function dbGetRest(tabela, query){
+  var url=RURL+tabela+(query?'?'+query:'');
+  var res=await fetch(url,{headers:Object.assign({},RHDR,{'Prefer':'return=representation'})});
+  if(!res.ok) return [];
+  return await res.json();
+}
+
 async function dbInsertRest(tabela, dados){
   var res = await fetch('https://kqtjievcjocjuyswwvow.supabase.co/rest/v1/'+tabela, {
     method: 'POST',
@@ -936,12 +947,12 @@ var CAMP_ABA='torneio';
 function setCampAba(aba){ CAMP_ABA=aba; renderCampeoes(); }
 async function renderCampeoes(){
   var el=document.getElementById('s-campeoes');
-  var [r1,r2,r3]=await Promise.all([
-    SB.from('poker_campeoes').select('*').order('torneio',{ascending:false}),
-    SB.from('poker_campeoes_ko').select('*').order('torneio',{ascending:false}),
-    SB.from('poker_king_rebuy').select('*').order('torneio',{ascending:false}),
+  var [camps,kos,kings]=await Promise.all([
+    dbGetRest('poker_campeoes','order=torneio.desc'),
+    dbGetRest('poker_campeoes_ko','order=torneio.desc'),
+    dbGetRest('poker_king_rebuy','order=torneio.desc'),
   ]);
-  var camps=r1.data||[], kos=r2.data||[], kings=r3.data||[];
+  camps=camps||[]; kos=kos||[]; kings=kings||[];
 
   var onCT=CAMP_ABA==='torneio'?' on':'';
   var onCK=CAMP_ABA==='ko'?' on':'';
@@ -1261,8 +1272,8 @@ document.addEventListener('DOMContentLoaded', async function(){
           var {data:{session}}=await SB.auth.getSession();
           if(!session){ noloading(); document.getElementById('tela-login').style.display='flex'; return; }
         } else {
-          var {data:ck}=await SB.from('poker_usuarios').select('nome').eq('nome',u.nome).maybeSingle();
-          if(!ck){ noloading(); document.getElementById('tela-login').style.display='flex'; return; }
+          var ckA=await dbGetRest('poker_usuarios','nome=eq.'+encodeURIComponent(u.nome));
+          if(!ckA||ckA.length===0){ noloading(); document.getElementById('tela-login').style.display='flex'; return; }
         }
         await abrirApp();
         return;
