@@ -477,7 +477,7 @@ async function cadastrar(){
   try{
     var ck=await SB.from('poker_usuarios').select('nome').eq('nome',nome).maybeSingle();
     if(ck.data){erro.textContent='Apelido ja em uso.';btn.disabled=false;btn.textContent='CADASTRAR';return}
-    var ins=await SB.from('poker_usuarios').insert([{nome:nome,senha:s1,admin:false}]);
+    var ins=await dbInsertRest('poker_usuarios',{nome:nome,senha:s1,admin:false});
     if(ins.error){erro.textContent='Erro: '+ins.error.message;btn.disabled=false;btn.textContent='CADASTRAR';return}
     toast('Cadastrado! Entrando...','ok');
     setTimeout(function(){
@@ -538,6 +538,25 @@ function sair(){
   document.getElementById('bn-admin').style.display='none';
 }
 
+
+// Insert via REST direto (evita schema cache do Supabase SDK)
+async function dbInsertRest(tabela, dados){
+  var res = await fetch('https://kqtjievcjocjuyswwvow.supabase.co/rest/v1/'+tabela, {
+    method: 'POST',
+    headers: {
+      'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtxdGppZXZjam9janV5c3d3dm93Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzNzgwNTcsImV4cCI6MjA5NTk1NDA1N30._52asyQvhmLGJoV6A6PG6FXVzSgIKI1h5-5NWSf0vy8',
+      'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtxdGppZXZjam9janV5c3d3dm93Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzNzgwNTcsImV4cCI6MjA5NTk1NDA1N30._52asyQvhmLGJoV6A6PG6FXVzSgIKI1h5-5NWSf0vy8',
+      'Content-Type': 'application/json',
+      'Prefer': 'return=minimal'
+    },
+    body: JSON.stringify(dados)
+  });
+  if(!res.ok){
+    var err = await res.text();
+    return {error: {message: err}};
+  }
+  return {error: null};
+}
 
 async function carregarTudo(){
   try{
@@ -704,11 +723,17 @@ async function renderInicio(){
 
 async function confirmarPresenca(rodadaId, status){
   if(!USER) return;
-  var {error}=await SB.from('poker_presencas').upsert(
-    {rodada_id:rodadaId,nome:USER.nome,status:status},
-    {onConflict:'rodada_id,nome'}
-  );
-  if(error){toast('Erro: '+error.message,'err');return}
+  var insP=await dbInsertRest('poker_presencas',{rodada_id:rodadaId,nome:USER.nome,status:status});
+  if(insP.error){
+    // Tenta update se ja existe
+    await fetch('https://kqtjievcjocjuyswwvow.supabase.co/rest/v1/poker_presencas?rodada_id=eq.'+rodadaId+'&nome=eq.'+encodeURIComponent(USER.nome),{
+      method:'PATCH',
+      headers:{'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtxdGppZXZjam9janV5c3d3dm93Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzNzgwNTcsImV4cCI6MjA5NTk1NDA1N30._52asyQvhmLGJoV6A6PG6FXVzSgIKI1h5-5NWSf0vy8',
+        'Authorization':'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtxdGppZXZjam9janV5c3d3dm93Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzNzgwNTcsImV4cCI6MjA5NTk1NDA1N30._52asyQvhmLGJoV6A6PG6FXVzSgIKI1h5-5NWSf0vy8',
+        'Content-Type':'application/json','Prefer':'return=minimal'},
+      body:JSON.stringify({status:status})
+    });
+  }
   if(!PRESENCAS[rodadaId]) PRESENCAS[rodadaId]=[];
   var idx=PRESENCAS[rodadaId].findIndex(function(p){return p.nome===USER.nome});
   if(idx>=0) PRESENCAS[rodadaId][idx].status=status;
@@ -1036,14 +1061,17 @@ async function salvarCampeao(){
   var p2=document.getElementById('camp-2').value.trim();
   var p3=document.getElementById('camp-3').value.trim();
   if(!num||!p1){toast('Preencha o número e o 1º lugar!','err');return}
-  var {data:exC}=await SB.from('poker_campeoes').select('id').eq('torneio',num).maybeSingle();
-  var error;
-  if(exC){
-    var rc=await SB.from('poker_campeoes').update({primeiro:p1,segundo:p2||null,terceiro:p3||null}).eq('torneio',num);
-    error=rc.error;
-  } else {
-    var rc=await SB.from('poker_campeoes').insert({torneio:num,primeiro:p1,segundo:p2||null,terceiro:p3||null});
-    error=rc.error;
+  var insC=await dbInsertRest('poker_campeoes',{torneio:num,primeiro:p1,segundo:p2||null,terceiro:p3||null});
+  var error=insC.error;
+  if(error){
+    var updC=await fetch('https://kqtjievcjocjuyswwvow.supabase.co/rest/v1/poker_campeoes?torneio=eq.'+num,{
+      method:'PATCH',
+      headers:{'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtxdGppZXZjam9janV5c3d3dm93Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzNzgwNTcsImV4cCI6MjA5NTk1NDA1N30._52asyQvhmLGJoV6A6PG6FXVzSgIKI1h5-5NWSf0vy8',
+        'Authorization':'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtxdGppZXZjam9janV5c3d3dm93Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzNzgwNTcsImV4cCI6MjA5NTk1NDA1N30._52asyQvhmLGJoV6A6PG6FXVzSgIKI1h5-5NWSf0vy8',
+        'Content-Type':'application/json','Prefer':'return=minimal'},
+      body:JSON.stringify({primeiro:p1,segundo:p2||null,terceiro:p3||null})
+    });
+    error=updC.ok?null:{message:'Erro ao salvar campeao'};
   }
   if(error){toast('Erro: '+error.message,'err');return}
   toast('Campeão salvo!','ok');
@@ -1128,14 +1156,19 @@ async function salvarRodada(){
   var local=document.getElementById('rod-local').value.trim();
   if(!num||!data){toast('Preencha numero e data!','err');return}
   try{
-    var ck=await SB.from('poker_rodadas').select('id').eq('numero',num).maybeSingle();
-    var res;
-    if(ck.data){
-      res=await SB.from('poker_rodadas').update({data:data,horario:hora,local:local}).eq('numero',num);
-    } else {
-      res=await SB.from('poker_rodadas').insert([{numero:num,data:data,horario:hora,local:local,realizada:false,rateio_intervalo:0}]);
+    // Tenta insert direto — se duplicado faz update
+    var insR=await dbInsertRest('poker_rodadas',{numero:num,data:data,horario:hora,local:local,realizada:false,rateio_intervalo:0});
+    if(insR.error){
+      // Se erro é duplicate, tenta update
+      var updR=await fetch('https://kqtjievcjocjuyswwvow.supabase.co/rest/v1/poker_rodadas?numero=eq.'+num,{
+        method:'PATCH',
+        headers:{'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtxdGppZXZjam9janV5c3d3dm93Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzNzgwNTcsImV4cCI6MjA5NTk1NDA1N30._52asyQvhmLGJoV6A6PG6FXVzSgIKI1h5-5NWSf0vy8',
+          'Authorization':'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtxdGppZXZjam9janV5c3d3dm93Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzNzgwNTcsImV4cCI6MjA5NTk1NDA1N30._52asyQvhmLGJoV6A6PG6FXVzSgIKI1h5-5NWSf0vy8',
+          'Content-Type':'application/json','Prefer':'return=minimal'},
+        body:JSON.stringify({data:data,horario:hora,local:local})
+      });
+      if(!updR.ok){var t=await updR.text();toast('Erro: '+t,'err');return;}
     }
-    if(res.error){toast('Erro: '+res.error.message,'err');return}
     toast('Rodada '+num+' salva!','ok');
     await carregarTudo();
     renderAdmin();
@@ -1189,10 +1222,13 @@ async function salvarResultados(){
   if(rows.length===0){toast('Adicione ao menos um jogador!','err');return}
 
   // Salva resultados
-  var {error:e1}=await SB.from('poker_resultados').delete().eq('rodada_id',rodadaId);
-  if(e1){toast('Erro: '+e1.message,'err');return}
-  var {error:e2}=await SB.from('poker_resultados').insert(rows);
-  if(e2){toast('Erro: '+e2.message,'err');return}
+  // Deleta resultados anteriores
+  var delRes=await fetch('https://kqtjievcjocjuyswwvow.supabase.co/rest/v1/poker_resultados?rodada_id=eq.'+rodadaId,{
+    method:'DELETE',
+    headers:{'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtxdGppZXZjam9janV5c3d3dm93Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzNzgwNTcsImV4cCI6MjA5NTk1NDA1N30._52asyQvhmLGJoV6A6PG6FXVzSgIKI1h5-5NWSf0vy8','Authorization':'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtxdGppZXZjam9janV5c3d3dm93Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzNzgwNTcsImV4cCI6MjA5NTk1NDA1N30._52asyQvhmLGJoV6A6PG6FXVzSgIKI1h5-5NWSf0vy8'}
+  });
+  var ins2=await dbInsertRest('poker_resultados',rows);
+  if(ins2.error){toast('Erro ao inserir: '+ins2.error.message,'err');return}
 
   // Atualiza rateio e marca como realizada
   var {error:e3}=await SB.from('poker_rodadas').update({realizada:true,rateio_intervalo:rateio}).eq('id',rodadaId);
