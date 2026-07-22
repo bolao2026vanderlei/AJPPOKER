@@ -470,20 +470,24 @@ async function cadastrar(){
   var erro=document.getElementById('cerro');
   if(!nome){erro.textContent='Digite seu apelido.';return}
   if(!s1){erro.textContent='Digite uma senha.';return}
-  if(s1!==s2){erro.textContent='As senhas não conferem.';return}
-  if(s1.length<4){erro.textContent='Senha mínima: 4 caracteres.';return}
+  if(s1!==s2){erro.textContent='As senhas nao conferem.';return}
+  if(s1.length<4){erro.textContent='Senha minima: 4 caracteres.';return}
   var btn=document.getElementById('btn-c');
   btn.disabled=true;btn.textContent='...';
-  var {data:ex}=await SB.from('poker_usuarios').select('nome').eq('nome',nome).maybeSingle();
-  if(ex){erro.textContent='Apelido já em uso.';btn.disabled=false;btn.textContent='CADASTRAR';return}
-  var {error}=await SB.from('poker_usuarios').insert({nome:nome,senha:s1,admin:false});
-  if(error){erro.textContent='Erro: '+error.message;btn.disabled=false;btn.textContent='CADASTRAR';return}
-  toast('Cadastrado! Entrando...','ok');
-  setTimeout(function(){
-    document.getElementById('e-nome').value=nome;
-    document.getElementById('e-senha').value=s1;
-    setTab('e');entrar();
-  },700);
+  try{
+    var ck=await SB.from('poker_usuarios').select('nome').eq('nome',nome).maybeSingle();
+    if(ck.data){erro.textContent='Apelido ja em uso.';btn.disabled=false;btn.textContent='CADASTRAR';return}
+    var ins=await SB.from('poker_usuarios').insert([{nome:nome,senha:s1,admin:false}]);
+    if(ins.error){erro.textContent='Erro: '+ins.error.message;btn.disabled=false;btn.textContent='CADASTRAR';return}
+    toast('Cadastrado! Entrando...','ok');
+    setTimeout(function(){
+      document.getElementById('e-nome').value=nome;
+      document.getElementById('e-senha').value=s1;
+      setTab('e');entrar();
+    },700);
+  }catch(e){
+    erro.textContent='Erro: '+e.message;btn.disabled=false;btn.textContent='CADASTRAR';
+  }
 }
 
 
@@ -614,9 +618,9 @@ async function renderInicio(){
   html+='<div class="hero-sub">no semestre</div>';
   html+='</div>';
   html+='<div class="hero-card">';
-  html+='<div class="hero-label">🎯 Rodadas</div>';
-  html+='<div class="hero-valor">'+stats.rodadasJogadas+'</div>';
-  html+='<div class="hero-sub">de '+RODADAS.filter(function(r){return r.realizada}).length+' realizadas</div>';
+  html+='<div class="hero-label">&#x1F480; Rodelas</div>';
+  html+='<div class="hero-valor">'+stats.knockouts+'</div>';
+  html+='<div class="hero-sub">knockouts no semestre</div>';
   html+='</div>';
   html+='</div>';
 
@@ -642,6 +646,40 @@ async function renderInicio(){
     html+='</div>';
   } else {
     html+='<div class="card" style="text-align:center;padding:24px;color:var(--texto3)">🏁 Todas as rodadas foram realizadas!</div>';
+  }
+
+  // Mini-lista das 8 rodadas do semestre
+  var todasRodadas=RODADAS.slice(0,8);
+  if(todasRodadas.length>0){
+    html+='<div class="card" style="margin-bottom:12px">';
+    html+='<div class="card-title">&#x1F4C5; Rodadas do Semestre</div>';
+    todasRodadas.forEach(function(r){
+      var pres=PRESENCAS[r.id]||[];
+      var minhaP=pres.find(function(p){return p.nome===USER.nome});
+      var meuRes=RESULTADOS[r.id]?RESULTADOS[r.id].find(function(x){return x.nome===USER.nome}):null;
+      var isProx=!r.realizada&&RODADAS.findIndex(function(x){return !x.realizada})===RODADAS.indexOf(r);
+      var bgRow=isProx?'background:var(--verde-light);':'';
+      html+='<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--cinza3);'+bgRow+'">';
+      html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:18px;font-weight:900;color:'+(r.realizada?'var(--verde)':isProx?'var(--azul)':'var(--texto3)')+';min-width:24px">'+r.numero+'</div>';
+      html+='<div style="flex:1">';
+      html+='<div style="font-size:12px;font-weight:600;color:var(--texto)">'+(r.data?fmtData(r.data):'A definir')+'</div>';
+      if(r.local) html+='<div style="font-size:11px;color:var(--texto3)">'+r.local+'</div>';
+      html+='</div>';
+      if(r.realizada&&meuRes){
+        var nj=RESULTADOS[r.id].length;
+        var pts=getPts(nj,meuRes.posicao);
+        html+='<div style="text-align:right">';
+        html+='<div style="font-size:11px;font-weight:700;color:var(--verde)">'+pts+'pts</div>';
+        html+='<div style="font-size:10px;color:var(--texto3)">'+meuRes.posicao+'° lugar</div>';
+        html+='</div>';
+      } else if(!r.realizada&&minhaP){
+        html+='<span style="font-size:18px">'+(minhaP.status==='in'?'&#x1F91A;':'&#x1F919;')+'</span>';
+      } else if(!r.realizada){
+        html+='<div style="font-size:10px;color:var(--texto3)">-</div>';
+      }
+      html+='</div>';
+    });
+    html+='</div>';
   }
 
   // Resultado financeiro da última rodada
@@ -745,7 +783,7 @@ function renderRodadas(){
     html+='<div class="rodada-header">';
     html+='<div>';
     html+='<div class="rodada-num">Rodada '+r.numero+'</div>';
-    html+='<div class="rodada-data">'+fmtData(r.data)+(r.horario?' às '+r.horario:'')+'</div>';
+    html+='<div class="rodada-data">'+fmtData(r.data)+(r.horario?' das '+r.horario+' às 18h15':'')+'</div>';
     if(r.local) html+='<div style="font-size:11px;color:var(--texto3)">📍 '+r.local+'</div>';
     html+='</div>';
     html+='<span class="rodada-badge badge-'+status+'">'+
@@ -1057,7 +1095,7 @@ async function renderAdmin(){
   html+='<div style="flex:2"><div class="ainput-label">Data</div><input class="ainput" id="rod-data" type="date"></div>';
   html+='</div>';
   html+='<div class="aform-row">';
-  html+='<div style="flex:1"><div class="ainput-label">Horário</div><input class="ainput" id="rod-hora" type="time" value="20:00"></div>';
+  html+='<div style="flex:1"><div class="ainput-label">Horário</div><input class="ainput" id="rod-hora" type="time" value="13:45"></div>';
   html+='<div style="flex:2"><div class="ainput-label">Local</div><input class="ainput" id="rod-local" placeholder="Ex: Casa do Juliano"></div>';
   html+='</div>';
   html+='<button class="btn-sv" onclick="salvarRodada()">Salvar Rodada</button>';
@@ -1088,21 +1126,22 @@ async function salvarRodada(){
   var data=document.getElementById('rod-data').value;
   var hora=document.getElementById('rod-hora').value;
   var local=document.getElementById('rod-local').value.trim();
-  if(!num||!data){toast('Preencha número e data!','err');return}
-  // Verifica se já existe
-  var {data:ex}=await SB.from('poker_rodadas').select('id').eq('numero',num).maybeSingle();
-  var error;
-  if(ex){
-    var r=await SB.from('poker_rodadas').update({data:data,horario:hora,local:local}).eq('numero',num);
-    error=r.error;
-  } else {
-    var r=await SB.from('poker_rodadas').insert({numero:num,data:data,horario:hora,local:local,realizada:false,rateio_intervalo:0});
-    error=r.error;
+  if(!num||!data){toast('Preencha numero e data!','err');return}
+  try{
+    var ck=await SB.from('poker_rodadas').select('id').eq('numero',num).maybeSingle();
+    var res;
+    if(ck.data){
+      res=await SB.from('poker_rodadas').update({data:data,horario:hora,local:local}).eq('numero',num);
+    } else {
+      res=await SB.from('poker_rodadas').insert([{numero:num,data:data,horario:hora,local:local,realizada:false,rateio_intervalo:0}]);
+    }
+    if(res.error){toast('Erro: '+res.error.message,'err');return}
+    toast('Rodada '+num+' salva!','ok');
+    await carregarTudo();
+    renderAdmin();
+  }catch(e){
+    toast('Erro: '+e.message,'err');
   }
-  if(error){toast('Erro: '+error.message,'err');return}
-  toast('Rodada '+num+' salva!','ok');
-  await carregarTudo();
-  renderAdmin();
 }
 
 function gerarLinhasJogadores(){
