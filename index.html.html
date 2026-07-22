@@ -31,28 +31,62 @@ body{font-family:'Inter',sans-serif;background:var(--fundo);color:var(--texto);m
 #loading p{color:rgba(255,255,255,.6);font-size:14px}
 
 /* TELA LOGIN */
-#tela-login{display:none;min-height:100vh;background:linear-gradient(135deg,#0F172A,#1a2744);
-  align-items:center;justify-content:center;padding:20px}
-.login-box{background:#1E293B;border-radius:20px;padding:32px 24px;
-  width:100%;max-width:380px;box-shadow:0 25px 50px rgba(0,0,0,.5)}
-.login-logo{text-align:center;margin-bottom:24px}
-.login-logo .emoji{font-size:48px;display:block;margin-bottom:8px}
-.login-logo h1{font-family:'Barlow Condensed',sans-serif;font-size:32px;
-  font-weight:900;color:#fff;letter-spacing:1px}
-.login-logo p{color:rgba(255,255,255,.5);font-size:13px;margin-top:4px}
-.login-tabs{display:flex;background:#0F172A;border-radius:10px;padding:4px;margin-bottom:20px;gap:4px}
-.login-tab{flex:1;padding:9px;border:none;border-radius:8px;font-size:13px;font-weight:600;
-  cursor:pointer;transition:.2s;background:transparent;color:rgba(255,255,255,.5)}
-.login-tab.on{background:#16A34A;color:#fff}
-.linput{width:100%;padding:13px 16px;border-radius:10px;border:1.5px solid #334155;
-  background:#0F172A;color:#fff;font-size:15px;outline:none;margin-bottom:12px;transition:.2s}
-.linput:focus{border-color:#16A34A}
-.linput::placeholder{color:#475569}
-.lbtn{width:100%;padding:14px;border-radius:10px;border:none;
-  background:linear-gradient(135deg,#16A34A,#15803D);color:#fff;
-  font-size:16px;font-weight:700;cursor:pointer;margin-top:4px;transition:.2s}
-.lbtn:hover{opacity:.9}
-.lerro{color:#F87171;font-size:13px;margin-top:8px;min-height:20px;text-align:center}
+#tela-login{display:none;min-height:100vh;background:#030a04;
+  align-items:center;justify-content:center;padding:0;position:relative;overflow:hidden}
+.login-bg{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 30%, #0d2a10 0%, #030a04 70%)}
+.login-side{position:absolute;top:0;bottom:0;width:20px;background:#080808;
+  display:flex;flex-direction:column;justify-content:space-evenly;align-items:center;z-index:3}
+.login-side.left{left:0;border-right:1px solid #1a1a1a}
+.login-side.right{right:0;border-left:1px solid #1a1a1a}
+.login-led{width:7px;height:7px;border-radius:50%;background:#111;border:1px solid #222}
+.login-scene{width:calc(100% - 40px);margin:0 20px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;padding:24px 16px;position:relative;z-index:2}
+.login-logo{display:flex;flex-direction:column;align-items:center;margin-bottom:20px}
+.login-iniciais{font-size:64px;font-weight:bold;letter-spacing:10px;color:#FFD700;
+  font-family:Georgia,serif;text-shadow:0 2px 4px rgba(0,0,0,.8)}
+.login-linha{width:220px;height:1px;margin:8px 0;opacity:.5;background:#B8860B}
+.login-poker{font-size:15px;letter-spacing:6px;color:#FFD700;font-family:Arial,sans-serif;font-weight:bold}
+.login-naipes{display:flex;gap:18px;font-size:22px;font-family:serif;margin-top:5px}
+.login-naipes .s,.login-naipes .c{color:#d4d4d4}
+.login-naipes .h,.login-naipes .d{color:#b82020}
+.login-cards{display:flex;margin-bottom:18px;filter:drop-shadow(0 4px 8px rgba(0,0,0,.7))}
+.login-card{width:50px;height:72px;background:#fafafa;border-radius:6px;border:1px solid #ccc;
+  display:flex;flex-direction:column;justify-content:space-between;padding:5px 6px;font-family:Georgia,serif}
+.login-card:nth-child(1){transform:rotate(-13deg) translateY(5px) translateX(4px)}
+.login-card:nth-child(2){transform:rotate(-5deg) translateY(2px)}
+.login-card:nth-child(3){transform:rotate(5deg) translateY(2px)}
+.login-card:nth-child(4){transform:rotate(13deg) translateY(5px) translateX(-4px)}
+.cn{font-size:14px;font-weight:bold;line-height:1}
+.cs{font-size:12px;line-height:1;margin-top:1px}
+.nr{color:#b82020}.nb{color:#111}
+.cb{align-self:flex-end;transform:rotate(180deg)}
+.login-chips{display:flex;gap:8px;margin-bottom:20px;filter:drop-shadow(0 3px 6px rgba(0,0,0,.6))}
+.lchip{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:8px;font-weight:bold;font-family:Arial,sans-serif;position:relative}
+.lchip::before{content:'';position:absolute;inset:0;border-radius:50%;
+  background:linear-gradient(135deg,rgba(255,255,255,.18) 0%,transparent 60%)}
+.lchip::after{content:'';position:absolute;inset:4px;border-radius:50%;border:2px dashed rgba(255,255,255,.4)}
+.lchip span{position:relative;z-index:1}
+.lc50{background:#1a44cc;border:3px solid #88aaff;color:#fff}
+.lc100{background:#181818;border:3px solid #555;color:#fff}
+.lc500{background:#6a0dad;border:3px solid #bb66ff;color:#fff}
+.lc1k{background:#c8900a;border:3px solid #FFD700;color:#111}
+.lc10k{background:#bb1166;border:3px solid #ff77bb;color:#fff}
+.login-box{background:rgba(4,14,5,.92);border:1px solid #1e3a1e;border-radius:16px;
+  padding:24px 26px;width:100%;max-width:290px;box-shadow:0 8px 32px rgba(0,0,0,.6)}
+.login-tabs{display:flex;background:#060e06;border-radius:9px;padding:4px;gap:3px;
+  margin-bottom:16px;border:1px solid #1a2a1a}
+.login-tab{flex:1;padding:8px;border:none;border-radius:7px;font-size:12px;font-weight:600;
+  cursor:pointer;background:transparent;color:#3a6a3a;font-family:Arial,sans-serif}
+.login-tab.on{background:#1a5a22;color:#FFD700}
+.linput{width:100%;padding:11px 13px;border-radius:9px;border:1px solid #1e3a1e;
+  background:#060e06;color:#d8e8d8;font-size:14px;outline:none;margin-bottom:10px;font-family:Arial,sans-serif}
+.linput::placeholder{color:#2a4a2a}
+.linput:focus{border-color:#2a6a2a}
+.lbtn{width:100%;padding:13px;border-radius:9px;border:none;background:#1a5a22;
+  color:#FFD700;font-size:15px;font-weight:700;cursor:pointer;letter-spacing:1px;
+  font-family:Georgia,serif;margin-top:2px}
+.lerro{color:#F87171;font-size:13px;margin-top:8px;min-height:18px;text-align:center}
 
 /* APP */
 #app{display:none;padding-bottom:80px}
@@ -246,30 +280,62 @@ body{font-family:'Inter',sans-serif;background:var(--fundo);color:var(--texto);m
 
 <!-- LOGIN -->
 <div id="tela-login" style="display:flex">
-  <div class="login-box">
+  <div class="login-bg"></div>
+  <div class="login-side left">
+    <div class="login-led"></div><div class="login-led"></div><div class="login-led"></div>
+    <div class="login-led"></div><div class="login-led"></div><div class="login-led"></div>
+    <div class="login-led"></div><div class="login-led"></div><div class="login-led"></div>
+    <div class="login-led"></div><div class="login-led"></div><div class="login-led"></div>
+    <div class="login-led"></div><div class="login-led"></div><div class="login-led"></div>
+    <div class="login-led"></div><div class="login-led"></div><div class="login-led"></div>
+  </div>
+  <div class="login-side right">
+    <div class="login-led"></div><div class="login-led"></div><div class="login-led"></div>
+    <div class="login-led"></div><div class="login-led"></div><div class="login-led"></div>
+    <div class="login-led"></div><div class="login-led"></div><div class="login-led"></div>
+    <div class="login-led"></div><div class="login-led"></div><div class="login-led"></div>
+    <div class="login-led"></div><div class="login-led"></div><div class="login-led"></div>
+    <div class="login-led"></div><div class="login-led"></div><div class="login-led"></div>
+  </div>
+  <div class="login-scene">
     <div class="login-logo">
-      <span class="emoji">♠️</span>
-      <h1>AJP POKER</h1>
-      <p>Amigos Juliano of Poker</p>
+      <div class="login-iniciais">AJP</div>
+      <div class="login-linha"></div>
+      <div class="login-poker">POKER</div>
+      <div class="login-linha"></div>
+      <div class="login-naipes"><span class="s">♠</span><span class="h">♥</span><span class="d">♦</span><span class="c">♣</span></div>
     </div>
-    <div class="login-tabs">
-      <button class="login-tab on" id="tab-e" onclick="setTab('e')">Entrar</button>
-      <button class="login-tab" id="tab-c" onclick="setTab('c')">Cadastrar</button>
+    <div class="login-cards">
+      <div class="login-card"><div><div class="cn nb">A</div><div class="cs nb">♠</div></div><div class="cb"><div class="cn nb">A</div></div></div>
+      <div class="login-card"><div><div class="cn nr">K</div><div class="cs nr">♥</div></div><div class="cb"><div class="cn nr">K</div></div></div>
+      <div class="login-card"><div><div class="cn nr">Q</div><div class="cs nr">♦</div></div><div class="cb"><div class="cn nr">Q</div></div></div>
+      <div class="login-card"><div><div class="cn nb">J</div><div class="cs nb">♣</div></div><div class="cb"><div class="cn nb">J</div></div></div>
     </div>
-    <!-- LOGIN -->
-    <div id="form-e">
-      <input class="linput" id="e-nome" placeholder="Apelido" autocomplete="username">
-      <input class="linput" id="e-senha" type="password" placeholder="Senha" autocomplete="current-password">
-      <button class="lbtn" id="btn-e" onclick="entrar()">ENTRAR</button>
-      <div class="lerro" id="lerro"></div>
+    <div class="login-chips">
+      <div class="lchip lc50"><span>50</span></div>
+      <div class="lchip lc100"><span>100</span></div>
+      <div class="lchip lc500"><span>500</span></div>
+      <div class="lchip lc1k"><span>1K</span></div>
+      <div class="lchip lc10k"><span>10K</span></div>
     </div>
-    <!-- CADASTRO -->
-    <div id="form-c" style="display:none">
-      <input class="linput" id="c-nome" placeholder="Apelido (como quer ser chamado)">
-      <input class="linput" id="c-senha" type="password" placeholder="Senha">
-      <input class="linput" id="c-senha2" type="password" placeholder="Confirme a senha">
-      <button class="lbtn" id="btn-c" onclick="cadastrar()">CADASTRAR</button>
-      <div class="lerro" id="cerro"></div>
+    <div class="login-box">
+      <div class="login-tabs">
+        <button class="login-tab on" id="tab-e" onclick="setTab('e')">Entrar</button>
+        <button class="login-tab" id="tab-c" onclick="setTab('c')">Cadastrar</button>
+      </div>
+      <div id="form-e">
+        <input class="linput" id="e-nome" placeholder="Apelido" autocomplete="username">
+        <input class="linput" id="e-senha" type="password" placeholder="Senha" autocomplete="current-password">
+        <button class="lbtn" id="btn-e" onclick="entrar()">ENTRAR</button>
+        <div class="lerro" id="lerro"></div>
+      </div>
+      <div id="form-c" style="display:none">
+        <input class="linput" id="c-nome" placeholder="Apelido">
+        <input class="linput" id="c-senha" type="password" placeholder="Senha">
+        <input class="linput" id="c-senha2" type="password" placeholder="Confirme a senha">
+        <button class="lbtn" id="btn-c" onclick="cadastrar()">CADASTRAR</button>
+        <div class="lerro" id="cerro"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -325,7 +391,7 @@ body{font-family:'Inter',sans-serif;background:var(--fundo);color:var(--texto);m
 </div>
 
 <script>
-// ── SUPABASE ──────────────────────────────────────────────────────────────────
+
 var SB = window.supabase.createClient(
   'https://kqtjievcjocjuyswwvow.supabase.co',
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtxdGppZXZjam9janV5c3d3dm93Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzNzgwNTcsImV4cCI6MjA5NTk1NDA1N30._52asyQvhmLGJoV6A6PG6FXVzSgIKI1h5-5NWSf0vy8'
@@ -333,7 +399,7 @@ var SB = window.supabase.createClient(
 var ADMIN_EMAIL = 'silvaveterinario@gmail.com';
 var APP_VERSION = '2026-ajp-v1';
 
-// ── ESTADO ────────────────────────────────────────────────────────────────────
+
 var USER = null;
 var RODADAS = [];
 var JOGADORES = []; // participantes cadastrados no torneio
@@ -367,7 +433,7 @@ function getPts(nJogadores, posicao) {
   return arr[posicao-1] || 0;
 }
 
-// ── UTILS ─────────────────────────────────────────────────────────────────────
+
 function noloading(){ document.getElementById('loading').style.display='none'; }
 function loading(t){ var el=document.getElementById('loading'); el.style.display='flex'; el.querySelector('p').textContent=t||'Carregando...'; }
 
@@ -388,7 +454,7 @@ function fmtMoeda(v){
   return 'R$ '+v.toFixed(2).replace('.',',');
 }
 
-// ── TABS LOGIN ────────────────────────────────────────────────────────────────
+
 function setTab(t){
   document.getElementById('form-e').style.display=t==='e'?'block':'none';
   document.getElementById('form-c').style.display=t==='c'?'block':'none';
@@ -396,7 +462,7 @@ function setTab(t){
   document.getElementById('tab-c').classList.toggle('on',t==='c');
 }
 
-// ── CADASTRO ──────────────────────────────────────────────────────────────────
+
 async function cadastrar(){
   var nome=document.getElementById('c-nome').value.trim();
   var s1=document.getElementById('c-senha').value;
@@ -420,7 +486,7 @@ async function cadastrar(){
   },700);
 }
 
-// ── LOGIN ─────────────────────────────────────────────────────────────────────
+
 async function entrar(){
   var nome=document.getElementById('e-nome').value.trim();
   var senha=document.getElementById('e-senha').value;
@@ -468,7 +534,7 @@ function sair(){
   document.getElementById('bn-admin').style.display='none';
 }
 
-// ── CARREGAR DADOS ────────────────────────────────────────────────────────────
+
 async function carregarTudo(){
   try{
     var [rR,rJ,rP,rRes] = await Promise.all([
@@ -492,7 +558,7 @@ async function carregarTudo(){
   }catch(e){ console.error('Erro ao carregar:',e); }
 }
 
-// ── NAVEGAÇÃO ─────────────────────────────────────────────────────────────────
+
 function ir(s){
   ['inicio','rodadas','ranking','campeoes','regras','admin'].forEach(function(id){
     var el=document.getElementById('s-'+id);
@@ -510,7 +576,7 @@ function ir(s){
   window.scrollTo(0,0);
 }
 
-// ── RENDER INÍCIO ─────────────────────────────────────────────────────────────
+
 async function renderInicio(){
   var el=document.getElementById('s-inicio');
   var proxRodada=RODADAS.find(function(r){return !r.realizada})||null;
@@ -597,7 +663,7 @@ async function renderInicio(){
   el.innerHTML=html;
 }
 
-// ── CONFIRMAR PRESENÇA ────────────────────────────────────────────────────────
+
 async function confirmarPresenca(rodadaId, status){
   if(!USER) return;
   var {error}=await SB.from('poker_presencas').upsert(
@@ -613,7 +679,7 @@ async function confirmarPresenca(rodadaId, status){
   renderInicio();
 }
 
-// ── CALCULAR STATS ────────────────────────────────────────────────────────────
+
 function calcStats(nome){
   var pontosPorRodada=[];
   var rebuys=0,addons=0,knockouts=0,rodadasJogadas=0;
@@ -650,7 +716,7 @@ function calcStatsAll(){
   });
 }
 
-// ── CALCULAR FINANCEIRO ───────────────────────────────────────────────────────
+
 function calcFinanceiro(res,rodada){
   if(!res) return{saldo:0,premio:0,custo:0};
   var buyin=15, rebuyVal=20, addonVal=30;
@@ -663,7 +729,7 @@ function calcFinanceiro(res,rodada){
   return{saldo:saldo,premio:premio,custo:custo};
 }
 
-// ── RENDER RODADAS ────────────────────────────────────────────────────────────
+
 function renderRodadas(){
   var el=document.getElementById('s-rodadas');
   var html='<h2 style="font-family:Barlow Condensed,sans-serif;font-size:24px;font-weight:900;margin-bottom:16px">📅 Rodadas do Semestre</h2>';
@@ -725,7 +791,7 @@ function renderRodadas(){
   el.innerHTML=html;
 }
 
-// ── RENDER RANKING ────────────────────────────────────────────────────────────
+
 var RANK_ABA='pontos';
 function renderRanking(aba){
   RANK_ABA=aba||RANK_ABA;
@@ -808,44 +874,122 @@ function renderRanking(aba){
   el.innerHTML=html;
 }
 
-// ── RENDER CAMPEÕES ───────────────────────────────────────────────────────────
+
+var CAMP_ABA='torneio';
+function setCampAba(aba){ CAMP_ABA=aba; renderCampeoes(); }
 async function renderCampeoes(){
   var el=document.getElementById('s-campeoes');
-  var {data:camps}=await SB.from('poker_campeoes').select('*').order('torneio',{ascending:false});
-  camps=camps||[];
+  var [r1,r2,r3]=await Promise.all([
+    SB.from('poker_campeoes').select('*').order('torneio',{ascending:false}),
+    SB.from('poker_campeoes_ko').select('*').order('torneio',{ascending:false}),
+    SB.from('poker_king_rebuy').select('*').order('torneio',{ascending:false}),
+  ]);
+  var camps=r1.data||[], kos=r2.data||[], kings=r3.data||[];
 
   var html='<h2 style="font-family:Barlow Condensed,sans-serif;font-size:24px;font-weight:900;margin-bottom:16px">🏆 Hall of Fame</h2>';
+  html+='<div class="rank-tabs" style="margin-bottom:16px">';
+  html+='<button class="rank-tab'+(CAMP_ABA==='torneio'?' on':'')+'" onclick="setCampAba(this.dataset.aba)" data-aba="torneio">&#x1F3C6; Torneio</button>';
+  html+='<button class="rank-tab'+(CAMP_ABA==='ko'?' on':'')+'" onclick="setCampAba(this.dataset.aba)" data-aba="ko">&#x1F480; Knockout</button>';
+  html+='<button class="rank-tab'+(CAMP_ABA==='rebuy'?' on':'')+'" onclick="setCampAba(this.dataset.aba)" data-aba="rebuy">&#x1F451; King Rebuy</button>';
+  html+='</div>';
 
-  if(camps.length===0){
-    html+='<div class="card" style="text-align:center;padding:24px;color:var(--texto3)">Nenhum campeão cadastrado ainda.</div>';
+  if(CAMP_ABA==='torneio'){
+    if(camps.length===0){
+      html+='<div class="card" style="text-align:center;padding:24px;color:var(--texto3)">Nenhum campeão cadastrado ainda.</div>';
+    } else {
+      camps.forEach(function(c){
+        html+='<div class="camp-item">';
+        html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:22px;font-weight:900;color:var(--amarelo);min-width:44px">#'+c.torneio+'</div>';
+        html+='<div style="flex:1">';
+        if(c.primeiro) html+='<div class="camp-pos"><span class="camp-medal">🥇</span><span class="camp-nome">'+c.primeiro+'</span></div>';
+        if(c.segundo)  html+='<div class="camp-pos"><span class="camp-medal">🥈</span><span class="camp-nome">'+c.segundo+'</span></div>';
+        if(c.terceiro) html+='<div class="camp-pos"><span class="camp-medal">🥉</span><span class="camp-nome">'+c.terceiro+'</span></div>';
+        html+='</div></div>';
+      });
+    }
+    if(USER.admin){
+      html+='<div class="admin-card" style="margin-top:16px"><h3>➕ Adicionar/Editar Campeão</h3>';
+      html+='<div class="ainput-label">Nº Torneio</div><input class="ainput" id="camp-num" type="number" placeholder="Ex: 24" style="margin-bottom:8px;width:100%">';
+      html+='<div class="ainput-label">1º Lugar</div><input class="ainput" id="camp-1" placeholder="Nome" style="margin-bottom:8px;width:100%">';
+      html+='<div class="ainput-label">2º Lugar</div><input class="ainput" id="camp-2" placeholder="Nome" style="margin-bottom:8px;width:100%">';
+      html+='<div class="ainput-label">3º Lugar</div><input class="ainput" id="camp-3" placeholder="Nome" style="margin-bottom:8px;width:100%">';
+      html+='<button class="btn-sv" onclick="salvarCampeao()">Salvar</button></div>';
+    }
+  } else if(CAMP_ABA==='ko'){
+    if(kos.length===0){
+      html+='<div class="card" style="text-align:center;padding:24px;color:var(--texto3)">Nenhum registro ainda.</div>';
+    } else {
+      kos.forEach(function(c){
+        html+='<div class="camp-item">';
+        html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:22px;font-weight:900;color:#92400E;min-width:44px">#'+c.torneio+'</div>';
+        html+='<div style="flex:1">';
+        if(c.ano) html+='<div style="font-size:11px;color:var(--texto3);margin-bottom:3px">'+c.ano+'</div>';
+        if(c.primeiro) html+='<div class="camp-pos"><span class="camp-medal">🥇</span><span class="camp-nome">'+c.primeiro+'</span></div>';
+        if(c.segundo)  html+='<div class="camp-pos"><span class="camp-medal">🥈</span><span class="camp-nome">'+c.segundo+'</span></div>';
+        if(c.terceiro) html+='<div class="camp-pos"><span class="camp-medal">🥉</span><span class="camp-nome">'+c.terceiro+'</span></div>';
+        html+='</div></div>';
+      });
+    }
+    if(USER.admin){
+      html+='<div class="admin-card" style="margin-top:16px"><h3>➕ Adicionar Knockout</h3>';
+      html+='<div class="aform-row"><div style="flex:1"><div class="ainput-label">Nº</div><input class="ainput" id="ko-num" type="number" placeholder="16"></div>';
+      html+='<div style="flex:1"><div class="ainput-label">Ano</div><input class="ainput" id="ko-ano" type="number" placeholder="2026"></div></div>';
+      html+='<div class="ainput-label">1º</div><input class="ainput" id="ko-1" placeholder="Nome" style="margin-bottom:8px;width:100%">';
+      html+='<div class="ainput-label">2º</div><input class="ainput" id="ko-2" placeholder="Nome" style="margin-bottom:8px;width:100%">';
+      html+='<div class="ainput-label">3º</div><input class="ainput" id="ko-3" placeholder="Nome" style="margin-bottom:8px;width:100%">';
+      html+='<button class="btn-sv" onclick="salvarKO()">Salvar</button></div>';
+    }
   } else {
-    camps.forEach(function(c){
-      html+='<div class="camp-item">';
-      html+='<div class="camp-torneio" style="font-family:Barlow Condensed,sans-serif;font-size:20px;font-weight:900;color:var(--amarelo)">#'+c.torneio+'</div>';
-      html+='<div class="camp-podio">';
-      if(c.primeiro) html+='<div class="camp-pos"><span class="camp-medal">🥇</span><span class="camp-nome">'+c.primeiro+'</span></div>';
-      if(c.segundo) html+='<div class="camp-pos"><span class="camp-medal">🥈</span><span class="camp-nome">'+c.segundo+'</span></div>';
-      if(c.terceiro) html+='<div class="camp-pos"><span class="camp-medal">🥉</span><span class="camp-nome">'+c.terceiro+'</span></div>';
-      html+='</div></div>';
-    });
-  }
-
-  if(USER.admin){
-    html+='<div class="admin-card" style="margin-top:16px">';
-    html+='<h3>➕ Adicionar Campeão</h3>';
-    html+='<div class="ainput-label">Nº do Torneio</div>';
-    html+='<input class="ainput" id="camp-num" type="number" placeholder="Ex: 22" style="margin-bottom:8px;width:100%">';
-    html+='<div class="ainput-label">1º Lugar</div>';
-    html+='<input class="ainput" id="camp-1" placeholder="Nome" style="margin-bottom:8px;width:100%">';
-    html+='<div class="ainput-label">2º Lugar</div>';
-    html+='<input class="ainput" id="camp-2" placeholder="Nome" style="margin-bottom:8px;width:100%">';
-    html+='<div class="ainput-label">3º Lugar</div>';
-    html+='<input class="ainput" id="camp-3" placeholder="Nome" style="margin-bottom:8px;width:100%">';
-    html+='<button class="btn-sv" onclick="salvarCampeao()">Salvar</button>';
-    html+='</div>';
+    if(kings.length===0){
+      html+='<div class="card" style="text-align:center;padding:24px;color:var(--texto3)">Nenhum registro ainda.</div>';
+    } else {
+      kings.forEach(function(c){
+        html+='<div class="camp-item">';
+        html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:22px;font-weight:900;color:var(--roxo);min-width:44px">#'+c.torneio+'</div>';
+        html+='<div style="flex:1">';
+        if(c.ano) html+='<div style="font-size:11px;color:var(--texto3);margin-bottom:3px">'+c.ano+'</div>';
+        html+='<div style="font-size:14px;font-weight:700">👑 '+c.campeao+'</div>';
+        html+='</div>';
+        html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:28px;font-weight:900;color:var(--roxo)">'+c.quantidade+'<div style="font-size:10px;color:var(--texto3)">rebuys</div></div>';
+        html+='</div>';
+      });
+    }
+    if(USER.admin){
+      html+='<div class="admin-card" style="margin-top:16px"><h3>➕ Adicionar King of Rebuy</h3>';
+      html+='<div class="aform-row"><div style="flex:1"><div class="ainput-label">Nº</div><input class="ainput" id="kr-num" type="number" placeholder="16"></div>';
+      html+='<div style="flex:1"><div class="ainput-label">Ano</div><input class="ainput" id="kr-ano" type="number" placeholder="2026"></div></div>';
+      html+='<div class="ainput-label">Campeão</div><input class="ainput" id="kr-nome" placeholder="Nome" style="margin-bottom:8px;width:100%">';
+      html+='<div class="ainput-label">Quantidade de Rebuys</div><input class="ainput" id="kr-qtd" type="number" placeholder="0" style="margin-bottom:8px;width:100%">';
+      html+='<button class="btn-sv" onclick="salvarKingRebuy()">Salvar</button></div>';
+    }
   }
 
   el.innerHTML=html;
+}
+
+async function salvarKO(){
+  var num=parseInt(document.getElementById('ko-num').value);
+  var ano=parseInt(document.getElementById('ko-ano').value)||null;
+  var p1=document.getElementById('ko-1').value.trim();
+  var p2=document.getElementById('ko-2').value.trim();
+  var p3=document.getElementById('ko-3').value.trim();
+  if(!num||!p1){toast('Preencha nº e 1º lugar!','err');return}
+  var {error}=await SB.from('poker_campeoes_ko').insert({torneio:num,ano:ano,primeiro:p1,segundo:p2||null,terceiro:p3||null});
+  if(error){toast('Erro: '+error.message,'err');return}
+  toast('Knockout salvo!','ok');
+  renderCampeoes();
+}
+
+async function salvarKingRebuy(){
+  var num=parseInt(document.getElementById('kr-num').value);
+  var ano=parseInt(document.getElementById('kr-ano').value)||null;
+  var nome=document.getElementById('kr-nome').value.trim();
+  var qtd=parseInt(document.getElementById('kr-qtd').value)||0;
+  if(!num||!nome){toast('Preencha nº e nome!','err');return}
+  var {error}=await SB.from('poker_king_rebuy').insert({torneio:num,ano:ano,campeao:nome,quantidade:qtd});
+  if(error){toast('Erro: '+error.message,'err');return}
+  toast('King of Rebuy salvo!','ok');
+  renderCampeoes();
 }
 
 async function salvarCampeao(){
@@ -854,34 +998,40 @@ async function salvarCampeao(){
   var p2=document.getElementById('camp-2').value.trim();
   var p3=document.getElementById('camp-3').value.trim();
   if(!num||!p1){toast('Preencha o número e o 1º lugar!','err');return}
-  var {error}=await SB.from('poker_campeoes').upsert(
-    {torneio:num,primeiro:p1,segundo:p2||null,terceiro:p3||null},
-    {onConflict:'torneio'}
-  );
+  var {data:exC}=await SB.from('poker_campeoes').select('id').eq('torneio',num).maybeSingle();
+  var error;
+  if(exC){
+    var rc=await SB.from('poker_campeoes').update({primeiro:p1,segundo:p2||null,terceiro:p3||null}).eq('torneio',num);
+    error=rc.error;
+  } else {
+    var rc=await SB.from('poker_campeoes').insert({torneio:num,primeiro:p1,segundo:p2||null,terceiro:p3||null});
+    error=rc.error;
+  }
   if(error){toast('Erro: '+error.message,'err');return}
   toast('Campeão salvo!','ok');
   renderCampeoes();
 }
 
-// ── RENDER REGRAS ─────────────────────────────────────────────────────────────
+
 function renderRegras(){
   var el=document.getElementById('s-regras');
   var regras=[
     ['Modalidade','No Limit Texas Hold\'em com baralho de 52 cartas (sem coringas).'],
     ['Buy-in','R$ 15,00 por rodada — vai para a premiação.'],
-    ['Rebuy','R$ 20,00 cada. Máximo 4 rebuys nos primeiros 6 níveis. Rebuy duplo a partir do 5º nível conta como 2.'],
-    ['Addon','R$ 30,00 no intervalo (6º nível). Obrigatório para quem fez os 4 rebuys e foi eliminado — recebe 40K fichas.'],
+    ['Rebuy (fase 1)','R$ 20,00 cada. Maximo 6 rebuys por jogador durante os 6 primeiros niveis (fase de rebuys). A partir do 5° nivel o rebuy e duplo (conta como 2). Exemplo: quem fez 3 rebuys nos 4 primeiros niveis so pode fazer mais 1 simples no 5° ou 6° nivel. Quem fizer os 4 rebuys simples e for eliminado aguarda o intervalo e volta com Addon + Rebuy Duplo (40K fichas).'],
+    ['Rebuy (fase 2)','Apos o intervalo sao liberados mais 2 rebuys por jogador, encerrando definitivamente o rebuy na fase eliminatoria.'],
+    ['Addon','R$ 30,00. Liberado somente apos o intervalo, quando encerra a fase de rebuys. Opcional para todos. Quem terminar o 6° nivel com menos de 20K pode devolver as fichas e pegar Addon + Rebuy Duplo (40K) — garantindo entrada na fase eliminatoria com minimo de 40K (~50BB).'],
     ['Fichas iniciais','10.000 em valor de fichas por rodada.'],
-    ['Blinds','Aumentam a cada 15 minutos (8 níveis de 15 min = 2h por rodada). Ante pago no Big Blind.'],
-    ['Punição por atraso','Chegou após início: recebe 9.000 fichas. Cada rebuy: 1ª = 9.500, 2ª = 9.000.'],
-    ['Mesa Final','9 jogadores. Novo sorteio de posições (redraw). Botão inicia no assento 1.'],
-    ['Premiação por Rodada','Rateio proporcional ao total de fichas na mesa final. Múltiplos de R$ 1,00. Fichas: valor × R$ 1,50.'],
-    ['Pontuação','Tabela por posição × nº de jogadores. Mínimo 10 pontos para posições pontuadas.'],
-    ['Descarte','1 pior resultado descartado na somatória final do semestre.'],
+    ['Estrutura','12 niveis no total com duração de 20 minutos cada (4h de jogo). Niveis 1 a 6: fase de rebuys. Intervalo apos o 6° nivel com novo sorteio de posicoes (redraw). Niveis 7 a 12: fase eliminatoria com rebuys limitados e addon liberado.'],
+    ['Ante','Pago na posicao Big Blind a partir do 7° nivel, no valor do Big Blind. Com menos de 6 jogadores o Ante equivale ao Small Blind (metade do BB).'],
+    ['Mesa Final','9 jogadores. Novo sorteio de posicoes (redraw). Botao inicia no assento 1.'],
+    ['Premiação por Rodada','Rateio proporcional ao total de fichas na mesa final. Multiplos de R$ 1,00. Fichas: valor x R$ 1,50.'],
+    ['Pontuação','Tabela por posicao x n° de jogadores (9 a 25). Minimo 10 pontos para posicoes pontuadas.'],
+    ['Descarte','1 pior resultado descartado na somatoria final do semestre.'],
     ['King of Rebuy','Quem mais fez rebuys no semestre. Desempate: quem perdeu menos rodelas.'],
     ['Knockout','Registrado por rodada. Contagem total no semestre.'],
-    ['Rateio do intervalo','Custo do salão/lanche dividido igualmente entre os participantes da rodada.'],
-    ['Conduta','Sem collusion, sem soft play. Decisão do Diretor é final.'],
+    ['Rateio do intervalo','Custo do salao/lanche dividido igualmente entre os participantes da rodada.'],
+    ['Conduta','Sem collusion, sem soft play. Decisao do Diretor e final.'],
   ];
   var html='<h2 style="font-family:Barlow Condensed,sans-serif;font-size:24px;font-weight:900;margin-bottom:16px">📋 Regras AJOP</h2>';
   regras.forEach(function(r,i){
@@ -893,7 +1043,7 @@ function renderRegras(){
   el.innerHTML=html;
 }
 
-// ── RENDER ADMIN ──────────────────────────────────────────────────────────────
+
 async function renderAdmin(){
   if(!USER||!USER.admin) return;
   var el=document.getElementById('s-admin');
@@ -939,10 +1089,16 @@ async function salvarRodada(){
   var hora=document.getElementById('rod-hora').value;
   var local=document.getElementById('rod-local').value.trim();
   if(!num||!data){toast('Preencha número e data!','err');return}
-  var {error}=await SB.from('poker_rodadas').upsert(
-    {numero:num,data:data,horario:hora,local:local,realizada:false},
-    {onConflict:'numero'}
-  );
+  // Verifica se já existe
+  var {data:ex}=await SB.from('poker_rodadas').select('id').eq('numero',num).maybeSingle();
+  var error;
+  if(ex){
+    var r=await SB.from('poker_rodadas').update({data:data,horario:hora,local:local}).eq('numero',num);
+    error=r.error;
+  } else {
+    var r=await SB.from('poker_rodadas').insert({numero:num,data:data,horario:hora,local:local,realizada:false,rateio_intervalo:0});
+    error=r.error;
+  }
   if(error){toast('Erro: '+error.message,'err');return}
   toast('Rodada '+num+' salva!','ok');
   await carregarTudo();
@@ -1008,7 +1164,7 @@ async function salvarResultados(){
   renderAdmin();
 }
 
-// ── DOMContentLoaded ──────────────────────────────────────────────────────────
+
 document.addEventListener('DOMContentLoaded', async function(){
   // Versão
   var savedVer=localStorage.getItem('poker_app_version');
