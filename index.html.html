@@ -860,12 +860,15 @@ function renderRanking(aba){
   RANK_ABA=aba||RANK_ABA;
   var el=document.getElementById('s-ranking');
   var stats=calcStatsAll();
+  var onP=RANK_ABA==='pontos'?' on':'';
+  var onR=RANK_ABA==='rebuy'?' on':'';
+  var onK=RANK_ABA==='knockout'?' on':'';
 
-  var html='<h2 style="font-family:Barlow Condensed,sans-serif;font-size:24px;font-weight:900;margin-bottom:16px">📊 Classificação</h2>';
+  var html='<h2 style="font-family:Barlow Condensed,sans-serif;font-size:24px;font-weight:900;margin-bottom:16px">&#x1F4CA; Classificação</h2>';
   html+='<div class="rank-tabs">';
-  html+='<button class="rank-tab'+(RANK_ABA==='pontos'?' on':'')+'" onclick="renderRanking(\'pontos\')">🏆 Pontos</button>';
-  html+='<button class="rank-tab'+(RANK_ABA==='rebuy'?' on':'')+'" onclick="renderRanking(\'rebuy\')">👑 King Rebuy</button>';
-  html+='<button class="rank-tab'+(RANK_ABA==='knockout'?' on':'')+'" onclick="renderRanking(\'knockout\')">💀 Knockout</button>';
+  html+='<button class="rank-tab'+onP+'" data-aba="pontos" onclick="renderRanking(this.dataset.aba)">&#x1F3C6; Pontos</button>';
+  html+='<button class="rank-tab'+onR+'" data-aba="rebuy" onclick="renderRanking(this.dataset.aba)">&#x1F451; King Rebuy</button>';
+  html+='<button class="rank-tab'+onK+'" data-aba="knockout" onclick="renderRanking(this.dataset.aba)">&#x1F480; Knockout</button>';
   html+='</div>';
 
   var sorted;
@@ -895,7 +898,7 @@ function renderRanking(aba){
     sorted.forEach(function(s,i){
       var me=s.nome===USER.nome;
       html+='<div class="rank-item'+(me?' me':'')+'">';
-      html+='<div class="rank-pos '+(i===0?'ouro':'')+'">'+(i+1)+'</div>';
+      html+='<div class="rank-pos '+(i===0?'ouro':i===1?'prata':i===2?'bronze':'')+'"> '+(i+1)+'</div>';
       html+='<div class="rank-info">';
       html+='<div class="rank-nome">'+s.nome+'</div>';
       html+='<div class="rank-sub">'+s.rodadasJogadas+' rodadas jogadas</div>';
@@ -905,15 +908,6 @@ function renderRanking(aba){
       html+='<div style="font-size:10px;color:var(--texto3)">rebuys</div>';
       html+='</div></div>';
     });
-    html='<div style="background:var(--roxo-light);border:1px solid var(--roxo);border-radius:var(--radius);padding:12px;margin-bottom:12px;color:var(--roxo)">'+
-      '<b>👑 King of Rebuy</b> — Quem mais deu rebuy no semestre</div>'+html;
-    html='<div class="rank-tabs">'+
-      '<button class="rank-tab'+(RANK_ABA==='pontos'?' on':'')+'" onclick="renderRanking(\'pontos\')">🏆 Pontos</button>'+
-      '<button class="rank-tab'+(RANK_ABA==='rebuy'?' on':'')+'" onclick="renderRanking(\'rebuy\')">👑 King Rebuy</button>'+
-      '<button class="rank-tab'+(RANK_ABA==='knockout'?' on':'')+'" onclick="renderRanking(\'knockout\')">💀 Knockout</button>'+
-      '</div>'+html;
-    el.innerHTML='<h2 style="font-family:Barlow Condensed,sans-serif;font-size:24px;font-weight:900;margin-bottom:16px">📊 Classificação</h2>'+html;
-    return;
   } else {
     sorted=stats.slice().sort(function(a,b){
       return b.knockouts-a.knockouts||a.rodadasJogadas-b.rodadasJogadas;
@@ -921,7 +915,7 @@ function renderRanking(aba){
     sorted.forEach(function(s,i){
       var me=s.nome===USER.nome;
       html+='<div class="rank-item'+(me?' me':'')+'">';
-      html+='<div class="rank-pos '+(i===0?'ouro':'')+'">'+(i+1)+'</div>';
+      html+='<div class="rank-pos '+(i===0?'ouro':i===1?'prata':i===2?'bronze':'')+'"> '+(i+1)+'</div>';
       html+='<div class="rank-info">';
       html+='<div class="rank-nome">'+s.nome+'</div>';
       html+='<div class="rank-sub">'+s.rodadasJogadas+' rodadas jogadas</div>';
@@ -949,11 +943,14 @@ async function renderCampeoes(){
   ]);
   var camps=r1.data||[], kos=r2.data||[], kings=r3.data||[];
 
-  var html='<h2 style="font-family:Barlow Condensed,sans-serif;font-size:24px;font-weight:900;margin-bottom:16px">🏆 Hall of Fame</h2>';
+  var onCT=CAMP_ABA==='torneio'?' on':'';
+  var onCK=CAMP_ABA==='ko'?' on':'';
+  var onCR=CAMP_ABA==='rebuy'?' on':'';
+  var html='<h2 style="font-family:Barlow Condensed,sans-serif;font-size:24px;font-weight:900;margin-bottom:16px">&#x1F3C6; Hall of Fame</h2>';
   html+='<div class="rank-tabs" style="margin-bottom:16px">';
-  html+='<button class="rank-tab'+(CAMP_ABA==='torneio'?' on':'')+'" onclick="setCampAba(this.dataset.aba)" data-aba="torneio">&#x1F3C6; Torneio</button>';
-  html+='<button class="rank-tab'+(CAMP_ABA==='ko'?' on':'')+'" onclick="setCampAba(this.dataset.aba)" data-aba="ko">&#x1F480; Knockout</button>';
-  html+='<button class="rank-tab'+(CAMP_ABA==='rebuy'?' on':'')+'" onclick="setCampAba(this.dataset.aba)" data-aba="rebuy">&#x1F451; King Rebuy</button>';
+  html+='<button class="rank-tab'+onCT+'" data-aba="torneio" onclick="setCampAba(this.dataset.aba)">&#x1F3C6; Torneio</button>';
+  html+='<button class="rank-tab'+onCK+'" data-aba="ko" onclick="setCampAba(this.dataset.aba)">&#x1F480; Knockout</button>';
+  html+='<button class="rank-tab'+onCR+'" data-aba="rebuy" onclick="setCampAba(this.dataset.aba)">&#x1F451; King Rebuy</button>';
   html+='</div>';
 
   if(CAMP_ABA==='torneio'){
