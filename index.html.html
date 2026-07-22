@@ -330,7 +330,9 @@ body{font-family:'Inter',sans-serif;background:var(--fundo);color:var(--texto);m
         <div class="lerro" id="lerro"></div>
       </div>
       <div id="form-c" style="display:none">
-        <input class="linput" id="c-nome" placeholder="Apelido">
+        <input class="linput" id="c-nome" placeholder="Apelido (como quer ser chamado)">
+        <input class="linput" id="c-nomec" placeholder="Nome completo">
+        <input class="linput" id="c-fone" type="tel" placeholder="WhatsApp (ex: 43999991234)">
         <input class="linput" id="c-senha" type="password" placeholder="Senha">
         <input class="linput" id="c-senha2" type="password" placeholder="Confirme a senha">
         <button class="lbtn" id="btn-c" onclick="cadastrar()">CADASTRAR</button>
@@ -359,6 +361,7 @@ body{font-family:'Inter',sans-serif;background:var(--fundo);color:var(--texto);m
   <div class="secao" id="s-ranking"></div>
   <div class="secao" id="s-campeoes"></div>
   <div class="secao" id="s-regras"></div>
+  <div class="secao" id="s-participantes" style="display:none"></div>
   <div class="secao" id="s-admin" style="display:none"></div>
 
   <!-- NAVBAR -->
@@ -382,6 +385,10 @@ body{font-family:'Inter',sans-serif;background:var(--fundo);color:var(--texto);m
     <button class="nav-btn" id="bn-regras" onclick="ir('regras')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
       Regras
+    </button>
+    <button class="nav-btn" id="bn-participantes" style="display:none" onclick="ir('participantes')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Membros
     </button>
     <button class="nav-btn" id="bn-admin" style="display:none" onclick="ir('admin')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93l-1.41 1.41M4.93 4.93l1.41 1.41M12 2v2M12 20v2M4.93 19.07l1.41-1.41M19.07 19.07l-1.41-1.41M2 12h2M20 12h2"/></svg>
@@ -465,6 +472,8 @@ function setTab(t){
 
 async function cadastrar(){
   var nome=document.getElementById('c-nome').value.trim();
+  var nomec=document.getElementById('c-nomec').value.trim();
+  var fone=document.getElementById('c-fone').value.trim();
   var s1=document.getElementById('c-senha').value;
   var s2=document.getElementById('c-senha2').value;
   var erro=document.getElementById('cerro');
@@ -475,18 +484,27 @@ async function cadastrar(){
   var btn=document.getElementById('btn-c');
   btn.disabled=true;btn.textContent='...';
   try{
+    // Verifica apelido duplicado
     var ckU=await dbGetRest('poker_usuarios','nome=eq.'+encodeURIComponent(nome));
     if(ckU&&ckU.length>0){erro.textContent='Apelido ja em uso.';btn.disabled=false;btn.textContent='CADASTRAR';return}
-    var ins=await dbInsertRest('poker_usuarios',{nome:nome,senha:s1,admin:false});
-    if(ins.error){erro.textContent='Erro: '+ins.error.message;btn.disabled=false;btn.textContent='CADASTRAR';return}
-    toast('Cadastrado! Entrando...','ok');
+    // Insere via REST
+    var payload={nome:nome,senha:s1,admin:false};
+    if(nomec) payload.nome_completo=nomec;
+    if(fone) payload.whatsapp=fone;
+    var ins=await dbInsertRest('poker_usuarios',payload);
+    if(ins.error){
+      erro.textContent='Erro ao cadastrar: '+ins.error.message;
+      btn.disabled=false;btn.textContent='CADASTRAR';return;
+    }
+    toast('Cadastrado com sucesso!','ok');
     setTimeout(function(){
       document.getElementById('e-nome').value=nome;
       document.getElementById('e-senha').value=s1;
       setTab('e');entrar();
-    },700);
+    },800);
   }catch(e){
-    erro.textContent='Erro: '+e.message;btn.disabled=false;btn.textContent='CADASTRAR';
+    erro.textContent='Erro: '+e.message;
+    btn.disabled=false;btn.textContent='CADASTRAR';
   }
 }
 
@@ -521,7 +539,10 @@ async function abrirApp(){
   document.getElementById('tela-login').style.display='none';
   document.getElementById('app').style.display='block';
   document.getElementById('uavatar').textContent=USER.nome[0].toUpperCase();
-  if(USER.admin) document.getElementById('bn-admin').style.display='flex';
+  if(USER.admin){
+    document.getElementById('bn-admin').style.display='flex';
+    document.getElementById('bn-participantes').style.display='flex';
+  }
   loading('Carregando dados...');
   await carregarTudo();
   noloading();
@@ -594,7 +615,7 @@ async function carregarTudo(){
 
 
 function ir(s){
-  ['inicio','rodadas','ranking','campeoes','regras','admin'].forEach(function(id){
+  ['inicio','rodadas','ranking','campeoes','regras','participantes','admin'].forEach(function(id){
     var el=document.getElementById('s-'+id);
     if(el) el.style.display=id===s?'block':'none';
   });
@@ -606,6 +627,7 @@ function ir(s){
   if(s==='ranking') renderRanking('pontos');
   if(s==='campeoes') renderCampeoes();
   if(s==='regras') renderRegras();
+  if(s==='participantes') renderParticipantes();
   if(s==='admin') renderAdmin();
   window.scrollTo(0,0);
 }
@@ -1117,6 +1139,64 @@ function renderRegras(){
   el.innerHTML=html;
 }
 
+
+async function renderParticipantes(){
+  if(!USER||!USER.admin) return;
+  var el=document.getElementById('s-participantes');
+  el.innerHTML='<div style="text-align:center;padding:20px;color:var(--texto3)">Carregando...</div>';
+  var lista=await dbGetRest('poker_usuarios','order=nome.asc');
+  lista=lista||[];
+  var html='<h2 style="font-family:Barlow Condensed,sans-serif;font-size:24px;font-weight:900;margin-bottom:16px">&#x1F465; Participantes ('+lista.length+')</h2>';
+
+  // Cadastro admin
+  html+='<div class="admin-card" style="margin-bottom:16px">';
+  html+='<h3>➕ Cadastrar Participante</h3>';
+  html+='<div class="ainput-label">Apelido</div>';
+  html+='<input class="ainput" id="adm-apelido" placeholder="Apelido" style="margin-bottom:8px;width:100%">';
+  html+='<div class="ainput-label">Nome Completo</div>';
+  html+='<input class="ainput" id="adm-nome" placeholder="Nome completo" style="margin-bottom:8px;width:100%">';
+  html+='<div class="ainput-label">WhatsApp</div>';
+  html+='<input class="ainput" id="adm-fone" placeholder="Ex: 43999991234" style="margin-bottom:8px;width:100%">';
+  html+='<div class="ainput-label">Senha</div>';
+  html+='<input class="ainput" id="adm-senha" type="password" placeholder="Senha" style="margin-bottom:8px;width:100%">';
+  html+='<button class="btn-sv" onclick="cadastrarPeloAdmin()">Cadastrar</button>';
+  html+='</div>';
+
+  // Lista
+  if(lista.length===0){
+    html+='<div class="card" style="text-align:center;padding:24px;color:var(--texto3)">Nenhum participante cadastrado.</div>';
+  } else {
+    lista.forEach(function(u){
+      html+='<div class="card" style="margin-bottom:8px;display:flex;align-items:center;gap:12px">';
+      html+='<div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--verde),var(--verde-dark));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:16px;flex-shrink:0">'+u.nome[0].toUpperCase()+'</div>';
+      html+='<div style="flex:1">';
+      html+='<div style="font-size:14px;font-weight:700;color:var(--texto)">'+u.nome+(u.admin?' <span style="font-size:10px;color:var(--verde);background:var(--verde-light);padding:1px 6px;border-radius:8px">admin</span>':'')+'</div>';
+      if(u.nome_completo) html+='<div style="font-size:12px;color:var(--texto2)">'+u.nome_completo+'</div>';
+      if(u.whatsapp) html+='<div style="font-size:11px;color:var(--texto3)">&#x1F4F1; '+u.whatsapp+'</div>';
+      html+='</div>';
+      html+='</div>';
+    });
+  }
+  el.innerHTML=html;
+}
+
+async function cadastrarPeloAdmin(){
+  var apelido=document.getElementById('adm-apelido').value.trim();
+  var nome=document.getElementById('adm-nome').value.trim();
+  var fone=document.getElementById('adm-fone').value.trim();
+  var senha=document.getElementById('adm-senha').value;
+  if(!apelido||!senha){toast('Preencha apelido e senha!','err');return}
+  var ck=await dbGetRest('poker_usuarios','nome=eq.'+encodeURIComponent(apelido));
+  if(ck&&ck.length>0){toast('Apelido ja em uso!','err');return}
+  var payload={nome:apelido,senha:senha,admin:false};
+  if(nome) payload.nome_completo=nome;
+  if(fone) payload.whatsapp=fone;
+  var r=await dbInsertRest('poker_usuarios',payload);
+  if(r.error){toast('Erro: '+r.error.message,'err');return}
+  toast('Participante cadastrado!','ok');
+  await carregarTudo();
+  renderParticipantes();
+}
 
 async function renderAdmin(){
   if(!USER||!USER.admin) return;
