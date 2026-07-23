@@ -949,11 +949,11 @@ async function renderInicio(){
       var bgRow=isProx?'background:var(--verde-light);':'';
       var isPiorRod=r.realizada&&meuRes&&stats.piorPts>0&&getPts((RESULTADOS[r.id]||[]).length,meuRes.posicao)===stats.piorPts&&stats.rodadasJogadas>1;
       var bordaRod=isPiorRod?'border-left:3px solid #DC2626;padding-left:8px;':'';
-      html+='<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--cinza3);'+bgRow+bordaRod+'">';
-      html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:18px;font-weight:900;color:'+(r.realizada?'var(--verde)':isProx?'var(--azul)':'var(--texto3)')+';min-width:24px">'+r.numero+'</div>';
+      html+='<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--cinza3);'+bgRow+bordaRod+'">';
+      html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:24px;font-weight:900;color:'+(r.realizada?'var(--verde)':isProx?'var(--azul)':'var(--texto3)')+';min-width:32px;text-align:center">'+r.numero+'</div>';
       html+='<div style="flex:1">';
-      html+='<div style="font-size:12px;font-weight:600;color:var(--texto)">'+(r.data?fmtData(r.data):'A definir')+'</div>';
-      if(r.local) html+='<div style="font-size:11px;color:var(--texto3)">'+r.local+'</div>';
+      html+='<div style="font-size:14px;font-weight:700;color:var(--texto)">'+(r.data?fmtData(r.data):'A definir')+'</div>';
+      if(r.local) html+='<div style="font-size:12px;color:var(--texto3);margin-top:2px">&#x1F4CD; '+r.local+'</div>';
       html+='</div>';
       if(r.realizada&&meuRes){
         var nj=RESULTADOS[r.id].length;
@@ -961,11 +961,11 @@ async function renderInicio(){
         var fin=calcFinanceiro(meuRes,r);
         var isPior=stats.piorPts>0&&pts===stats.piorPts&&stats.rodadasJogadas>1;
         html+='<div style="text-align:right">';
-        html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:20px;font-weight:900;color:'+(isPior?'#DC2626':'var(--verde)')+'">'+pts+'pts'+(isPior?' &#x2715;':'')+'</div>';
-        html+='<div style="font-size:10px;color:var(--texto3)">'+meuRes.posicao+'° lugar</div>';
-        if(meuRes.rebuy>0) html+='<div style="font-size:10px;color:var(--roxo)">'+meuRes.rebuy+' rebuy</div>';
-        if(meuRes.knockout>0) html+='<div style="font-size:10px;color:#92400E">'+meuRes.knockout+' KO</div>';
-        html+='<div style="font-size:11px;font-weight:700;color:'+(fin.saldo>=0?'var(--verde)':'var(--vermelho)')+'">'+fmtMoeda(fin.saldo)+'</div>';
+        html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:26px;font-weight:900;color:'+(isPior?'#DC2626':'var(--verde)')+'">'+pts+'pts'+(isPior?' &#x2715;':'')+'</div>';
+        html+='<div style="font-size:13px;font-weight:700;color:var(--texto2)">'+meuRes.posicao+'° lugar</div>';
+        if(meuRes.rebuy>0) html+='<div style="font-size:12px;color:var(--roxo)">'+meuRes.rebuy+' rebuy</div>';
+        if(meuRes.knockout>0) html+='<div style="font-size:12px;color:#92400E">&#x1F480; '+meuRes.knockout+' KO</div>';
+        html+='<div style="font-size:13px;font-weight:700;color:'+(fin.saldo>=0?'var(--verde)':'var(--vermelho)')+'">'+fmtMoeda(fin.saldo)+'</div>';
         html+='</div>';
       } else if(!r.realizada&&minhaP){
         html+='<span style="font-size:18px">'+(minhaP.status==='in'?'&#x1F91A;':'&#x1F919;')+'</span>';
@@ -1375,7 +1375,7 @@ function renderRegras(){
     ['Rateio do intervalo','Custo do salao/lanche dividido igualmente entre os participantes da rodada.'],
     ['Conduta','Sem collusion, sem soft play. Decisao do Diretor e final.'],
   ];
-  var html='<h2 style="font-family:Barlow Condensed,sans-serif;font-size:24px;font-weight:900;margin-bottom:16px">📋 Regras AJOP</h2>';
+  var html='<h2 style="font-family:Barlow Condensed,sans-serif;font-size:24px;font-weight:900;margin-bottom:16px">📋 Regras AJP</h2>';
   regras.forEach(function(r,i){
     html+='<div class="regra-item">';
     html+='<div class="regra-num">'+String(i+1).padStart(2,'0')+' — '+r[0]+'</div>';
