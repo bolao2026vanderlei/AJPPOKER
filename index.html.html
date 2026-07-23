@@ -1630,37 +1630,7 @@ async function renderAdmin(){
     html+='</div>';
   }
 
-    // INSERIR RESULTADO
-  html+='<div class="admin-card">';
-  html+='<h3>🎯 Inserir Resultado da Rodada</h3>';
-  html+='<div class="aform-row">';
-  html+='<div style="flex:1"><div class="ainput-label">Rodada</div>';
-  html+='<select class="ainput" id="res-rodada" onchange="carregarFormResultado()">';
-  html+='<option value="">Selecione...</option>';
-  RODADAS.forEach(function(r){ html+='<option value="'+r.id+'">Rodada '+r.numero+' ('+fmtData(r.data)+')</option>'; });
-  html+='</select></div>';
-  html+='<div style="flex:1"><div class="ainput-label">Nº Jogadores</div><input class="ainput" id="res-njog" type="number" min="9" max="25" placeholder="9-25" onchange="gerarLinhasJogadores()"></div>';
-  html+='</div>';
-  html+='<div class="ainput-label">Rateio Intervalo (R$)</div>';
-  html+='<input class="ainput" id="res-rateio" type="number" step="0.01" placeholder="Ex: 150.00" style="margin-bottom:10px;width:100%">';
-  html+='<div id="linhas-jogadores"></div>';
-  html+='<button class="btn-sv" onclick="salvarResultados()" style="margin-top:8px">&#x1F4BE; Salvar Resultados</button>';
-  html+='</div>';
-
-  // RESULTADOS SALVOS COM OPÇÃO DE EDITAR
-  var rodsComRes=RODADAS.filter(function(r){return r.realizada&&RESULTADOS[r.id]&&RESULTADOS[r.id].length>0;});
-  if(rodsComRes.length>0){
-    html+='<div class="admin-card">';
-    html+='<h3>&#x270F;&#xFE0F; Editar Resultados Salvos</h3>';
-    html+='<select class="ainput" id="edit-rodada" onchange="carregarEdicao()" style="width:100%;margin-bottom:10px">';
-    html+='<option value="">Selecione a rodada...</option>';
-    rodsComRes.forEach(function(r){ html+='<option value="'+r.id+'">Rodada '+r.numero+' ('+fmtData(r.data)+')</option>'; });
-    html+='</select>';
-    html+='<div id="linhas-edicao"></div>';
-    html+='</div>';
-  }
-
-  // RODADAS SALVAS — EDITAR
+    // RODADAS SALVAS — EDITAR
   if(RODADAS.length>0){
     html+='<div class="admin-card">';
     html+='<h3>&#x270F;&#xFE0F; Editar Rodadas Cadastradas</h3>';
@@ -1728,25 +1698,6 @@ async function renderAdmin(){
     html+='</div></label></div>';
   });
   html+='</div>';
-
-  // INSCRITOS NO TORNEIO
-  html+='<div class="admin-card">';
-  html+='<h3>&#x1F3C6; Inscritos no Torneio</h3>';
-  html+='<div style="font-size:12px;color:var(--texto3);margin-bottom:12px">Apenas inscritos aparecem nas classificações. Avulsos podem jogar mas nao pontuar.</div>';
-  var jogTodos=await dbGetRest('poker_usuarios','select=id,nome,inscrito&nome=neq.admin&order=nome.asc');
-  jogTodos=jogTodos||[];
-  jogTodos.forEach(function(j){
-    var checked=j.inscrito?'checked':'';
-    html+='<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--cinza3)">';
-    html+='<span style="font-size:14px;font-weight:600;color:'+(j.inscrito?'var(--verde)':'var(--texto3)')+'">'+j.nome+'</span>';
-    html+='<label style="display:flex;align-items:center;gap:8px;cursor:pointer">';
-    html+='<span style="font-size:11px;color:'+(j.inscrito?'var(--verde)':'var(--texto3)')+';font-weight:700">'+(j.inscrito?'INSCRITO':'AVULSO')+'</span>';
-    html+='<div data-jid="'+j.id+'" data-jinscrito="'+(j.inscrito?'1':'0')+'" onclick="toggleInscrito(this)" style="width:42px;height:24px;border-radius:12px;background:'+(j.inscrito?'var(--verde)':'var(--cinza3)')+';position:relative;cursor:pointer;transition:.2s">';
-    html+='<div style="width:20px;height:20px;border-radius:50%;background:#fff;position:absolute;top:2px;'+(j.inscrito?'right:2px':'left:2px')+';transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.3)"></div>';
-    html+='</div></label></div>';
-  });
-  html+='</div>';
-
 
   el.innerHTML=html;
 }
