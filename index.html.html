@@ -714,40 +714,42 @@ async function renderInicio(){
   var nJog=JOGADORES.length||1;
   var rodsRealizadas=RODADAS.filter(function(r){return r.realizada;}).length;
 
-  // Hero cards
+  // Hero cards — 2 classificações + 2 stats
   html+='<div class="hero-grid">';
 
-  // Pontos sem descarte (a partir da 2ª rodada)
-  html+='<div class="hero-card destaque">';
-  html+='<div class="hero-label">&#x2B50; Pontos c/ descarte</div>';
-  html+='<div class="hero-valor">'+stats.totalSem+'</div>';
+  // CLASS 1: Com descarte — fundo VERDE
+  html+='<div class="hero-card" style="background:linear-gradient(135deg,#16A34A,#15803D);border:none">';
+  html+='<div class="hero-label" style="color:rgba(255,255,255,.7)">C/ Descarte</div>';
+  html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:64px;font-weight:900;color:#fff;line-height:1">'+(rodsRealizadas>=2?posSem+'º':'--')+'</div>';
+  html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:28px;font-weight:700;color:rgba(255,255,255,.9)">'+stats.totalSem+' pts</div>';
   if(rodsRealizadas>=2){
-    html+='<div class="hero-sub">&#x1F3C6; '+posSem+'º de '+nJog+'</div>';
-    html+='<div style="font-size:10px;color:rgba(255,255,255,.5);margin-top:2px">descartou '+stats.piorPts+'pts</div>';
+    html+='<div style="font-size:10px;color:rgba(255,255,255,.55);margin-top:3px">de '+nJog+' jogadores</div>';
+    html+='<div style="font-size:10px;color:rgba(255,255,255,.45);margin-top:1px">descartou '+stats.piorPts+'pts</div>';
   } else {
-    html+='<div class="hero-sub">disponível na 2ª rodada</div>';
+    html+='<div style="font-size:10px;color:rgba(255,255,255,.5);margin-top:3px">disponível na 2ª rodada</div>';
   }
   html+='</div>';
 
-  // Pontos total sem descarte
-  html+='<div class="hero-card">';
-  html+='<div class="hero-label">&#x1F4CB; Pontos total</div>';
-  html+='<div class="hero-valor">'+stats.total+'</div>';
-  html+='<div class="hero-sub">'+posTotal+'º de '+nJog+'</div>';
+  // CLASS 2: Sem descarte — fundo AZUL
+  html+='<div class="hero-card" style="background:linear-gradient(135deg,#2563EB,#1D4ED8);border:none">';
+  html+='<div class="hero-label" style="color:rgba(255,255,255,.7)">Sem Descarte</div>';
+  html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:64px;font-weight:900;color:#fff;line-height:1">'+posTotal+'º</div>';
+  html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:28px;font-weight:700;color:rgba(255,255,255,.9)">'+stats.total+' pts</div>';
+  html+='<div style="font-size:10px;color:rgba(255,255,255,.55);margin-top:3px">de '+nJog+' jogadores</div>';
   html+='</div>';
 
   // Rebuys
   html+='<div class="hero-card">';
   html+='<div class="hero-label">&#x1F504; Rebuys</div>';
-  html+='<div class="hero-valor">'+stats.rebuys+'</div>';
-  html+='<div class="hero-sub">'+posRebuy+'º de '+nJog+'</div>';
+  html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:48px;font-weight:900;color:var(--roxo);line-height:1">'+stats.rebuys+'</div>';
+  html+='<div style="font-size:11px;color:var(--texto3);margin-top:3px">'+posRebuy+'º de '+nJog+'</div>';
   html+='</div>';
 
-  // Rodelas/Knockouts
+  // Rodelas
   html+='<div class="hero-card">';
   html+='<div class="hero-label">&#x1F480; Rodelas</div>';
-  html+='<div class="hero-valor">'+stats.knockouts+'</div>';
-  html+='<div class="hero-sub">'+posKO+'º de '+nJog+'</div>';
+  html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:48px;font-weight:900;color:#92400E;line-height:1">'+stats.knockouts+'</div>';
+  html+='<div style="font-size:11px;color:var(--texto3);margin-top:3px">'+posKO+'º de '+nJog+'</div>';
   html+='</div>';
 
   html+='</div>';
@@ -787,7 +789,9 @@ async function renderInicio(){
       var meuRes=RESULTADOS[r.id]?RESULTADOS[r.id].find(function(x){return x.nome===USER.nome}):null;
       var isProx=!r.realizada&&RODADAS.findIndex(function(x){return !x.realizada})===RODADAS.indexOf(r);
       var bgRow=isProx?'background:var(--verde-light);':'';
-      html+='<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--cinza3);'+bgRow+'">';
+      var isPiorRod=r.realizada&&meuRes&&stats.piorPts>0&&getPts((RESULTADOS[r.id]||[]).length,meuRes.posicao)===stats.piorPts&&stats.rodadasJogadas>1;
+      var bordaRod=isPiorRod?'border-left:3px solid #DC2626;padding-left:8px;':'';
+      html+='<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--cinza3);'+bgRow+bordaRod+'">';
       html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:18px;font-weight:900;color:'+(r.realizada?'var(--verde)':isProx?'var(--azul)':'var(--texto3)')+';min-width:24px">'+r.numero+'</div>';
       html+='<div style="flex:1">';
       html+='<div style="font-size:12px;font-weight:600;color:var(--texto)">'+(r.data?fmtData(r.data):'A definir')+'</div>';
@@ -796,9 +800,14 @@ async function renderInicio(){
       if(r.realizada&&meuRes){
         var nj=RESULTADOS[r.id].length;
         var pts=getPts(nj,meuRes.posicao);
+        var fin=calcFinanceiro(meuRes,r);
+        var isPior=stats.piorPts>0&&pts===stats.piorPts&&stats.rodadasJogadas>1;
         html+='<div style="text-align:right">';
-        html+='<div style="font-size:11px;font-weight:700;color:var(--verde)">'+pts+'pts</div>';
+        html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:20px;font-weight:900;color:'+(isPior?'#DC2626':'var(--verde)')+'">'+pts+'pts'+(isPior?' &#x2715;':'')+'</div>';
         html+='<div style="font-size:10px;color:var(--texto3)">'+meuRes.posicao+'° lugar</div>';
+        if(meuRes.rebuy>0) html+='<div style="font-size:10px;color:var(--roxo)">'+meuRes.rebuy+' rebuy</div>';
+        if(meuRes.knockout>0) html+='<div style="font-size:10px;color:#92400E">'+meuRes.knockout+' KO</div>';
+        html+='<div style="font-size:11px;font-weight:700;color:'+(fin.saldo>=0?'var(--verde)':'var(--vermelho)')+'">'+fmtMoeda(fin.saldo)+'</div>';
         html+='</div>';
       } else if(!r.realizada&&minhaP){
         html+='<span style="font-size:18px">'+(minhaP.status==='in'?'&#x1F91A;':'&#x1F919;')+'</span>';
