@@ -1591,6 +1591,43 @@ async function renderAdmin(){
   html+='<button class="btn-sv" onclick="salvarRodada()">Salvar Rodada</button>';
   html+='</div>';
 
+  // RODADAS SALVAS — EDITAR
+  if(RODADAS.length>0){
+    html+='<div class="admin-card">';
+    html+='<h3>&#x270F;&#xFE0F; Editar Rodadas Cadastradas</h3>';
+    RODADAS.forEach(function(r){
+      html+='<div style="border:1px solid var(--cinza3);border-radius:10px;padding:12px;margin-bottom:10px">';
+      html+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">';
+      html+='<div>';
+      html+='<div style="font-size:14px;font-weight:700">Rodada '+r.numero+'</div>';
+      html+='<div style="font-size:12px;color:var(--texto3)">'+fmtData(r.data)+(r.horario?' às '+r.horario:'')+'</div>';
+      if(r.local) html+='<div style="font-size:11px;color:var(--texto3)">'+r.local+'</div>';
+      html+='</div>';
+      html+='<button data-rodid="'+r.id+'" onclick="toggleEditRodada(this.dataset.rodid)" style="font-size:11px;padding:6px 12px;border-radius:8px;border:1px solid var(--azul);background:var(--azul-light);color:var(--azul);cursor:pointer;font-weight:700">Editar</button>';
+      html+='</div>';
+      html+='<div id="edit-rod-'+r.id+'" style="display:none">';
+      html+='<div class="aform-row">';
+      html+='<div style="flex:1"><div class="ainput-label">Nº Rodada</div>';
+      html+='<input class="ainput" id="er-num-'+r.id+'" type="number" value="'+r.numero+'"></div>';
+      html+='<div style="flex:2"><div class="ainput-label">Data</div>';
+      html+='<input class="ainput" id="er-data-'+r.id+'" type="date" value="'+(r.data||'')+'"></div>';
+      html+='</div>';
+      html+='<div class="aform-row">';
+      html+='<div style="flex:1"><div class="ainput-label">Horário</div>';
+      html+='<input class="ainput" id="er-hora-'+r.id+'" type="time" value="'+(r.horario||'13:45')+'"></div>';
+      html+='<div style="flex:2"><div class="ainput-label">Local</div>';
+      html+='<input class="ainput" id="er-local-'+r.id+'" value="'+(r.local||'')+'"></div>';
+      html+='</div>';
+      html+='<div style="display:flex;gap:8px">';
+      html+='<button data-rid="'+r.id+'" onclick="salvarEdicaoRodada(this.dataset.rid)" class="btn-sv" style="flex:1">Salvar</button>';
+      html+='<button data-rid="'+r.id+'" onclick="toggleEditRodada(this.dataset.rid)" style="flex:1;padding:10px;border-radius:8px;border:1px solid var(--cinza3);background:var(--cinza2);cursor:pointer;font-weight:700">Cancelar</button>';
+      html+='</div>';
+      html+='</div>';
+      html+='</div>';
+    });
+    html+='</div>';
+  }
+
     // GERENCIAR PRESENÇAS
   var proxRodAdmin=RODADAS.find(function(r){return !r.realizada});
   if(proxRodAdmin){
@@ -1773,6 +1810,31 @@ async function cancelarPresenca(rodadaId, nome){
     renderAdmin();
   } else {
     toast('Erro ao cancelar presença','err');
+  }
+}
+
+function toggleEditRodada(rid){
+  var el=document.getElementById('edit-rod-'+rid);
+  if(el) el.style.display=el.style.display==='none'?'block':'none';
+}
+
+async function salvarEdicaoRodada(rid){
+  var num=parseInt(document.getElementById('er-num-'+rid).value);
+  var data=document.getElementById('er-data-'+rid).value;
+  var hora=document.getElementById('er-hora-'+rid).value;
+  var local=document.getElementById('er-local-'+rid).value.trim();
+  if(!num||!data){toast('Preencha numero e data!','err');return}
+  var res=await fetch('https://gpnrixcftsjzufnygisa.supabase.co/rest/v1/poker_rodadas?id=eq.'+rid,{
+    method:'PATCH',
+    headers:Object.assign({},RHDR,{'Prefer':'return=minimal'}),
+    body:JSON.stringify({numero:num,data:data,horario:hora,local:local})
+  });
+  if(res.ok){
+    toast('Rodada atualizada!','ok');
+    await carregarTudo();
+    renderAdmin();
+  } else {
+    toast('Erro ao salvar','err');
   }
 }
 
