@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>AJP Poker</title>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <style>
 :root{
   --verde:#16A34A;--verde-dark:#14532D;--verde-light:#DCFCE7;
@@ -399,11 +399,8 @@ body{font-family:'Inter',sans-serif;background:var(--fundo);color:var(--texto);m
 
 <script>
 
-var SB = window.supabase.createClient(
-  'https://kqtjievcjocjuyswwvow.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtxdGppZXZjam9janV5c3d3dm93Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzNzgwNTcsImV4cCI6MjA5NTk1NDA1N30._52asyQvhmLGJoV6A6PG6FXVzSgIKI1h5-5NWSf0vy8'
-);
-var ADMIN_EMAIL = 'silvaveterinario@gmail.com';
+// Sem SDK Supabase — usando REST direto
+var ADMIN_SENHA = 'ajp2024admin'; // senha do admin local
 var APP_VERSION = '2026-ajp-v1';
 
 
@@ -519,8 +516,7 @@ async function entrar(){
   btn.disabled=true;btn.innerHTML='<span style="display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px"></span>Entrando...';
 
   if(nome==='admin'){
-    var authRes=await SB.auth.signInWithPassword({email:ADMIN_EMAIL,password:senha});
-    if(authRes.error){erro.textContent='Senha incorreta.';btn.disabled=false;btn.textContent='ENTRAR';return}
+    if(senha!==ADMIN_SENHA){erro.textContent='Senha incorreta.';btn.disabled=false;btn.textContent='ENTRAR';return}
     USER={nome:'admin',admin:true};
   } else {
     var usuarios=await dbGetRest('poker_usuarios','nome=eq.'+encodeURIComponent(nome));
@@ -552,7 +548,6 @@ async function abrirApp(){
 function sair(){
   USER=null;RODADAS=[];JOGADORES=[];PRESENCAS={};RESULTADOS={};
   localStorage.removeItem('poker_user');
-  SB.auth.signOut();
   document.getElementById('app').style.display='none';
   document.getElementById('tela-login').style.display='flex';
   document.getElementById('lerro').textContent='';
@@ -1351,8 +1346,7 @@ document.addEventListener('DOMContentLoaded', async function(){
         USER=u;
         loading('Entrando automaticamente...');
         if(u.admin){
-          var {data:{session}}=await SB.auth.getSession();
-          if(!session){ noloading(); document.getElementById('tela-login').style.display='flex'; return; }
+          // admin usa senha local — sem verificação de session
         } else {
           var ckA=await dbGetRest('poker_usuarios','nome=eq.'+encodeURIComponent(u.nome));
           if(!ckA||ckA.length===0){ noloading(); document.getElementById('tela-login').style.display='flex'; return; }
