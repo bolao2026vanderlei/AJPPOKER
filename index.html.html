@@ -457,29 +457,29 @@ body{font-family:'Inter',sans-serif;background:var(--fundo);color:var(--texto);m
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
       Início
     </button>
-    <button class="nav-btn" id="bn-rodadas" onclick="ir('rodadas')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-      Rodadas
-    </button>
-    <button class="nav-btn" id="bn-ranking" onclick="ir('ranking')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-      Ranking
-    </button>
-    <button class="nav-btn" id="bn-campeoes" onclick="ir('campeoes')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8.21 13.89L7 23l5-3 5 3-1.21-9.12"/><path d="M15 7c0 2.76-1.34 5-3 5S9 9.76 9 7s1.34-5 3-5 3 2.24 3 5z"/><path d="M5 7H3l1 5h2"/><path d="M19 7h2l-1 5h-2"/></svg>
-      Campeões
-    </button>
-    <button class="nav-btn" id="bn-regras" onclick="ir('regras')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-      Regras
+    <button class="nav-btn" id="bn-admin" style="display:none" onclick="ir('admin')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93l-1.41 1.41M4.93 4.93l1.41 1.41M12 2v2M12 20v2M4.93 19.07l1.41-1.41M19.07 19.07l-1.41-1.41M2 12h2M20 12h2"/></svg>
+      Admin
     </button>
     <button class="nav-btn" id="bn-participantes" style="display:none" onclick="ir('participantes')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
       Membros
     </button>
-    <button class="nav-btn" id="bn-admin" style="display:none" onclick="ir('admin')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93l-1.41 1.41M4.93 4.93l1.41 1.41M12 2v2M12 20v2M4.93 19.07l1.41-1.41M19.07 19.07l-1.41-1.41M2 12h2M20 12h2"/></svg>
-      Admin
+    <button class="nav-btn" id="bn-ranking" onclick="ir('ranking')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Ranking
+    </button>
+    <button class="nav-btn" id="bn-rodadas" onclick="ir('rodadas')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Rodadas
+    </button>
+    <button class="nav-btn" id="bn-regras" onclick="ir('regras')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      Regras
+    </button>
+    <button class="nav-btn" id="bn-campeoes" onclick="ir('campeoes')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8.21 13.89L7 23l5-3 5 3-1.21-9.12"/><path d="M15 7c0 2.76-1.34 5-3 5S9 9.76 9 7s1.34-5 3-5 3 2.24 3 5z"/><path d="M5 7H3l1 5h2"/><path d="M19 7h2l-1 5h-2"/></svg>
+      Campeões
     </button>
   </nav>
 </div>
@@ -1577,19 +1577,88 @@ async function renderAdmin(){
   var el=document.getElementById('s-admin');
   var html='<h2 style="font-family:Barlow Condensed,sans-serif;font-size:24px;font-weight:900;margin-bottom:16px">⚙️ Painel Admin</h2>';
 
-  // RODADAS
+  // GERENCIAR PRESENÇAS
+  var proxRodAdmin=RODADAS.find(function(r){return !r.realizada});
+  if(proxRodAdmin){
+    var presRodAdmin=PRESENCAS[proxRodAdmin.id]||[];
+    if(presRodAdmin.length>0){
+      html+='<div class="admin-card">';
+      html+='<h3>&#x1F91A; Presenças — Rodada '+proxRodAdmin.numero+'</h3>';
+      presRodAdmin.forEach(function(p){
+        var corP=p.status==='in'?'var(--verde)':'var(--vermelho)';
+        var icoP=p.status==='in'?'&#x1F44D;':'&#x1F44E;';
+        html+='<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--cinza3)">';
+        html+='<div style="display:flex;align-items:center;gap:8px">';
+        html+='<span style="font-size:18px">'+icoP+'</span>';
+        html+='<span style="font-size:14px;font-weight:600">'+p.nome+'</span>';
+        html+='<span style="font-size:11px;color:'+corP+';font-weight:700">'+p.status.toUpperCase()+'</span>';
+        html+='</div>';
+        html+='<button data-rid="'+proxRodAdmin.id+'" data-rnome="'+p.nome+'" onclick="cancelarPresenca(this.dataset.rid,this.dataset.rnome)" style="font-size:11px;padding:4px 10px;border-radius:8px;border:1px solid var(--vermelho);background:var(--vermelho-light);color:var(--vermelho);cursor:pointer;font-weight:700">Cancelar</button>';
+        html+='</div>';
+      });
+      html+='</div>';
+    }
+  }
+
+  // INSERIR RESULTADO
   html+='<div class="admin-card">';
-  html+='<h3>📅 Gerenciar Rodadas</h3>';
+  html+='<h3>🎯 Inserir Resultado da Rodada</h3>';
   html+='<div class="aform-row">';
-  html+='<div style="flex:1"><div class="ainput-label">Nº Rodada</div><input class="ainput" id="rod-num" type="number" min="1" max="8" placeholder="1-8"></div>';
-  html+='<div style="flex:2"><div class="ainput-label">Data</div><input class="ainput" id="rod-data" type="date"></div>';
+  html+='<div style="flex:1"><div class="ainput-label">Rodada</div>';
+  html+='<select class="ainput" id="res-rodada" onchange="carregarFormResultado()">';
+  html+='<option value="">Selecione...</option>';
+  RODADAS.forEach(function(r){ html+='<option value="'+r.id+'">Rodada '+r.numero+' ('+fmtData(r.data)+')</option>'; });
+  html+='</select></div>';
+  html+='<div style="flex:1"><div class="ainput-label">Nº Jogadores</div><input class="ainput" id="res-njog" type="number" min="9" max="25" placeholder="9-25" onchange="gerarLinhasJogadores()"></div>';
   html+='</div>';
+  html+='<div class="ainput-label">Rateio Intervalo (R$)</div>';
+  html+='<input class="ainput" id="res-rateio" type="number" step="0.01" placeholder="Ex: 150.00" style="margin-bottom:10px;width:100%">';
+  html+='<div id="linhas-jogadores"></div>';
+  html+='<button class="btn-sv" onclick="salvarResultados()" style="margin-top:8px">&#x1F4BE; Salvar Resultados</button>';
+  html+='</div>';
+
+  // RESULTADOS SALVOS COM OPÇÃO DE EDITAR
+  var rodsComRes=RODADAS.filter(function(r){return r.realizada&&RESULTADOS[r.id]&&RESULTADOS[r.id].length>0;});
+  if(rodsComRes.length>0){
+    html+='<div class="admin-card">';
+    html+='<h3>&#x270F;&#xFE0F; Editar Resultados Salvos</h3>';
+    html+='<select class="ainput" id="edit-rodada" onchange="carregarEdicao()" style="width:100%;margin-bottom:10px">';
+    html+='<option value="">Selecione a rodada...</option>';
+    rodsComRes.forEach(function(r){ html+='<option value="'+r.id+'">Rodada '+r.numero+' ('+fmtData(r.data)+')</option>'; });
+    html+='</select>';
+    html+='<div id="linhas-edicao"></div>';
+    html+='</div>';
+  }
+
+    // INSERIR RESULTADO
+  html+='<div class="admin-card">';
+  html+='<h3>🎯 Inserir Resultado da Rodada</h3>';
   html+='<div class="aform-row">';
-  html+='<div style="flex:1"><div class="ainput-label">Horário</div><input class="ainput" id="rod-hora" type="time" value="13:45"></div>';
-  html+='<div style="flex:2"><div class="ainput-label">Local</div><input class="ainput" id="rod-local" placeholder="Ex: Casa do Juliano"></div>';
+  html+='<div style="flex:1"><div class="ainput-label">Rodada</div>';
+  html+='<select class="ainput" id="res-rodada" onchange="carregarFormResultado()">';
+  html+='<option value="">Selecione...</option>';
+  RODADAS.forEach(function(r){ html+='<option value="'+r.id+'">Rodada '+r.numero+' ('+fmtData(r.data)+')</option>'; });
+  html+='</select></div>';
+  html+='<div style="flex:1"><div class="ainput-label">Nº Jogadores</div><input class="ainput" id="res-njog" type="number" min="9" max="25" placeholder="9-25" onchange="gerarLinhasJogadores()"></div>';
   html+='</div>';
-  html+='<button class="btn-sv" onclick="salvarRodada()">Salvar Rodada</button>';
+  html+='<div class="ainput-label">Rateio Intervalo (R$)</div>';
+  html+='<input class="ainput" id="res-rateio" type="number" step="0.01" placeholder="Ex: 150.00" style="margin-bottom:10px;width:100%">';
+  html+='<div id="linhas-jogadores"></div>';
+  html+='<button class="btn-sv" onclick="salvarResultados()" style="margin-top:8px">&#x1F4BE; Salvar Resultados</button>';
   html+='</div>';
+
+  // RESULTADOS SALVOS COM OPÇÃO DE EDITAR
+  var rodsComRes=RODADAS.filter(function(r){return r.realizada&&RESULTADOS[r.id]&&RESULTADOS[r.id].length>0;});
+  if(rodsComRes.length>0){
+    html+='<div class="admin-card">';
+    html+='<h3>&#x270F;&#xFE0F; Editar Resultados Salvos</h3>';
+    html+='<select class="ainput" id="edit-rodada" onchange="carregarEdicao()" style="width:100%;margin-bottom:10px">';
+    html+='<option value="">Selecione a rodada...</option>';
+    rodsComRes.forEach(function(r){ html+='<option value="'+r.id+'">Rodada '+r.numero+' ('+fmtData(r.data)+')</option>'; });
+    html+='</select>';
+    html+='<div id="linhas-edicao"></div>';
+    html+='</div>';
+  }
 
   // RODADAS SALVAS — EDITAR
   if(RODADAS.length>0){
@@ -1628,28 +1697,19 @@ async function renderAdmin(){
     html+='</div>';
   }
 
-    // GERENCIAR PRESENÇAS
-  var proxRodAdmin=RODADAS.find(function(r){return !r.realizada});
-  if(proxRodAdmin){
-    var presRodAdmin=PRESENCAS[proxRodAdmin.id]||[];
-    if(presRodAdmin.length>0){
-      html+='<div class="admin-card">';
-      html+='<h3>&#x1F91A; Presenças — Rodada '+proxRodAdmin.numero+'</h3>';
-      presRodAdmin.forEach(function(p){
-        var corP=p.status==='in'?'var(--verde)':'var(--vermelho)';
-        var icoP=p.status==='in'?'&#x1F44D;':'&#x1F44E;';
-        html+='<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--cinza3)">';
-        html+='<div style="display:flex;align-items:center;gap:8px">';
-        html+='<span style="font-size:18px">'+icoP+'</span>';
-        html+='<span style="font-size:14px;font-weight:600">'+p.nome+'</span>';
-        html+='<span style="font-size:11px;color:'+corP+';font-weight:700">'+p.status.toUpperCase()+'</span>';
-        html+='</div>';
-        html+='<button data-rid="'+proxRodAdmin.id+'" data-rnome="'+p.nome+'" onclick="cancelarPresenca(this.dataset.rid,this.dataset.rnome)" style="font-size:11px;padding:4px 10px;border-radius:8px;border:1px solid var(--vermelho);background:var(--vermelho-light);color:var(--vermelho);cursor:pointer;font-weight:700">Cancelar</button>';
-        html+='</div>';
-      });
-      html+='</div>';
-    }
-  }
+  // RODADAS
+  html+='<div class="admin-card">';
+  html+='<h3>📅 Gerenciar Rodadas</h3>';
+  html+='<div class="aform-row">';
+  html+='<div style="flex:1"><div class="ainput-label">Nº Rodada</div><input class="ainput" id="rod-num" type="number" min="1" max="8" placeholder="1-8"></div>';
+  html+='<div style="flex:2"><div class="ainput-label">Data</div><input class="ainput" id="rod-data" type="date"></div>';
+  html+='</div>';
+  html+='<div class="aform-row">';
+  html+='<div style="flex:1"><div class="ainput-label">Horário</div><input class="ainput" id="rod-hora" type="time" value="13:45"></div>';
+  html+='<div style="flex:2"><div class="ainput-label">Local</div><input class="ainput" id="rod-local" placeholder="Ex: Casa do Juliano"></div>';
+  html+='</div>';
+  html+='<button class="btn-sv" onclick="salvarRodada()">Salvar Rodada</button>';
+  html+='</div>';
 
   // INSCRITOS NO TORNEIO
   html+='<div class="admin-card">';
@@ -1669,117 +1729,27 @@ async function renderAdmin(){
   });
   html+='</div>';
 
-  // INSERIR RESULTADO
+  // INSCRITOS NO TORNEIO
   html+='<div class="admin-card">';
-  html+='<h3>🎯 Inserir Resultado da Rodada</h3>';
-  html+='<div class="aform-row">';
-  html+='<div style="flex:1"><div class="ainput-label">Rodada</div>';
-  html+='<select class="ainput" id="res-rodada" onchange="carregarFormResultado()">';
-  html+='<option value="">Selecione...</option>';
-  RODADAS.forEach(function(r){ html+='<option value="'+r.id+'">Rodada '+r.numero+' ('+fmtData(r.data)+')</option>'; });
-  html+='</select></div>';
-  html+='<div style="flex:1"><div class="ainput-label">Nº Jogadores</div><input class="ainput" id="res-njog" type="number" min="9" max="25" placeholder="9-25" onchange="gerarLinhasJogadores()"></div>';
-  html+='</div>';
-  html+='<div class="ainput-label">Rateio Intervalo (R$)</div>';
-  html+='<input class="ainput" id="res-rateio" type="number" step="0.01" placeholder="Ex: 150.00" style="margin-bottom:10px;width:100%">';
-  html+='<div id="linhas-jogadores"></div>';
-  html+='<button class="btn-sv" onclick="salvarResultados()" style="margin-top:8px">&#x1F4BE; Salvar Resultados</button>';
+  html+='<h3>&#x1F3C6; Inscritos no Torneio</h3>';
+  html+='<div style="font-size:12px;color:var(--texto3);margin-bottom:12px">Apenas inscritos aparecem nas classificações. Avulsos podem jogar mas nao pontuar.</div>';
+  var jogTodos=await dbGetRest('poker_usuarios','select=id,nome,inscrito&nome=neq.admin&order=nome.asc');
+  jogTodos=jogTodos||[];
+  jogTodos.forEach(function(j){
+    var checked=j.inscrito?'checked':'';
+    html+='<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--cinza3)">';
+    html+='<span style="font-size:14px;font-weight:600;color:'+(j.inscrito?'var(--verde)':'var(--texto3)')+'">'+j.nome+'</span>';
+    html+='<label style="display:flex;align-items:center;gap:8px;cursor:pointer">';
+    html+='<span style="font-size:11px;color:'+(j.inscrito?'var(--verde)':'var(--texto3)')+';font-weight:700">'+(j.inscrito?'INSCRITO':'AVULSO')+'</span>';
+    html+='<div data-jid="'+j.id+'" data-jinscrito="'+(j.inscrito?'1':'0')+'" onclick="toggleInscrito(this)" style="width:42px;height:24px;border-radius:12px;background:'+(j.inscrito?'var(--verde)':'var(--cinza3)')+';position:relative;cursor:pointer;transition:.2s">';
+    html+='<div style="width:20px;height:20px;border-radius:50%;background:#fff;position:absolute;top:2px;'+(j.inscrito?'right:2px':'left:2px')+';transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.3)"></div>';
+    html+='</div></label></div>';
+  });
   html+='</div>';
 
-  // RESULTADOS SALVOS COM OPÇÃO DE EDITAR
-  var rodsComRes=RODADAS.filter(function(r){return r.realizada&&RESULTADOS[r.id]&&RESULTADOS[r.id].length>0;});
-  if(rodsComRes.length>0){
-    html+='<div class="admin-card">';
-    html+='<h3>&#x270F;&#xFE0F; Editar Resultados Salvos</h3>';
-    html+='<select class="ainput" id="edit-rodada" onchange="carregarEdicao()" style="width:100%;margin-bottom:10px">';
-    html+='<option value="">Selecione a rodada...</option>';
-    rodsComRes.forEach(function(r){ html+='<option value="'+r.id+'">Rodada '+r.numero+' ('+fmtData(r.data)+')</option>'; });
-    html+='</select>';
-    html+='<div id="linhas-edicao"></div>';
-    html+='</div>';
-  }
 
   el.innerHTML=html;
 }
-
-function carregarEdicao(){
-  var rodadaId=document.getElementById('edit-rodada').value;
-  var el=document.getElementById('linhas-edicao');
-  if(!rodadaId){el.innerHTML='';return}
-  var res=RESULTADOS[parseInt(rodadaId)]||[];
-  if(res.length===0){el.innerHTML='<div style="color:var(--texto3);font-size:13px">Nenhum resultado salvo.</div>';return}
-
-  // Datalist
-  var datalist='<datalist id="edit-jog-list">';
-  JOGADORES.forEach(function(j){ datalist+='<option value="'+j.nome+'">'; });
-  datalist+='</datalist>';
-
-  var html=datalist;
-  html+='<div style="display:grid;grid-template-columns:28px 1fr 44px 44px 70px 44px;gap:4px;font-size:11px;font-weight:700;color:var(--texto3);margin-bottom:6px;padding:0 4px">';
-  html+='<span>#</span><span>Jogador</span><span>RB</span><span>AD</span><span>Fichas</span><span>KO</span></div>';
-
-  res.sort(function(a,b){return a.posicao-b.posicao;}).forEach(function(r){
-    html+='<div style="display:grid;grid-template-columns:28px 1fr 44px 44px 70px 44px;gap:4px;margin-bottom:6px;align-items:center">';
-    html+='<span style="font-weight:700;font-size:14px;color:var(--verde)">'+r.posicao+'º</span>';
-    html+='<input class="ainput" id="edit-nome-'+r.posicao+'" list="edit-jog-list" value="'+r.nome+'" style="padding:8px;font-size:13px">';
-    html+='<input class="ainput" id="edit-rebuy-'+r.posicao+'" type="number" min="0" max="8" value="'+(r.rebuy||0)+'" style="padding:8px;text-align:center">';
-    html+='<input class="ainput" id="edit-addon-'+r.posicao+'" type="number" min="0" max="1" value="'+(r.addon||0)+'" style="padding:8px;text-align:center">';
-    html+='<input class="ainput" id="edit-fichas-'+r.posicao+'" type="number" min="0" value="'+(r.fichas||0)+'" style="padding:8px">';
-    html+='<input class="ainput" id="edit-ko-'+r.posicao+'" type="number" min="0" value="'+(r.knockout||0)+'" style="padding:8px;text-align:center">';
-    html+='</div>';
-  });
-
-  var nj=res.length;
-  html+='<div class="aform-row" style="margin-top:10px">';
-  html+='<div style="flex:1"><div class="ainput-label">Rateio (R$)</div>';
-  var rodObj=RODADAS.find(function(r){return r.id===parseInt(rodadaId)});
-  html+='<input class="ainput" id="edit-rateio" type="number" step="0.01" value="'+(rodObj&&rodObj.rateio_intervalo||0)+'"></div>';
-  html+='</div>';
-  html+='<button class="btn-sv btn-amarelo" onclick="salvarEdicao('+rodadaId+','+nj+')" style="margin-top:8px;width:100%">&#x1F4BE; Salvar Alterações</button>';
-
-  el.innerHTML=html;
-}
-
-async function salvarEdicao(rodadaId, nj){
-  var rateio=parseFloat(document.getElementById('edit-rateio').value)||0;
-  var rows=[];
-  for(var i=1;i<=nj;i++){
-    var nomeEl=document.getElementById('edit-nome-'+i);
-    if(!nomeEl) continue;
-    var nome=nomeEl.value.trim();
-    if(!nome) continue;
-    rows.push({
-      rodada_id:parseInt(rodadaId),
-      nome:nome,
-      posicao:i,
-      rebuy:parseInt(document.getElementById('edit-rebuy-'+i).value)||0,
-      addon:parseInt(document.getElementById('edit-addon-'+i).value)||0,
-      fichas:parseFloat(document.getElementById('edit-fichas-'+i).value)||0,
-      knockout:parseInt(document.getElementById('edit-ko-'+i).value)||0,
-    });
-  }
-  if(rows.length===0){toast('Nenhum jogador preenchido!','err');return}
-
-  // Deleta e reinseree
-  await fetch('https://gpnrixcftsjzufnygisa.supabase.co/rest/v1/poker_resultados?rodada_id=eq.'+rodadaId,{
-    method:'DELETE',
-    headers:Object.assign({},RHDR,{'Prefer':'return=minimal'})
-  });
-  var ins=await dbInsertRest('poker_resultados',rows);
-  if(ins.error){toast('Erro: '+ins.error.message,'err');return}
-
-  // Atualiza rateio
-  await fetch('https://gpnrixcftsjzufnygisa.supabase.co/rest/v1/poker_rodadas?id=eq.'+rodadaId,{
-    method:'PATCH',
-    headers:Object.assign({},RHDR,{'Prefer':'return=minimal'}),
-    body:JSON.stringify({rateio_intervalo:rateio})
-  });
-
-  toast('Resultados atualizados!','ok');
-  await carregarTudo();
-  renderAdmin();
-}
-
 async function toggleInscrito(el){
   var jid=el.dataset.jid;
   var atual=el.dataset.jinscrito==='1';
