@@ -592,21 +592,19 @@ async function dbInsertRest(tabela, dados){
 
 async function carregarTudo(){
   try{
-    var [rR,rJ,rP,rRes] = await Promise.all([
-      SB.from('poker_rodadas').select('*').order('numero'),
-      SB.from('poker_usuarios').select('nome,admin').neq('nome','admin').order('nome'),
-      SB.from('poker_presencas').select('*'),
-      SB.from('poker_resultados').select('*'),
-    ]);
-    RODADAS = rR.data||[];
-    JOGADORES = rJ.data||[];
-    PRESENCAS = {};
-    (rP.data||[]).forEach(function(p){
+    var rodadas=await dbGetRest('poker_rodadas','order=numero.asc');
+    var jogadores=await dbGetRest('poker_usuarios','nome=neq.admin&order=nome.asc');
+    var presencas=await dbGetRest('poker_presencas','');
+    var resultados=await dbGetRest('poker_resultados','');
+    RODADAS=rodadas||[];
+    JOGADORES=jogadores||[];
+    PRESENCAS={};
+    (presencas||[]).forEach(function(p){
       if(!PRESENCAS[p.rodada_id]) PRESENCAS[p.rodada_id]=[];
       PRESENCAS[p.rodada_id].push({nome:p.nome,status:p.status});
     });
-    RESULTADOS = {};
-    (rRes.data||[]).forEach(function(r){
+    RESULTADOS={};
+    (resultados||[]).forEach(function(r){
       if(!RESULTADOS[r.rodada_id]) RESULTADOS[r.rodada_id]=[];
       RESULTADOS[r.rodada_id].push(r);
     });
@@ -1067,8 +1065,8 @@ async function salvarKO(){
   var p2=document.getElementById('ko-2').value.trim();
   var p3=document.getElementById('ko-3').value.trim();
   if(!num||!p1){toast('Preencha nº e 1º lugar!','err');return}
-  var {error}=await SB.from('poker_campeoes_ko').insert({torneio:num,ano:ano,primeiro:p1,segundo:p2||null,terceiro:p3||null});
-  if(error){toast('Erro: '+error.message,'err');return}
+  var rko=await dbInsertRest('poker_campeoes_ko',{torneio:num,ano:ano,primeiro:p1,segundo:p2||null,terceiro:p3||null});
+  if(rko.error){toast('Erro: '+rko.error.message,'err');return}
   toast('Knockout salvo!','ok');
   renderCampeoes();
 }
@@ -1079,8 +1077,8 @@ async function salvarKingRebuy(){
   var nome=document.getElementById('kr-nome').value.trim();
   var qtd=parseInt(document.getElementById('kr-qtd').value)||0;
   if(!num||!nome){toast('Preencha nº e nome!','err');return}
-  var {error}=await SB.from('poker_king_rebuy').insert({torneio:num,ano:ano,campeao:nome,quantidade:qtd});
-  if(error){toast('Erro: '+error.message,'err');return}
+  var rkr=await dbInsertRest('poker_king_rebuy',{torneio:num,ano:ano,campeao:nome,quantidade:qtd});
+  if(rkr.error){toast('Erro: '+rkr.error.message,'err');return}
   toast('King of Rebuy salvo!','ok');
   renderCampeoes();
 }
@@ -1318,9 +1316,13 @@ async function salvarResultados(){
   var ins2=await dbInsertRest('poker_resultados',rows);
   if(ins2.error){toast('Erro ao inserir: '+ins2.error.message,'err');return}
 
-  // Atualiza rateio e marca como realizada
-  var {error:e3}=await SB.from('poker_rodadas').update({realizada:true,rateio_intervalo:rateio}).eq('id',rodadaId);
-  if(e3){toast('Erro: '+e3.message,'err');return}
+  // Atualiza rateio e marca como realizada via REST
+  var updRod=await fetch('https://kqtjievcjocjuyswwvow.supabase.co/rest/v1/poker_rodadas?id=eq.'+rodadaId,{
+    method:'PATCH',
+    headers:Object.assign({},RHDR,{'Prefer':'return=minimal'}),
+    body:JSON.stringify({realizada:true,rateio_intervalo:rateio})
+  });
+  if(!updRod.ok){toast('Erro ao atualizar rodada','err');return}
 
   toast('Resultados salvos!','ok');
   await carregarTudo();
