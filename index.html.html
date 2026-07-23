@@ -33,7 +33,7 @@ body{font-family:'Inter',sans-serif;background:var(--fundo);color:var(--texto);m
 /* TELA LOGIN */
 #tela-login{display:none;min-height:100vh;background:#030a04;
   align-items:center;justify-content:center;padding:0;position:relative;overflow:hidden}
-.login-bg{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 30%, #0d2a10 0%, #030a04 70%)}
+.login-bg{position:absolute;inset:0;background:#051008}
 .login-side{position:absolute;top:0;bottom:0;width:20px;background:#080808;
   display:flex;flex-direction:column;justify-content:space-evenly;align-items:center;z-index:3}
 .login-side.left{left:0;border-right:1px solid #1a1a1a}
@@ -50,17 +50,19 @@ body{font-family:'Inter',sans-serif;background:var(--fundo);color:var(--texto);m
 .login-naipes .s,.login-naipes .c{color:#d4d4d4}
 .login-naipes .h,.login-naipes .d{color:#b82020}
 .login-cards{display:flex;margin-bottom:18px;filter:drop-shadow(0 4px 8px rgba(0,0,0,.7))}
-.login-card{width:50px;height:72px;background:#fafafa;border-radius:6px;border:1px solid #ccc;
-  display:flex;flex-direction:column;justify-content:space-between;padding:5px 6px;font-family:Georgia,serif}
-.login-card:nth-child(1){transform:rotate(-13deg) translateY(5px) translateX(4px)}
-.login-card:nth-child(2){transform:rotate(-5deg) translateY(2px)}
-.login-card:nth-child(3){transform:rotate(5deg) translateY(2px)}
-.login-card:nth-child(4){transform:rotate(13deg) translateY(5px) translateX(-4px)}
+.login-card{width:44px;height:64px;background:#fafafa;border-radius:6px;border:1px solid #ccc;
+  display:flex;flex-direction:column;justify-content:space-between;padding:4px 5px;font-family:Georgia,serif}
+.login-card:nth-child(1){transform:rotate(-16deg) translateY(6px) translateX(4px)}
+.login-card:nth-child(2){transform:rotate(-7deg) translateY(3px)}
+.login-card:nth-child(3){transform:rotate(0deg)}
+.login-card:nth-child(4){transform:rotate(7deg) translateY(3px)}
+.login-card:nth-child(5){transform:rotate(16deg) translateY(6px) translateX(-4px)}
 .cn{font-size:14px;font-weight:bold;line-height:1}
 .cs{font-size:12px;line-height:1;margin-top:1px}
 .nr{color:#b82020}.nb{color:#111}
 .cb{align-self:flex-end;transform:rotate(180deg)}
-.login-chips{display:flex;gap:8px;margin-bottom:20px;filter:drop-shadow(0 3px 6px rgba(0,0,0,.6))}
+.login-chips{display:flex;gap:5px;margin-bottom:16px;filter:drop-shadow(0 3px 6px rgba(0,0,0,.6));flex-wrap:nowrap}
+.lchip{width:30px!important;height:30px!important}
 .lchip{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;
   justify-content:center;font-size:8px;font-weight:bold;font-family:Arial,sans-serif;position:relative}
 .lchip::before{content:'';position:absolute;inset:0;border-radius:50%;
@@ -71,7 +73,9 @@ body{font-family:'Inter',sans-serif;background:var(--fundo);color:var(--texto);m
 .lc100{background:#181818;border:3px solid #555;color:#fff}
 .lc500{background:#6a0dad;border:3px solid #bb66ff;color:#fff}
 .lc1k{background:#c8900a;border:3px solid #FFD700;color:#111}
-.lc10k{background:#bb1166;border:3px solid #ff77bb;color:#fff}
+.lc5k{background:#FF1493;border:3px solid #ff88cc;color:#fff}
+.lc10k{background:#FF6600;border:3px solid #ffaa44;color:#fff}
+.lc25k{background:#aaaaaa;border:3px solid #dddddd;color:#111}
 .login-box{background:rgba(4,14,5,.92);border:1px solid #1e3a1e;border-radius:16px;
   padding:24px 26px;width:100%;max-width:290px;box-shadow:0 8px 32px rgba(0,0,0,.6)}
 .login-tabs{display:flex;background:#060e06;border-radius:9px;padding:4px;gap:3px;
@@ -314,20 +318,23 @@ body{font-family:'Inter',sans-serif;background:var(--fundo);color:var(--texto);m
       <div class="login-linha"></div>
       <div class="login-poker">POKER</div>
       <div class="login-linha"></div>
-      <div class="login-naipes"><span class="s">♠</span><span class="h">♥</span><span class="d">♦</span><span class="c">♣</span></div>
+      <div class="login-naipes"><span class="s">&#x2660;</span><span class="h">&#x2665;</span><span class="d">&#x2666;</span><span class="c">&#x2663;</span></div>
     </div>
     <div class="login-cards">
-      <div class="login-card"><div><div class="cn nb">A</div><div class="cs nb">♠</div></div><div class="cb"><div class="cn nb">A</div></div></div>
-      <div class="login-card"><div><div class="cn nr">K</div><div class="cs nr">♥</div></div><div class="cb"><div class="cn nr">K</div></div></div>
-      <div class="login-card"><div><div class="cn nr">Q</div><div class="cs nr">♦</div></div><div class="cb"><div class="cn nr">Q</div></div></div>
-      <div class="login-card"><div><div class="cn nb">J</div><div class="cs nb">♣</div></div><div class="cb"><div class="cn nb">J</div></div></div>
+      <div class="login-card"><div><div class="cn nb">A</div><div class="cs nb">&#x2660;</div></div><div class="cb"><div class="cn nb">A</div></div></div>
+      <div class="login-card"><div><div class="cn nb">A</div><div class="cs nb">&#x2663;</div></div><div class="cb"><div class="cn nb">A</div></div></div>
+      <div class="login-card"><div><div class="cn nr">A</div><div class="cs nr">&#x2665;</div></div><div class="cb"><div class="cn nr">A</div></div></div>
+      <div class="login-card"><div><div class="cn nr">K</div><div class="cs nr">&#x2666;</div></div><div class="cb"><div class="cn nr">K</div></div></div>
+      <div class="login-card"><div><div class="cn nb">K</div><div class="cs nb">&#x2663;</div></div><div class="cb"><div class="cn nb">K</div></div></div>
     </div>
     <div class="login-chips">
       <div class="lchip lc50"><span>50</span></div>
       <div class="lchip lc100"><span>100</span></div>
       <div class="lchip lc500"><span>500</span></div>
       <div class="lchip lc1k"><span>1K</span></div>
+      <div class="lchip lc5k"><span>5K</span></div>
       <div class="lchip lc10k"><span>10K</span></div>
+      <div class="lchip lc25k"><span>25K</span></div>
     </div>
     <div class="login-box">
       <div class="login-tabs">
