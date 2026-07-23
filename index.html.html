@@ -33,7 +33,11 @@ body{font-family:'Inter',sans-serif;background:var(--fundo);color:var(--texto);m
 /* TELA LOGIN */
 #tela-login{display:none;min-height:100vh;background:#030a04;
   align-items:center;justify-content:center;padding:0;position:relative;overflow:hidden}
-.login-bg{position:absolute;inset:0;background:#051008}
+.login-bg{position:absolute;inset:0;background:#030a04}
+.login-bg::before{content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 80% 120% at 50% 40%, #1a5c28 0%, #0a3018 35%, #030a04 75%)}
+.login-bg::after{content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 60% 80% at 50% 50%, rgba(26,100,50,.25) 0%, transparent 70%)}
 .login-side{position:absolute;top:0;bottom:0;width:20px;background:#080808;
   display:flex;flex-direction:column;justify-content:space-evenly;align-items:center;z-index:3}
 .login-side.left{left:0;border-right:1px solid #1a1a1a}
@@ -296,6 +300,31 @@ body{font-family:'Inter',sans-serif;background:var(--fundo);color:var(--texto);m
 <!-- LOGIN -->
 <div id="tela-login" style="display:flex">
   <div class="login-bg"></div>
+  <!-- Mesa oval de fundo -->
+  <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;overflow:hidden">
+    <svg viewBox="0 0 380 580" style="width:92%;max-width:360px;opacity:0.22">
+      <!-- Sombra exterior mesa -->
+      <ellipse cx="190" cy="290" rx="178" ry="272" fill="#000" opacity="0.6"/>
+      <!-- Apoio de braço -->
+      <ellipse cx="190" cy="290" rx="176" ry="270" fill="#1a0f05"/>
+      <!-- LED strip -->
+      <ellipse cx="190" cy="290" rx="168" ry="262" fill="none" stroke="#2a6a30" stroke-width="6" opacity="0.8"/>
+      <ellipse cx="190" cy="290" rx="168" ry="262" fill="none" stroke="#4aaa60" stroke-width="2" stroke-dasharray="8,6" opacity="0.5"/>
+      <!-- Feltro verde -->
+      <ellipse cx="190" cy="290" rx="158" ry="252" fill="#0e4a1e"/>
+      <!-- Feltro interno mais claro -->
+      <ellipse cx="190" cy="290" rx="148" ry="242" fill="#126024"/>
+      <!-- Linha de feltro interna -->
+      <ellipse cx="190" cy="290" rx="136" ry="230" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="1.5"/>
+      <!-- Porta copos -->
+      <ellipse cx="54" cy="110" rx="12" ry="8" fill="#0d3015" stroke="#1a5028" stroke-width="1.5"/>
+      <ellipse cx="326" cy="110" rx="12" ry="8" fill="#0d3015" stroke="#1a5028" stroke-width="1.5"/>
+      <ellipse cx="54" cy="470" rx="12" ry="8" fill="#0d3015" stroke="#1a5028" stroke-width="1.5"/>
+      <ellipse cx="326" cy="470" rx="12" ry="8" fill="#0d3015" stroke="#1a5028" stroke-width="1.5"/>
+      <ellipse cx="190" cy="36" rx="12" ry="8" fill="#0d3015" stroke="#1a5028" stroke-width="1.5"/>
+      <ellipse cx="190" cy="544" rx="12" ry="8" fill="#0d3015" stroke="#1a5028" stroke-width="1.5"/>
+    </svg>
+  </div>
   <div class="login-side left">
     <div class="login-led"></div><div class="login-led"></div><div class="login-led"></div>
     <div class="login-led"></div><div class="login-led"></div><div class="login-led"></div>
