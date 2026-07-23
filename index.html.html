@@ -405,6 +405,7 @@ body{font-family:'Inter',sans-serif;background:var(--fundo);color:var(--texto);m
         <input class="linput" id="c-nome" placeholder="Apelido (como quer ser chamado)">
         <input class="linput" id="c-nomec" placeholder="Nome completo">
         <input class="linput" id="c-fone" type="tel" placeholder="WhatsApp (ex: 43999991234)">
+        <input class="linput" id="c-pix" placeholder="Chave PIX (CPF, telefone ou email)">
         <input class="linput" id="c-senha" type="password" placeholder="Senha">
         <input class="linput" id="c-senha2" type="password" placeholder="Confirme a senha">
         <button class="lbtn" id="btn-c" onclick="cadastrar()">CADASTRAR</button>
@@ -557,9 +558,11 @@ async function cadastrar(){
     var ckU=await dbGetRest('poker_usuarios','nome=eq.'+encodeURIComponent(nome));
     if(ckU&&ckU.length>0){erro.textContent='Apelido ja em uso.';btn.disabled=false;btn.textContent='CADASTRAR';return}
     // Insere via REST
+    var pix=document.getElementById('c-pix').value.trim();
     var payload={nome:nome,senha:s1,admin:false};
     if(nomec) payload.nome_completo=nomec;
     if(fone) payload.whatsapp=fone;
+    if(pix) payload.pix=pix;
     var ins=await dbInsertRest('poker_usuarios',payload);
     if(ins.error){
       erro.textContent='Erro ao cadastrar: '+ins.error.message;
@@ -1012,13 +1015,15 @@ function renderRodadas(){
       html+='<div style="margin-top:8px">';
       html+='<div style="font-size:12px;color:var(--texto3);margin-bottom:8px">'+conf+' confirmados · '+fold+' fold</div>';
       if(status==='proxima'){
+        if(!USER.admin){
         html+='<div class="presenca-btns">';
         html+='<button class="btn-in'+(minhaP&&minhaP.status==='in'?' ativo':'')+
           '" onclick="confirmarPresenca('+r.id+',\'in\')" style="font-size:12px;padding:8px">&#x1F44D; IN</button>';
         html+='<button class="btn-fold'+(minhaP&&minhaP.status==='fold'?' ativo':'')+
           '" onclick="confirmarPresenca('+r.id+',\'fold\')" style="font-size:12px;padding:8px">&#x1F44E; FOLD</button>';
         html+='</div>';
-      } else if(minhaP){
+              }
+} else if(minhaP){
         html+='<span class="'+(minhaP.status==='in'?'chip-in':'chip-fold')+'">'+
           (minhaP.status==='in'?'✅ IN':'❌ FOLD')+'</span>';
       }
@@ -1343,6 +1348,14 @@ function renderRegras(){
 }
 
 
+function copiarPix(pix){
+  navigator.clipboard.writeText(pix).then(function(){
+    toast('PIX copiado: '+pix,'ok');
+  }).catch(function(){
+    toast('PIX: '+pix,'ok');
+  });
+}
+
 async function renderParticipantes(){
   if(!USER||!USER.admin) return;
   var el=document.getElementById('s-participantes');
@@ -1360,6 +1373,8 @@ async function renderParticipantes(){
   html+='<input class="ainput" id="adm-nome" placeholder="Nome completo" style="margin-bottom:8px;width:100%">';
   html+='<div class="ainput-label">WhatsApp</div>';
   html+='<input class="ainput" id="adm-fone" placeholder="Ex: 43999991234" style="margin-bottom:8px;width:100%">';
+  html+='<div class="ainput-label">Chave PIX</div>';
+  html+='<input class="ainput" id="adm-pix" placeholder="CPF, telefone ou email" style="margin-bottom:8px;width:100%">';
   html+='<div class="ainput-label">Senha</div>';
   html+='<input class="ainput" id="adm-senha" type="password" placeholder="Senha" style="margin-bottom:8px;width:100%">';
   html+='<button class="btn-sv" onclick="cadastrarPeloAdmin()">Cadastrar</button>';
@@ -1376,6 +1391,12 @@ async function renderParticipantes(){
       html+='<div style="font-size:14px;font-weight:700;color:var(--texto)">'+u.nome+(u.admin?' <span style="font-size:10px;color:var(--verde);background:var(--verde-light);padding:1px 6px;border-radius:8px">admin</span>':'')+'</div>';
       if(u.nome_completo) html+='<div style="font-size:12px;color:var(--texto2)">'+u.nome_completo+'</div>';
       if(u.whatsapp) html+='<div style="font-size:11px;color:var(--texto3)">&#x1F4F1; '+u.whatsapp+'</div>';
+      if(u.pix){
+        html+='<div style="display:flex;align-items:center;gap:6px;margin-top:3px">';
+        html+='<div style="font-size:11px;color:var(--verde);font-weight:600">PIX: '+u.pix+'</div>';
+        html+='<button data-pix="'+u.pix+'" onclick="copiarPix(this.dataset.pix)" style="font-size:10px;padding:2px 8px;border-radius:6px;border:1px solid var(--verde);background:var(--verde-light);color:var(--verde-dark);cursor:pointer;font-weight:700">Copiar</button>';
+        html+='</div>';
+      }
       html+='</div>';
       html+='</div>';
     });
@@ -1391,9 +1412,11 @@ async function cadastrarPeloAdmin(){
   if(!apelido||!senha){toast('Preencha apelido e senha!','err');return}
   var ck=await dbGetRest('poker_usuarios','nome=eq.'+encodeURIComponent(apelido));
   if(ck&&ck.length>0){toast('Apelido ja em uso!','err');return}
+  var pixAdm=document.getElementById('adm-pix')?document.getElementById('adm-pix').value.trim():'';
   var payload={nome:apelido,senha:senha,admin:false};
   if(nome) payload.nome_completo=nome;
   if(fone) payload.whatsapp=fone;
+  if(pixAdm) payload.pix=pixAdm;
   var r=await dbInsertRest('poker_usuarios',payload);
   if(r.error){toast('Erro: '+r.error.message,'err');return}
   toast('Participante cadastrado!','ok');
