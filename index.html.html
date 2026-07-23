@@ -699,12 +699,17 @@ async function abrirApp(){
   if(USER.admin){
     document.getElementById('bn-admin').style.display='flex';
     document.getElementById('bn-participantes').style.display='flex';
+    document.getElementById('bn-inicio').style.display='none';
   }
   loading('Carregando dados...');
   await reloadSchema();
   await carregarTudo();
   noloading();
-  await renderInicio();
+  if(USER.admin){
+    ir('admin');
+  } else {
+    await renderInicio();
+  }
 }
 
 function sair(){
@@ -795,7 +800,7 @@ function ir(s){
   document.querySelectorAll('.nav-btn').forEach(function(b){
     b.classList.toggle('on',b.id==='bn-'+s);
   });
-  if(s==='inicio') renderInicio();
+  if(s==='inicio'){ if(USER&&USER.admin){ ir('admin'); return; } renderInicio(); }
   if(s==='rodadas') renderRodadas();
   if(s==='ranking') renderRanking('pontos');
   if(s==='campeoes') renderCampeoes();
