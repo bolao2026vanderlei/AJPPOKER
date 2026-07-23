@@ -773,7 +773,7 @@ async function reloadSchema(){
 async function carregarTudo(){
   try{
     var rodadas=await dbGetRest('poker_rodadas','order=numero.asc');
-    var jogadores=await dbGetRest('poker_usuarios','select=id,nome,senha,admin,nome_completo,whatsapp,pix&nome=neq.admin&order=nome.asc');
+    var jogadores=await dbGetRest('poker_usuarios','select=id,nome,senha,admin,nome_completo,whatsapp,pix,inscrito&nome=neq.admin&order=nome.asc');
     var presencas=await dbGetRest('poker_presencas','');
     var resultados=await dbGetRest('poker_resultados','');
     RODADAS=rodadas||[];
@@ -1049,7 +1049,7 @@ function calcStats(nome){
 }
 
 function calcStatsAll(){
-  return JOGADORES.map(function(j){
+  return JOGADORES.filter(function(j){return j.inscrito;}).map(function(j){
     var s=calcStats(j.nome);
     s.nome=j.nome;
     return s;
@@ -1572,7 +1572,7 @@ async function cadastrarPeloAdmin(){
 async function renderAdmin(){
   if(!USER||!USER.admin) return;
   // Recarrega jogadores frescos do banco
-  var jogFresh=await dbGetRest('poker_usuarios','select=id,nome,senha,admin,nome_completo,whatsapp,pix&nome=neq.admin&order=nome.asc');
+  var jogFresh=await dbGetRest('poker_usuarios','select=id,nome,senha,admin,nome_completo,whatsapp,pix,inscrito&nome=neq.admin&order=nome.asc');
   if(jogFresh&&jogFresh.length>0) JOGADORES=jogFresh;
   var el=document.getElementById('s-admin');
   var html='<h2 style="font-family:Barlow Condensed,sans-serif;font-size:24px;font-weight:900;margin-bottom:16px">⚙️ Painel Admin</h2>';
@@ -1613,6 +1613,24 @@ async function renderAdmin(){
       html+='</div>';
     }
   }
+
+  // INSCRITOS NO TORNEIO
+  html+='<div class="admin-card">';
+  html+='<h3>&#x1F3C6; Inscritos no Torneio</h3>';
+  html+='<div style="font-size:12px;color:var(--texto3);margin-bottom:12px">Apenas inscritos aparecem nas classificações. Avulsos podem jogar mas nao pontuar.</div>';
+  var jogTodos=await dbGetRest('poker_usuarios','select=id,nome,inscrito&nome=neq.admin&order=nome.asc');
+  jogTodos=jogTodos||[];
+  jogTodos.forEach(function(j){
+    var checked=j.inscrito?'checked':'';
+    html+='<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--cinza3)">';
+    html+='<span style="font-size:14px;font-weight:600;color:'+(j.inscrito?'var(--verde)':'var(--texto3)')+'">'+j.nome+'</span>';
+    html+='<label style="display:flex;align-items:center;gap:8px;cursor:pointer">';
+    html+='<span style="font-size:11px;color:'+(j.inscrito?'var(--verde)':'var(--texto3)')+';font-weight:700">'+(j.inscrito?'INSCRITO':'AVULSO')+'</span>';
+    html+='<div data-jid="'+j.id+'" data-jinscrito="'+(j.inscrito?'1':'0')+'" onclick="toggleInscrito(this)" style="width:42px;height:24px;border-radius:12px;background:'+(j.inscrito?'var(--verde)':'var(--cinza3)')+';position:relative;cursor:pointer;transition:.2s">';
+    html+='<div style="width:20px;height:20px;border-radius:50%;background:#fff;position:absolute;top:2px;'+(j.inscrito?'right:2px':'left:2px')+';transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.3)"></div>';
+    html+='</div></label></div>';
+  });
+  html+='</div>';
 
   // INSERIR RESULTADO
   html+='<div class="admin-card">';
@@ -1723,6 +1741,24 @@ async function salvarEdicao(rodadaId, nj){
   toast('Resultados atualizados!','ok');
   await carregarTudo();
   renderAdmin();
+}
+
+async function toggleInscrito(el){
+  var jid=el.dataset.jid;
+  var atual=el.dataset.jinscrito==='1';
+  var novo=!atual;
+  var res=await fetch('https://gpnrixcftsjzufnygisa.supabase.co/rest/v1/poker_usuarios?id=eq.'+jid,{
+    method:'PATCH',
+    headers:Object.assign({},RHDR,{'Prefer':'return=minimal'}),
+    body:JSON.stringify({inscrito:novo})
+  });
+  if(res.ok){
+    toast((novo?'Inscrito no torneio!':'Removido do torneio'),'ok');
+    await carregarTudo();
+    renderAdmin();
+  } else {
+    toast('Erro ao atualizar','err');
+  }
 }
 
 async function cancelarPresenca(rodadaId, nome){
