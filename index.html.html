@@ -119,8 +119,17 @@ body{font-family:'Inter',sans-serif;background:var(--fundo);color:var(--texto);m
 .nav-btn.on svg{stroke:var(--verde)}
 
 /* SECOES */
-.secao{display:none;padding:16px}
+.secao{display:none;padding:16px;position:relative;min-height:calc(100vh - 140px)}
 .secao.on{display:block}
+.secao-content{position:relative;z-index:1}
+.carta-bg{position:fixed;bottom:-40px;right:-30px;width:280px;height:380px;
+  opacity:0.04;pointer-events:none;z-index:0;font-family:Georgia,serif;
+  display:flex;flex-direction:column;justify-content:center;align-items:center;
+  user-select:none;transform:rotate(-15deg)}
+.carta-bg .val{font-size:180px;line-height:1;font-weight:900}
+.carta-bg .nam{font-size:80px;line-height:1}
+.carta-bg.vermelho{color:#CC0000}
+.carta-bg.preto{color:#111111}
 
 /* CARDS */
 .card{background:var(--card);border-radius:var(--radius);padding:16px;
@@ -623,6 +632,28 @@ function ir(s){
   if(s==='participantes') renderParticipantes();
   if(s==='admin') renderAdmin();
   window.scrollTo(0,0);
+  // Carta de fundo por aba
+  var cartaMap={
+    inicio:    {v:'A',  n:'&#x2660;', c:'preto'},
+    rodadas:   {v:'K',  n:'&#x2665;', c:'vermelho'},
+    ranking:   {v:'Q',  n:'&#x2666;', c:'vermelho'},
+    campeoes:  {v:'J',  n:'&#x2663;', c:'preto'},
+    regras:    {v:'10', n:'&#x2660;', c:'preto'},
+    participantes:{v:'A',n:'&#x2665;',c:'vermelho'},
+    admin:     {v:'K',  n:'&#x2666;', c:'vermelho'},
+  };
+  // Remove carta anterior
+  var oldCarta=document.getElementById('carta-fundo');
+  if(oldCarta) oldCarta.remove();
+  // Adiciona nova carta
+  var cm=cartaMap[s];
+  if(cm){
+    var div=document.createElement('div');
+    div.id='carta-fundo';
+    div.className='carta-bg '+cm.c;
+    div.innerHTML='<div class="val">'+cm.v+'</div><div class="nam">'+cm.n+'</div>';
+    document.body.appendChild(div);
+  }
 }
 
 
