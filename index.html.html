@@ -122,12 +122,14 @@ body{font-family:'Inter',sans-serif;background:var(--fundo);color:var(--texto);m
 .secao{display:none;padding:16px;position:relative;min-height:calc(100vh - 140px)}
 .secao.on{display:block}
 .secao-content{position:relative;z-index:1}
-.carta-bg{position:fixed;bottom:-40px;right:-30px;width:280px;height:380px;
-  opacity:0.04;pointer-events:none;z-index:0;font-family:Georgia,serif;
-  display:flex;flex-direction:column;justify-content:center;align-items:center;
-  user-select:none;transform:rotate(-15deg)}
-.carta-bg .val{font-size:180px;line-height:1;font-weight:900}
-.carta-bg .nam{font-size:80px;line-height:1}
+.carta-bg{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-15deg);
+  width:360px;height:480px;opacity:0.055;pointer-events:none;z-index:0;
+  font-family:Georgia,serif;display:flex;flex-direction:column;
+  justify-content:center;align-items:center;user-select:none}
+.carta-bg .val{font-size:220px;line-height:1;font-weight:900}
+.carta-bg .nam{font-size:110px;line-height:1;margin-top:8px}
+.carta-bg .val-tl{position:absolute;top:20px;left:24px;font-size:48px;font-weight:900;line-height:1.1;text-align:left}
+.carta-bg .val-br{position:absolute;bottom:20px;right:24px;font-size:48px;font-weight:900;line-height:1.1;text-align:right;transform:rotate(180deg)}
 .carta-bg.vermelho{color:#CC0000}
 .carta-bg.preto{color:#111111}
 
@@ -670,7 +672,11 @@ function ir(s){
     var div=document.createElement('div');
     div.id='carta-fundo';
     div.className='carta-bg '+cm.c;
-    div.innerHTML='<div class="val">'+cm.v+'</div><div class="nam">'+cm.n+'</div>';
+    div.innerHTML=
+      '<div class="val-tl">'+cm.v+'<br>'+cm.n+'</div>'+
+      '<div class="val">'+cm.v+'</div>'+
+      '<div class="nam">'+cm.n+'</div>'+
+      '<div class="val-br">'+cm.v+'<br>'+cm.n+'</div>';
     document.body.appendChild(div);
   }
 }
@@ -695,28 +701,55 @@ async function renderInicio(){
 
   var html='';
 
+  // Calcula rankings
+  var statsAll=calcStatsAll();
+  var rankPontosSem=statsAll.slice().sort(function(a,b){return b.totalSem-a.totalSem||b.total-a.total;});
+  var rankPontosTotal=statsAll.slice().sort(function(a,b){return b.total-a.total;});
+  var rankRebuy=statsAll.slice().sort(function(a,b){return b.rebuys-a.rebuys;});
+  var rankKO=statsAll.slice().sort(function(a,b){return b.knockouts-a.knockouts;});
+  var posTotal=rankPontosTotal.findIndex(function(x){return x.nome===USER.nome;})+1;
+  var posSem=rankPontosSem.findIndex(function(x){return x.nome===USER.nome;})+1;
+  var posRebuy=rankRebuy.findIndex(function(x){return x.nome===USER.nome;})+1;
+  var posKO=rankKO.findIndex(function(x){return x.nome===USER.nome;})+1;
+  var nJog=JOGADORES.length||1;
+  var rodsRealizadas=RODADAS.filter(function(r){return r.realizada;}).length;
+
   // Hero cards
   html+='<div class="hero-grid">';
+
+  // Pontos sem descarte (a partir da 2ª rodada)
   html+='<div class="hero-card destaque">';
-  html+='<div class="hero-label">🏆 Classificação</div>';
-  html+='<div class="hero-valor">'+(stats.rank>0?stats.rank+'º':'--')+'</div>';
-  html+='<div class="hero-sub">'+(stats.rank>0?'de '+JOGADORES.length+' jogadores':'Sem rodadas')+'</div>';
+  html+='<div class="hero-label">&#x2B50; Pontos c/ descarte</div>';
+  html+='<div class="hero-valor">'+stats.totalSem+'</div>';
+  if(rodsRealizadas>=2){
+    html+='<div class="hero-sub">&#x1F3C6; '+posSem+'º de '+nJog+'</div>';
+    html+='<div style="font-size:10px;color:rgba(255,255,255,.5);margin-top:2px">descartou '+stats.piorPts+'pts</div>';
+  } else {
+    html+='<div class="hero-sub">disponível na 2ª rodada</div>';
+  }
   html+='</div>';
+
+  // Pontos total sem descarte
   html+='<div class="hero-card">';
-  html+='<div class="hero-label">⭐ Pontos</div>';
+  html+='<div class="hero-label">&#x1F4CB; Pontos total</div>';
   html+='<div class="hero-valor">'+stats.total+'</div>';
-  html+='<div class="hero-sub">'+stats.totalSem+' sem pior</div>';
+  html+='<div class="hero-sub">'+posTotal+'º de '+nJog+'</div>';
   html+='</div>';
+
+  // Rebuys
   html+='<div class="hero-card">';
-  html+='<div class="hero-label">🔄 Rebuys</div>';
+  html+='<div class="hero-label">&#x1F504; Rebuys</div>';
   html+='<div class="hero-valor">'+stats.rebuys+'</div>';
-  html+='<div class="hero-sub">no semestre</div>';
+  html+='<div class="hero-sub">'+posRebuy+'º de '+nJog+'</div>';
   html+='</div>';
+
+  // Rodelas/Knockouts
   html+='<div class="hero-card">';
   html+='<div class="hero-label">&#x1F480; Rodelas</div>';
   html+='<div class="hero-valor">'+stats.knockouts+'</div>';
-  html+='<div class="hero-sub">knockouts no semestre</div>';
+  html+='<div class="hero-sub">'+posKO+'º de '+nJog+'</div>';
   html+='</div>';
+
   html+='</div>';
 
   // Próxima rodada
@@ -728,9 +761,9 @@ async function renderInicio(){
     if(proxRodada.local) html+='<div class="prox-local">📍 '+proxRodada.local+'</div>';
     html+='<div class="presenca-btns">';
     html+='<button class="btn-in'+(minhaPresenca&&minhaPresenca.status==='in'?' ativo':'')
-      +'" onclick="confirmarPresenca('+proxRodada.id+',\'in\')">🤚 IN</button>';
+      +'" onclick="confirmarPresenca('+proxRodada.id+',\'in\')">&#x1F44D; IN</button>';
     html+='<button class="btn-fold'+(minhaPresenca&&minhaPresenca.status==='fold'?' ativo':'')
-      +'" onclick="confirmarPresenca('+proxRodada.id+',\'fold\')">🤙 FOLD</button>';
+      +'" onclick="confirmarPresenca('+proxRodada.id+',\'fold\')">&#x1F44E; FOLD</button>';
     html+='</div>';
     html+='<div class="confirmados">';
     html+='<div class="confirmados-label">'+confirmados.length+' confirmados · '+folds.length+' fold</div>';
@@ -843,7 +876,8 @@ function calcStats(nome){
   var totalSem=pontosPorRodada.length>1
     ?total-ordenado[0]
     :total;
-  return{total:total,totalSem:totalSem,rebuys:rebuys,addons:addons,
+  var piorPts=pontosPorRodada.length>1?ordenado[0]:0;
+  return{total:total,totalSem:totalSem,piorPts:piorPts,rebuys:rebuys,addons:addons,
     knockouts:knockouts,rodadasJogadas:rodadasJogadas,rank:0};
 }
 
@@ -910,9 +944,9 @@ function renderRodadas(){
       if(status==='proxima'){
         html+='<div class="presenca-btns">';
         html+='<button class="btn-in'+(minhaP&&minhaP.status==='in'?' ativo':'')+
-          '" onclick="confirmarPresenca('+r.id+',\'in\')" style="font-size:12px;padding:8px">🤚 IN</button>';
+          '" onclick="confirmarPresenca('+r.id+',\'in\')" style="font-size:12px;padding:8px">&#x1F44D; IN</button>';
         html+='<button class="btn-fold'+(minhaP&&minhaP.status==='fold'?' ativo':'')+
-          '" onclick="confirmarPresenca('+r.id+',\'fold\')" style="font-size:12px;padding:8px">🤙 FOLD</button>';
+          '" onclick="confirmarPresenca('+r.id+',\'fold\')" style="font-size:12px;padding:8px">&#x1F44E; FOLD</button>';
         html+='</div>';
       } else if(minhaP){
         html+='<span class="'+(minhaP.status==='in'?'chip-in':'chip-fold')+'">'+
