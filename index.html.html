@@ -394,6 +394,7 @@ body{font-family:'Inter',sans-serif;background:var(--fundo);color:var(--texto);m
       <div class="login-tabs">
         <button class="login-tab on" id="tab-e" onclick="setTab('e')">Entrar</button>
         <button class="login-tab" id="tab-c" onclick="setTab('c')">Cadastrar</button>
+        <button class="login-tab" id="tab-r" onclick="setTab('r')">Esqueci</button>
       </div>
       <div id="form-e">
         <input class="linput" id="e-nome" placeholder="Apelido" autocomplete="username">
@@ -410,6 +411,19 @@ body{font-family:'Inter',sans-serif;background:var(--fundo);color:var(--texto);m
         <input class="linput" id="c-senha2" type="password" placeholder="Confirme a senha">
         <button class="lbtn" id="btn-c" onclick="cadastrar()">CADASTRAR</button>
         <div class="lerro" id="cerro"></div>
+      </div>
+      <!-- RECUPERAR SENHA -->
+      <div id="form-r" style="display:none">
+        <div style="font-size:12px;color:rgba(255,255,255,.5);margin-bottom:12px;text-align:center">Informe seu apelido e WhatsApp cadastrado para redefinir a senha.</div>
+        <input class="linput" id="r-nome" placeholder="Apelido">
+        <input class="linput" id="r-fone" type="tel" placeholder="WhatsApp cadastrado">
+        <div id="form-r-nova" style="display:none">
+          <div style="font-size:12px;color:#4ADE80;margin-bottom:10px;text-align:center">&#x2705; Dados confirmados! Defina sua nova senha.</div>
+          <input class="linput" id="r-senha" type="password" placeholder="Nova senha">
+          <input class="linput" id="r-senha2" type="password" placeholder="Confirme a nova senha">
+        </div>
+        <button class="lbtn" id="btn-r" onclick="recuperarSenha()">VERIFICAR</button>
+        <div class="lerro" id="rerro"></div>
       </div>
     </div>
   </div>
@@ -535,10 +549,82 @@ function fmtMoeda(v){
 function setTab(t){
   document.getElementById('form-e').style.display=t==='e'?'block':'none';
   document.getElementById('form-c').style.display=t==='c'?'block':'none';
+  document.getElementById('form-r').style.display=t==='r'?'block':'none';
   document.getElementById('tab-e').classList.toggle('on',t==='e');
   document.getElementById('tab-c').classList.toggle('on',t==='c');
+  document.getElementById('tab-r').classList.toggle('on',t==='r');
+  // Reset form recuperar
+  if(t==='r'){
+    document.getElementById('form-r-nova').style.display='none';
+    document.getElementById('btn-r').textContent='VERIFICAR';
+    document.getElementById('btn-r').onclick=function(){recuperarSenha();};
+    document.getElementById('rerro').textContent='';
+  }
 }
 
+
+var RECUPERAR_USER_ID = null;
+
+async function recuperarSenha(){
+  var btn=document.getElementById('btn-r');
+  var erro=document.getElementById('rerro');
+  var formNova=document.getElementById('form-r-nova');
+
+  // Fase 2: salvar nova senha
+  if(RECUPERAR_USER_ID){
+    var s1=document.getElementById('r-senha').value;
+    var s2=document.getElementById('r-senha2').value;
+    if(!s1){erro.textContent='Digite a nova senha.';return}
+    if(s1.length<4){erro.textContent='Senha minima: 4 caracteres.';return}
+    if(s1!==s2){erro.textContent='As senhas nao conferem.';return}
+    btn.disabled=true;btn.textContent='Salvando...';
+    var res=await fetch('https://gpnrixcftsjzufnygisa.supabase.co/rest/v1/poker_usuarios?id=eq.'+RECUPERAR_USER_ID,{
+      method:'PATCH',
+      headers:Object.assign({},RHDR,{'Prefer':'return=minimal'}),
+      body:JSON.stringify({senha:s1})
+    });
+    if(res.ok){
+      toast('Senha redefinida! Faca login.','ok');
+      RECUPERAR_USER_ID=null;
+      setTimeout(function(){
+        document.getElementById('r-nome').value='';
+        document.getElementById('r-fone').value='';
+        setTab('e');
+      },1200);
+    } else {
+      erro.textContent='Erro ao salvar senha.';
+      btn.disabled=false;btn.textContent='SALVAR SENHA';
+    }
+    return;
+  }
+
+  // Fase 1: verificar apelido + whatsapp
+  var nome=document.getElementById('r-nome').value.trim();
+  var fone=document.getElementById('r-fone').value.trim();
+  if(!nome){erro.textContent='Digite seu apelido.';return}
+  if(!fone){erro.textContent='Digite seu WhatsApp.';return}
+  btn.disabled=true;btn.textContent='Verificando...';
+
+  var usuarios=await dbGetRest('poker_usuarios','nome=eq.'+encodeURIComponent(nome));
+  var u=usuarios&&usuarios[0]?usuarios[0]:null;
+  if(!u){erro.textContent='Apelido nao encontrado.';btn.disabled=false;btn.textContent='VERIFICAR';return}
+
+  // Normaliza fone — remove tudo que não é número para comparar
+  var foneNum=fone.replace(/\D/g,'');
+  var cadFone=(u.whatsapp||'').replace(/\D/g,'');
+  if(!cadFone||foneNum!==cadFone){
+    erro.textContent='WhatsApp nao confere com o cadastro.';
+    btn.disabled=false;btn.textContent='VERIFICAR';return;
+  }
+
+  // Confirmado — mostra campos de nova senha
+  RECUPERAR_USER_ID=u.id;
+  formNova.style.display='block';
+  btn.disabled=false;
+  btn.textContent='SALVAR SENHA';
+  btn.onclick=function(){recuperarSenha();};
+  erro.textContent='';
+}
 
 async function cadastrar(){
   var nome=document.getElementById('c-nome').value.trim();
@@ -682,7 +768,7 @@ async function reloadSchema(){
 async function carregarTudo(){
   try{
     var rodadas=await dbGetRest('poker_rodadas','order=numero.asc');
-    var jogadores=await dbGetRest('poker_usuarios','nome=neq.admin&order=nome.asc');
+    var jogadores=await dbGetRest('poker_usuarios','select=id,nome,senha,admin,nome_completo,whatsapp,pix&nome=neq.admin&order=nome.asc');
     var presencas=await dbGetRest('poker_presencas','');
     var resultados=await dbGetRest('poker_resultados','');
     RODADAS=rodadas||[];
@@ -1348,6 +1434,39 @@ function renderRegras(){
 }
 
 
+function abrirEditMembro(btn){
+  var uid=btn.dataset.mid;
+  var el=document.getElementById('edit-membro-'+uid);
+  if(!el) return;
+  el.style.display=el.style.display==='none'?'block':'none';
+}
+
+function fecharEditMembro(uid){
+  var el=document.getElementById('edit-membro-'+uid);
+  if(el) el.style.display='none';
+}
+
+async function salvarMembro(uid){
+  var nome=document.getElementById('em-nome-'+uid).value.trim();
+  var fone=document.getElementById('em-fone-'+uid).value.trim();
+  var pix=document.getElementById('em-pix-'+uid).value.trim();
+  var senha=document.getElementById('em-senha-'+uid).value;
+  var payload={nome_completo:nome||null,whatsapp:fone||null,pix:pix||null};
+  if(senha) payload.senha=senha;
+  var res=await fetch('https://gpnrixcftsjzufnygisa.supabase.co/rest/v1/poker_usuarios?id=eq.'+uid,{
+    method:'PATCH',
+    headers:Object.assign({},RHDR,{'Prefer':'return=minimal'}),
+    body:JSON.stringify(payload)
+  });
+  if(res.ok){
+    toast('Dados atualizados!','ok');
+    await carregarTudo();
+    renderParticipantes();
+  } else {
+    toast('Erro ao salvar','err');
+  }
+}
+
 function copiarPix(pix){
   navigator.clipboard.writeText(pix).then(function(){
     toast('PIX copiado: '+pix,'ok');
@@ -1385,18 +1504,36 @@ async function renderParticipantes(){
     html+='<div class="card" style="text-align:center;padding:24px;color:var(--texto3)">Nenhum participante cadastrado.</div>';
   } else {
     lista.forEach(function(u){
-      html+='<div class="card" style="margin-bottom:8px;display:flex;align-items:center;gap:12px">';
+      var uid=u.id||'';
+      html+='<div class="card" style="margin-bottom:8px">';
+      html+='<div style="display:flex;align-items:center;gap:12px">';
       html+='<div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--verde),var(--verde-dark));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:16px;flex-shrink:0">'+u.nome[0].toUpperCase()+'</div>';
       html+='<div style="flex:1">';
       html+='<div style="font-size:14px;font-weight:700;color:var(--texto)">'+u.nome+(u.admin?' <span style="font-size:10px;color:var(--verde);background:var(--verde-light);padding:1px 6px;border-radius:8px">admin</span>':'')+'</div>';
       if(u.nome_completo) html+='<div style="font-size:12px;color:var(--texto2)">'+u.nome_completo+'</div>';
       if(u.whatsapp) html+='<div style="font-size:11px;color:var(--texto3)">&#x1F4F1; '+u.whatsapp+'</div>';
       if(u.pix){
-        html+='<div style="display:flex;align-items:center;gap:6px;margin-top:3px">';
+        html+='<div style="display:flex;align-items:center;gap:6px;margin-top:2px">';
         html+='<div style="font-size:11px;color:var(--verde);font-weight:600">PIX: '+u.pix+'</div>';
         html+='<button data-pix="'+u.pix+'" onclick="copiarPix(this.dataset.pix)" style="font-size:10px;padding:2px 8px;border-radius:6px;border:1px solid var(--verde);background:var(--verde-light);color:var(--verde-dark);cursor:pointer;font-weight:700">Copiar</button>';
         html+='</div>';
       }
+      html+='</div>';
+      html+='<button data-mid="'+uid+'" data-mnome="'+u.nome+'" data-mnomec="'+(u.nome_completo||'')+'" data-mfone="'+(u.whatsapp||'')+'" data-mpix="'+(u.pix||'')+'" onclick="abrirEditMembro(this)" style="font-size:11px;padding:6px 12px;border-radius:8px;border:1px solid var(--azul);background:var(--azul-light);color:var(--azul);cursor:pointer;font-weight:700;flex-shrink:0">&#x270F;&#xFE0F; Editar</button>';
+      html+='</div>';
+      html+='<div id="edit-membro-'+uid+'" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--cinza3)">';
+      html+='<div class="ainput-label">Nome completo</div>';
+      html+='<input class="ainput" id="em-nome-'+uid+'" value="'+(u.nome_completo||'')+'" style="width:100%;margin-bottom:8px">';
+      html+='<div class="ainput-label">WhatsApp</div>';
+      html+='<input class="ainput" id="em-fone-'+uid+'" value="'+(u.whatsapp||'')+'" style="width:100%;margin-bottom:8px">';
+      html+='<div class="ainput-label">Chave PIX</div>';
+      html+='<input class="ainput" id="em-pix-'+uid+'" value="'+(u.pix||'')+'" style="width:100%;margin-bottom:8px">';
+      html+='<div class="ainput-label">Nova Senha (deixe vazio para manter)</div>';
+      html+='<input class="ainput" id="em-senha-'+uid+'" type="password" placeholder="Nova senha..." style="width:100%;margin-bottom:10px">';
+      html+='<div style="display:flex;gap:8px">';
+      html+='<button data-uid="'+uid+'" onclick="salvarMembro(this.dataset.uid)" class="btn-sv" style="flex:1">Salvar</button>';
+      html+='<button data-uid="'+uid+'" onclick="fecharEditMembro(this.dataset.uid)" style="flex:1;padding:10px;border-radius:8px;border:1px solid var(--cinza3);background:var(--cinza2);cursor:pointer;font-weight:700">Cancelar</button>';
+      html+='</div>';
       html+='</div>';
       html+='</div>';
     });
@@ -1427,7 +1564,7 @@ async function cadastrarPeloAdmin(){
 async function renderAdmin(){
   if(!USER||!USER.admin) return;
   // Recarrega jogadores frescos do banco
-  var jogFresh=await dbGetRest('poker_usuarios','nome=neq.admin&order=nome.asc');
+  var jogFresh=await dbGetRest('poker_usuarios','select=id,nome,senha,admin,nome_completo,whatsapp,pix&nome=neq.admin&order=nome.asc');
   if(jogFresh&&jogFresh.length>0) JOGADORES=jogFresh;
   var el=document.getElementById('s-admin');
   var html='<h2 style="font-family:Barlow Condensed,sans-serif;font-size:24px;font-weight:900;margin-bottom:16px">⚙️ Painel Admin</h2>';
@@ -1445,6 +1582,29 @@ async function renderAdmin(){
   html+='</div>';
   html+='<button class="btn-sv" onclick="salvarRodada()">Salvar Rodada</button>';
   html+='</div>';
+
+    // GERENCIAR PRESENÇAS
+  var proxRodAdmin=RODADAS.find(function(r){return !r.realizada});
+  if(proxRodAdmin){
+    var presRodAdmin=PRESENCAS[proxRodAdmin.id]||[];
+    if(presRodAdmin.length>0){
+      html+='<div class="admin-card">';
+      html+='<h3>&#x1F91A; Presenças — Rodada '+proxRodAdmin.numero+'</h3>';
+      presRodAdmin.forEach(function(p){
+        var corP=p.status==='in'?'var(--verde)':'var(--vermelho)';
+        var icoP=p.status==='in'?'&#x1F44D;':'&#x1F44E;';
+        html+='<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--cinza3)">';
+        html+='<div style="display:flex;align-items:center;gap:8px">';
+        html+='<span style="font-size:18px">'+icoP+'</span>';
+        html+='<span style="font-size:14px;font-weight:600">'+p.nome+'</span>';
+        html+='<span style="font-size:11px;color:'+corP+';font-weight:700">'+p.status.toUpperCase()+'</span>';
+        html+='</div>';
+        html+='<button data-rid="'+proxRodAdmin.id+'" data-rnome="'+p.nome+'" onclick="cancelarPresenca(this.dataset.rid,this.dataset.rnome)" style="font-size:11px;padding:4px 10px;border-radius:8px;border:1px solid var(--vermelho);background:var(--vermelho-light);color:var(--vermelho);cursor:pointer;font-weight:700">Cancelar</button>';
+        html+='</div>';
+      });
+      html+='</div>';
+    }
+  }
 
   // INSERIR RESULTADO
   html+='<div class="admin-card">';
@@ -1555,6 +1715,21 @@ async function salvarEdicao(rodadaId, nj){
   toast('Resultados atualizados!','ok');
   await carregarTudo();
   renderAdmin();
+}
+
+async function cancelarPresenca(rodadaId, nome){
+  if(!confirm('Cancelar presença de '+nome+'?')) return;
+  var res=await fetch('https://gpnrixcftsjzufnygisa.supabase.co/rest/v1/poker_presencas?rodada_id=eq.'+rodadaId+'&nome=eq.'+encodeURIComponent(nome),{
+    method:'DELETE',
+    headers:Object.assign({},RHDR,{'Prefer':'return=minimal'})
+  });
+  if(res.ok){
+    if(PRESENCAS[rodadaId]) PRESENCAS[rodadaId]=PRESENCAS[rodadaId].filter(function(p){return p.nome!==nome;});
+    toast('Presença de '+nome+' cancelada!','ok');
+    renderAdmin();
+  } else {
+    toast('Erro ao cancelar presença','err');
+  }
 }
 
 async function salvarRodada(){
