@@ -911,12 +911,15 @@ async function renderInicio(){
     html+='<div class="prox-titulo">Rodada '+proxRodada.numero+'</div>';
     html+='<div class="prox-data">📅 '+fmtData(proxRodada.data)+(proxRodada.horario?' às '+proxRodada.horario:'')+'</div>';
     if(proxRodada.local) html+='<div class="prox-local">📍 '+proxRodada.local+'</div>';
-    html+='<div class="presenca-btns">';
-    html+='<button class="btn-in'+(minhaPresenca&&minhaPresenca.status==='in'?' ativo':'')
-      +'" onclick="confirmarPresenca('+proxRodada.id+',\'in\')">&#x1F44D; IN</button>';
-    html+='<button class="btn-fold'+(minhaPresenca&&minhaPresenca.status==='fold'?' ativo':'')
-      +'" onclick="confirmarPresenca('+proxRodada.id+',\'fold\')">&#x1F44E; FOLD</button>';
-    html+='</div>';
+    if(!USER.admin){
+      var atvIn=minhaPresenca&&minhaPresenca.status==='in'?' ativo':'';
+      var atvFold=minhaPresenca&&minhaPresenca.status==='fold'?' ativo':'';
+      html+='<div class="presenca-btns">';
+      html+='<button class="btn-in'+atvIn+'" data-rid="'+proxRodada.id+'" data-rst="in" onclick="confirmarPresenca(this.dataset.rid,this.dataset.rst)">&#x1F44D; IN</button>';
+      html+='<button class="btn-fold'+atvFold+'" data-rid="'+proxRodada.id+'" data-rst="fold" onclick="confirmarPresenca(this.dataset.rid,this.dataset.rst)">&#x1F44E; FOLD</button>';
+      html+='</div>';
+    }
+        html+='</div>';
     html+='<div class="confirmados">';
     html+='<div class="confirmados-label">'+confirmados.length+' confirmados · '+folds.length+' fold</div>';
     html+='<div class="chips-row">';
