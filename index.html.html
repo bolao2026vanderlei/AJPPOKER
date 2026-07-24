@@ -773,7 +773,7 @@ async function reloadSchema(){
 async function carregarTudo(){
   try{
     var rodadas=await dbGetRest('poker_rodadas','order=numero.asc');
-    var jogadores=await dbGetRest('poker_usuarios','select=id,nome,senha,admin,nome_completo,whatsapp,pix,inscrito&nome=neq.admin&order=nome.asc');
+    var jogadores=await dbGetRest('poker_usuarios','select=id,nome,senha,admin,nome_completo,whatsapp,pix,inscrito,status_inscricao&nome=neq.admin&order=nome.asc');
     var presencas=await dbGetRest('poker_presencas','');
     var resultados=await dbGetRest('poker_resultados','');
     RODADAS=rodadas||[];
@@ -909,6 +909,21 @@ async function renderInicio(){
 
   html+='</div>';
 
+  // CARD DE INSCRIÇÃO — aparece até 1ª rodada ser realizada
+  var rodsRealizadasN=RODADAS.filter(function(r){return r.realizada;}).length;
+  var jog=JOGADORES.find(function(j){return j.nome===USER.nome;});
+  var jaDefiniu=jog&&(jog.inscrito===true||jog.status_inscricao==='avulso');
+  if(!USER.admin && rodsRealizadasN===0 && !jaDefiniu){
+    html+='<div style="background:linear-gradient(135deg,#1E3A5F,#0F172A);border-radius:var(--radius);padding:20px;margin-bottom:16px;border:1px solid #2563EB">';
+    html+='<div style="font-size:11px;color:#93C5FD;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">&#x1F3C6; Novo Semestre</div>';
+    html+='<div style="font-size:18px;font-weight:700;color:#fff;margin-bottom:4px">Confirme sua participação</div>';
+    html+='<div style="font-size:13px;color:#94A3B8;margin-bottom:16px">Deseja participar do torneio deste semestre e ser incluído na classificação?</div>';
+    html+='<div style="display:flex;gap:10px">';
+    html+='<button onclick="confirmarInscricao(true)" style="flex:1;padding:12px;border:none;border-radius:10px;background:linear-gradient(135deg,#16A34A,#15803D);color:#fff;font-size:14px;font-weight:700;cursor:pointer">&#x1F91D; Quero me inscrever</button>';
+    html+='<button onclick="confirmarInscricao(false)" style="flex:1;padding:12px;border:none;border-radius:10px;background:rgba(255,255,255,.08);color:#94A3B8;font-size:14px;font-weight:600;cursor:pointer;border:1px solid #334155">&#x1F3B2; Jogarei avulso</button>';
+    html+='</div></div>';
+  }
+
   // Próxima rodada
   if(proxRodada){
     html+='<div class="prox-card">';
@@ -996,6 +1011,26 @@ async function renderInicio(){
   el.innerHTML=html;
 }
 
+
+async function confirmarInscricao(inscrito){
+  var jog=JOGADORES.find(function(j){return j.nome===USER.nome;});
+  if(!jog) return;
+  var payload={inscrito:inscrito, status_inscricao: inscrito?'inscrito':'avulso'};
+  var res=await fetch('https://gpnrixcftsjzufnygisa.supabase.co/rest/v1/poker_usuarios?id=eq.'+jog.id,{
+    method:'PATCH',
+    headers:Object.assign({},RHDR,{'Prefer':'return=minimal'}),
+    body:JSON.stringify(payload)
+  });
+  if(res.ok){
+    jog.inscrito=inscrito;
+    jog.status_inscricao=inscrito?'inscrito':'avulso';
+    toast(inscrito?'&#x1F3C6; Inscrito no torneio!':'&#x1F3B2; Você jogará como avulso','ok');
+    await carregarTudo();
+    renderInicio();
+  } else {
+    toast('Erro ao confirmar','err');
+  }
+}
 
 async function confirmarPresenca(rodadaId, status){
   if(!USER) return;
@@ -1146,8 +1181,8 @@ function renderRanking(aba){
   var html='<h2 style="font-family:Barlow Condensed,sans-serif;font-size:24px;font-weight:900;margin-bottom:16px">&#x1F4CA; Classificação</h2>';
   html+='<div class="rank-tabs">';
   html+='<button class="rank-tab'+onP+'" data-aba="pontos" onclick="renderRanking(this.dataset.aba)">&#x1F3C6; Pontos</button>';
-  html+='<button class="rank-tab'+onR+'" data-aba="rebuy" onclick="renderRanking(this.dataset.aba)">&#x1F451; King Rebuy</button>';
-  html+='<button class="rank-tab'+onK+'" data-aba="knockout" onclick="renderRanking(this.dataset.aba)">&#x1F480; Knockout</button>';
+  html+='<button class="rank-tab'+onR+'" data-aba="rebuy" onclick="renderRanking(this.dataset.aba)">&#x1F451; King of Rebuy</button>';
+  html+='<button class="rank-tab'+onK+'" data-aba="knockout" onclick="renderRanking(this.dataset.aba)">&#x1F94A; Knockout</button>';
   html+='</div>';
 
   var sorted;
@@ -1155,19 +1190,23 @@ function renderRanking(aba){
     sorted=stats.slice().sort(function(a,b){
       return b.totalSem-a.totalSem||b.total-a.total||a.rodadasJogadas-b.rodadasJogadas;
     });
+    // Agrupa por pontuação para empates reais
+    var posAtual=0, ptxAnt=-1, countEmp=0;
     sorted.forEach(function(s,i){
-      var pos=i+1;
+      if(s.totalSem!==ptxAnt){ posAtual=i+1; countEmp=0; }
+      ptxAnt=s.totalSem; countEmp++;
+      var pos=posAtual;
       var pc=pos===1?'ouro':pos===2?'prata':pos===3?'bronze':'';
       var me=s.nome===USER.nome;
       html+='<div class="rank-item'+(me?' me':'')+'">';
       html+='<div class="rank-pos '+pc+'">'+pos+'</div>';
       html+='<div class="rank-info">';
       html+='<div class="rank-nome">'+s.nome+(me?' <span style="font-size:10px;color:var(--verde)">(você)</span>':'')+'</div>';
-      html+='<div class="rank-sub">'+s.rodadasJogadas+' rodadas · '+s.rebuys+' rebuys · '+s.knockouts+' KOs</div>';
+      html+='<div class="rank-sub">'+s.rodadasJogadas+' rodada(s) · '+s.rebuys+' rebuys · '+s.knockouts+' KOs</div>';
       html+='</div>';
       html+='<div style="text-align:right">';
       html+='<div class="rank-pts">'+s.totalSem+'</div>';
-      html+='<div style="font-size:10px;color:var(--texto3)">'+s.total+' total</div>';
+      html+='<div style="font-size:10px;color:var(--texto3)">'+s.total+' bruto</div>';
       html+='</div></div>';
     });
   } else if(RANK_ABA==='rebuy'){
@@ -1228,25 +1267,37 @@ async function renderCampeoes(){
   var html='<h2 style="font-family:Barlow Condensed,sans-serif;font-size:24px;font-weight:900;margin-bottom:16px">&#x1F3C6; Hall of Fame</h2>';
   html+='<div class="rank-tabs" style="margin-bottom:16px">';
   html+='<button class="rank-tab'+onCT+'" data-aba="torneio" onclick="setCampAba(this.dataset.aba)">&#x1F3C6; Torneio</button>';
-  html+='<button class="rank-tab'+onCK+'" data-aba="ko" onclick="setCampAba(this.dataset.aba)">&#x1F480; Knockout</button>';
-  html+='<button class="rank-tab'+onCR+'" data-aba="rebuy" onclick="setCampAba(this.dataset.aba)">&#x1F451; King Rebuy</button>';
+  html+='<button class="rank-tab'+onCK+'" data-aba="ko" onclick="setCampAba(this.dataset.aba)">&#x1F94A; Knockout</button>';
+  html+='<button class="rank-tab'+onCR+'" data-aba="rebuy" onclick="setCampAba(this.dataset.aba)">&#x1F451; King of Rebuy</button>';
   html+='</div>';
 
   if(CAMP_ABA==='torneio'){
     if(camps.length===0){
       html+='<div class="card" style="text-align:center;padding:24px;color:var(--texto3)">Nenhum campeão cadastrado ainda.</div>';
     } else {
-      camps.forEach(function(c){
-        html+='<div class="camp-item">';
-        html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:22px;font-weight:900;color:var(--amarelo);min-width:44px">#'+c.torneio+'</div>';
-        html+='<div style="flex:1">';
-        if(c.primeiro) html+='<div class="camp-pos"><span class="camp-medal">🥇</span><span class="camp-nome">'+c.primeiro+'</span></div>';
-        if(c.segundo)  html+='<div class="camp-pos"><span class="camp-medal">🥈</span><span class="camp-nome">'+c.segundo+'</span></div>';
-        if(c.terceiro) html+='<div class="camp-pos"><span class="camp-medal">🥉</span><span class="camp-nome">'+c.terceiro+'</span></div>';
-        html+='</div></div>';
+      var anosMap={1: 2013, 2: 2013, 3: 2014, 4: 2014, 5: 2015, 6: 2015, 7: 2016, 8: 2016, 9: 2017, 10: 2017, 11: 2018, 12: 2018, 13: 2019, 14: 2019, 15: 2020, 16: 2022, 17: 2023, 18: 2023, 19: 2024, 20: 2024, 21: 2025, 22: 2025, 23: 2026};
+      html+='<div style="overflow-x:auto;margin-bottom:12px">';
+      html+='<table style="width:100%;border-collapse:collapse;font-size:13px">';
+      html+='<thead><tr style="background:#0F172A">';
+      html+='<th style="color:#FFD700;padding:8px 6px;border:1px solid #334155;text-align:center">Ano</th>';
+      html+='<th style="color:#FFD700;padding:8px 6px;border:1px solid #334155;text-align:center">#</th>';
+      html+='<th style="color:#FFD700;padding:8px 6px;border:1px solid #334155;text-align:left">&#x1F947; Campeao</th>';
+      html+='<th style="color:#FFD700;padding:8px 6px;border:1px solid #334155;text-align:left">&#x1F948; Vice</th>';
+      html+='<th style="color:#FFD700;padding:8px 6px;border:1px solid #334155;text-align:left">&#x1F949; 3°</th>';
+      html+='</tr></thead><tbody>';
+      camps.forEach(function(c,i){
+        var rbg=i%2===0?'background:#fff':'background:#f8fafc';
+        html+='<tr style="'+rbg+'">';
+        html+='<td style="padding:7px 6px;border:1px solid #e5e7eb;text-align:center;color:var(--texto3);font-size:12px">'+(anosMap[c.torneio]||'')+'</td>';
+        html+='<td style="padding:7px 6px;border:1px solid #e5e7eb;text-align:center;font-family:Barlow Condensed,sans-serif;font-size:18px;font-weight:900;color:var(--amarelo)">'+c.torneio+'</td>';
+        html+='<td style="padding:7px 6px;border:1px solid #e5e7eb;font-weight:700;color:var(--texto)">'+(c.primeiro||'—')+'</td>';
+        html+='<td style="padding:7px 6px;border:1px solid #e5e7eb;color:var(--texto2)">'+(c.segundo||'—')+'</td>';
+        html+='<td style="padding:7px 6px;border:1px solid #e5e7eb;color:var(--texto3)">'+(c.terceiro||'—')+'</td>';
+        html+='</tr>';
       });
+      html+='</tbody></table></div>';
     }
-    if(USER.admin){
+        if(USER.admin){
       html+='<div class="admin-card" style="margin-top:16px"><h3>➕ Adicionar/Editar Campeão</h3>';
       html+='<div class="ainput-label">Nº Torneio</div><input class="ainput" id="camp-num" type="number" placeholder="Ex: 24" style="margin-bottom:8px;width:100%">';
       html+='<div class="ainput-label">1º Lugar</div><input class="ainput" id="camp-1" placeholder="Nome" style="margin-bottom:8px;width:100%">';
@@ -1442,6 +1493,21 @@ function renderRegras(){
 }
 
 
+async function excluirMembro(uid, nome){
+  if(!confirm('Excluir o jogador '+nome+'? Esta ação não pode ser desfeita.')) return;
+  var res=await fetch('https://gpnrixcftsjzufnygisa.supabase.co/rest/v1/poker_usuarios?id=eq.'+uid,{
+    method:'DELETE',
+    headers:Object.assign({},RHDR,{'Prefer':'return=minimal'})
+  });
+  if(res.ok){
+    toast('Jogador '+nome+' excluído!','ok');
+    await carregarTudo();
+    renderParticipantes();
+  } else {
+    toast('Erro ao excluir','err');
+  }
+}
+
 function abrirEditMembro(btn){
   var uid=btn.dataset.mid;
   var el=document.getElementById('edit-membro-'+uid);
@@ -1541,6 +1607,7 @@ async function renderParticipantes(){
       html+='<div style="display:flex;gap:8px">';
       html+='<button data-uid="'+uid+'" onclick="salvarMembro(this.dataset.uid)" class="btn-sv" style="flex:1">Salvar</button>';
       html+='<button data-uid="'+uid+'" onclick="fecharEditMembro(this.dataset.uid)" style="flex:1;padding:10px;border-radius:8px;border:1px solid var(--cinza3);background:var(--cinza2);cursor:pointer;font-weight:700">Cancelar</button>';
+      html+='<button data-uid="'+uid+'" data-unome="'+u.nome+'" onclick="excluirMembro(this.dataset.uid,this.dataset.unome)" style="padding:10px 14px;border-radius:8px;border:1px solid var(--vermelho);background:var(--vermelho-light);color:var(--vermelho);cursor:pointer;font-weight:700">Excluir</button>';
       html+='</div>';
       html+='</div>';
       html+='</div>';
@@ -1572,7 +1639,7 @@ async function cadastrarPeloAdmin(){
 async function renderAdmin(){
   if(!USER||!USER.admin) return;
   // Recarrega jogadores frescos do banco
-  var jogFresh=await dbGetRest('poker_usuarios','select=id,nome,senha,admin,nome_completo,whatsapp,pix,inscrito&nome=neq.admin&order=nome.asc');
+  var jogFresh=await dbGetRest('poker_usuarios','select=id,nome,senha,admin,nome_completo,whatsapp,pix,inscrito,status_inscricao&nome=neq.admin&order=nome.asc');
   if(jogFresh&&jogFresh.length>0) JOGADORES=jogFresh;
   var el=document.getElementById('s-admin');
   var html='<h2 style="font-family:Barlow Condensed,sans-serif;font-size:24px;font-weight:900;margin-bottom:16px">⚙️ Painel Admin</h2>';
