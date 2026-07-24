@@ -985,15 +985,9 @@ async function renderInicio(){
     html+='<div class="confirmados">';
     html+='<div class="confirmados-label" style="display:flex;gap:8px;margin-bottom:6px"><span style="background:rgba(74,222,128,.2);border:1px solid rgba(74,222,128,.4);border-radius:8px;padding:4px 10px;font-size:13px;font-weight:700;color:#4ade80">✅ '+confirmados.length+' IN</span><span style="background:rgba(248,113,113,.15);border:1px solid rgba(248,113,113,.3);border-radius:8px;padding:4px 10px;font-size:13px;font-weight:700;color:#f87171">❌ '+folds.length+' FOLD</span></div>';
     html+='<div class="chips-row">';
-    html+='<div style="margin-bottom:6px;display:flex;flex-wrap:wrap;gap:6px">';
-    confirmados.forEach(function(p,i){ html+='<span class="chip-in">'+((i+1)+'. '+p.nome)+'</span>'; });
+    html+='<div style="display:flex;flex-wrap:wrap;gap:6px">';
+    confirmados.forEach(function(p){ html+='<span class="chip-in">'+p.nome+'</span>'; });
     html+='</div>';
-    if(folds.length>0){
-      html+='<div style="font-size:11px;color:var(--texto3);margin:4px 0 4px">FOLD:</div>';
-      html+='<div style="display:flex;flex-wrap:wrap;gap:6px">';
-      folds.forEach(function(p,i){ html+='<span class="chip-fold">'+((i+1)+'. '+p.nome)+'</span>'; });
-      html+='</div>';
-    }
     html+='</div></div>';
     html+='</div>';
   } else {
@@ -1260,12 +1254,14 @@ function renderRanking(aba){
   var el=document.getElementById('s-ranking');
   var stats=calcStatsAll();
   var onP=RANK_ABA==='pontos'?' on':'';
+  var onD=RANK_ABA==='descarte'?' on':'';
   var onR=RANK_ABA==='rebuy'?' on':'';
   var onK=RANK_ABA==='knockout'?' on':'';
 
   var html='<h2 style="font-family:Barlow Condensed,sans-serif;font-size:24px;font-weight:900;margin-bottom:16px">&#x1F4CA; Classificação</h2>';
   html+='<div class="rank-tabs">';
-  html+='<button class="rank-tab'+onP+'" data-aba="pontos" onclick="renderRanking(this.dataset.aba)">&#x1F3C6; Pontos</button>';
+  html+='<button class="rank-tab'+onP+'" data-aba="pontos" onclick="renderRanking(this.dataset.aba)">&#x1F4CB; Sem Descarte</button>';
+  html+='<button class="rank-tab'+onD+'" data-aba="descarte" onclick="renderRanking(this.dataset.aba)">&#x2702;&#xFE0F; C/ Descarte</button>';
   html+='<button class="rank-tab'+onR+'" data-aba="rebuy" onclick="renderRanking(this.dataset.aba)">&#x1F451; King of Rebuy</button>';
   html+='<button class="rank-tab'+onK+'" data-aba="knockout" onclick="renderRanking(this.dataset.aba)">&#x1F94A; Knockout</button>';
   html+='</div>';
@@ -1294,6 +1290,50 @@ function renderRanking(aba){
       html+='<div style="font-size:10px;color:var(--texto3)">'+s.total+' bruto</div>';
       html+='</div></div>';
     });
+  } else if(RANK_ABA==='descarte'){
+    // Classificação com descarte do pior resultado
+    var rodsReal=RODADAS.filter(function(r){return r.realizada;}).length;
+    if(rodsReal<2){
+      html+='<div class="card" style="text-align:center;padding:24px;color:var(--texto3)">Disponível a partir da 2ª rodada realizada.</div>';
+    } else {
+      sorted=stats.slice().sort(function(a,b){
+        return b.totalSem-a.totalSem||b.total-a.total;
+      });
+      var posD=0,antD=-1;
+      sorted.forEach(function(s,i){
+        if(s.totalSem!==antD){posD=i+1;} antD=s.totalSem;
+        var me=s.nome===USER.nome;
+        // Descobre qual rodada foi descartada
+        var rodDescartada=null;
+        if(s.piorPts>0&&s.rodadasJogadas>1){
+          // Busca a rodada com menor pontuação
+          var menorPts=999,menorRod=null;
+          RODADAS.forEach(function(r){
+            if(!r.realizada) return;
+            var res=(RESULTADOS[r.id]||[]).find(function(x){return x.nome===s.nome;});
+            if(res){
+              var pts=getPts((RESULTADOS[r.id]||[]).length,res.posicao);
+              if(pts<menorPts){menorPts=pts;menorRod=r;}
+            }
+          });
+          if(menorRod) rodDescartada='Rodada '+menorRod.numero+' ('+menorPts+'pts)';
+        }
+        html+='<div class="rank-item'+(me?' me':'')+'">';
+        html+='<div class="rank-pos '+(posD===1?'ouro':posD===2?'prata':posD===3?'bronze':'')+'">'+(s.totalSem>0?posD:'—')+'</div>';
+        html+='<div class="rank-info">';
+        html+='<div class="rank-nome">'+s.nome+(me?' <span style="font-size:10px;color:var(--verde)">(você)</span>':'')+'</div>';
+        if(rodDescartada){
+          html+='<div style="font-size:10px;color:#DC2626;margin-top:2px">&#x2702; descartou '+rodDescartada+'</div>';
+        } else {
+          html+='<div class="rank-sub">'+s.rodadasJogadas+' rodada(s)</div>';
+        }
+        html+='</div>';
+        html+='<div style="text-align:right">';
+        html+='<div class="rank-pts" style="color:var(--verde)">'+s.totalSem+'</div>';
+        html+='<div style="font-size:10px;color:var(--texto3)">'+s.total+' bruto</div>';
+        html+='</div></div>';
+      });
+    }
   } else if(RANK_ABA==='rebuy'){
     sorted=stats.slice().sort(function(a,b){
       return b.rebuys-a.rebuys||a.rodadasJogadas-b.rodadasJogadas;
