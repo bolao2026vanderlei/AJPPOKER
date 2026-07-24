@@ -186,13 +186,14 @@ body{font-family:'Inter',sans-serif;background:var(--fundo);color:var(--texto);m
 /* CONFIRMADOS */
 .confirmados{margin-top:12px}
 .confirmados-label{font-size:11px;color:#94A3B8;margin-bottom:8px}
-.chips-row{display:flex;flex-wrap:wrap;gap:6px}
-.chip-in{background:rgba(22,163,74,.15);color:#4ADE80;
-  border:1px solid rgba(22,163,74,.3);
-  border-radius:20px;padding:4px 10px;font-size:12px;font-weight:600}
-.chip-fold{background:rgba(220,38,38,.1);color:#F87171;
-  border:1px solid rgba(220,38,38,.2);
-  border-radius:20px;padding:4px 10px;font-size:12px;font-weight:600}
+.chips-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px}
+.chip-in{background:#16A34A;color:#fff;
+  border:none;
+  border-radius:8px;padding:5px 12px;font-size:13px;font-weight:700;
+  display:flex;align-items:center;gap:4px}
+.chip-fold{background:#6B7280;color:#fff;
+  border:none;
+  border-radius:8px;padding:5px 12px;font-size:12px;font-weight:600}
 
 /* RANKING */
 .rank-item{display:flex;align-items:center;gap:12px;padding:12px;
@@ -984,8 +985,15 @@ async function renderInicio(){
     html+='<div class="confirmados">';
     html+='<div class="confirmados-label" style="display:flex;gap:8px;margin-bottom:6px"><span style="background:rgba(74,222,128,.2);border:1px solid rgba(74,222,128,.4);border-radius:8px;padding:4px 10px;font-size:13px;font-weight:700;color:#4ade80">✅ '+confirmados.length+' IN</span><span style="background:rgba(248,113,113,.15);border:1px solid rgba(248,113,113,.3);border-radius:8px;padding:4px 10px;font-size:13px;font-weight:700;color:#f87171">❌ '+folds.length+' FOLD</span></div>';
     html+='<div class="chips-row">';
-    confirmados.forEach(function(p){ html+='<span class="chip-in">'+p.nome+'</span>'; });
-    folds.forEach(function(p){ html+='<span class="chip-fold">'+p.nome+'</span>'; });
+    html+='<div style="margin-bottom:6px;display:flex;flex-wrap:wrap;gap:6px">';
+    confirmados.forEach(function(p,i){ html+='<span class="chip-in">'+((i+1)+'. '+p.nome)+'</span>'; });
+    html+='</div>';
+    if(folds.length>0){
+      html+='<div style="font-size:11px;color:var(--texto3);margin:4px 0 4px">FOLD:</div>';
+      html+='<div style="display:flex;flex-wrap:wrap;gap:6px">';
+      folds.forEach(function(p,i){ html+='<span class="chip-fold">'+((i+1)+'. '+p.nome)+'</span>'; });
+      html+='</div>';
+    }
     html+='</div></div>';
     html+='</div>';
   } else {
