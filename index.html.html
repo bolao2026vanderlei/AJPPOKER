@@ -148,18 +148,18 @@ body{font-family:'Inter',sans-serif;background:var(--fundo);color:var(--texto);m
   text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px}
 
 /* HERO GRID */
-.hero-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
-.hero-card{background:var(--card);border-radius:var(--radius);padding:14px;
+.hero-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.hero-card{background:var(--card);border-radius:var(--radius);padding:10px;
   box-shadow:var(--shadow);border:1px solid var(--borda);
   display:flex;flex-direction:column;align-items:center;text-align:center}
 .hero-card.destaque{background:linear-gradient(135deg,#16A34A,#15803D);border:none}
-.hero-label{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
-  color:var(--texto3);margin-bottom:4px}
+.hero-label{font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
+  color:var(--texto3);margin-bottom:3px}
 .hero-card.destaque .hero-label{color:rgba(255,255,255,.7)}
-.hero-valor{font-family:'Barlow Condensed',sans-serif;font-size:32px;
+.hero-valor{font-family:'Barlow Condensed',sans-serif;font-size:28px;
   font-weight:900;color:var(--texto);line-height:1}
 .hero-card.destaque .hero-valor{color:#fff}
-.hero-sub{font-size:11px;color:var(--texto3);margin-top:3px}
+.hero-sub{font-size:10px;color:var(--texto3);margin-top:2px}
 .hero-card.destaque .hero-sub{color:rgba(255,255,255,.6)}
 
 /* PRÓXIMA RODADA */
@@ -858,6 +858,13 @@ async function renderInicio(){
 
   // Calcula rankings
   var statsAll=calcStatsAll();
+  // Garante que o jogador logado está incluído mesmo se avulso
+  var meNoRank=statsAll.find(function(x){return x.nome===USER.nome;});
+  if(!meNoRank){
+    var sMe=calcStats(USER.nome);
+    sMe.nome=USER.nome;
+    statsAll.push(sMe);
+  }
   var rankPontosSem=statsAll.slice().sort(function(a,b){return b.totalSem-a.totalSem||b.total-a.total;});
   var rankPontosTotal=statsAll.slice().sort(function(a,b){return b.total-a.total;});
   var rankRebuy=statsAll.slice().sort(function(a,b){return b.rebuys-a.rebuys;});
@@ -866,45 +873,41 @@ async function renderInicio(){
   var posSem=rankPontosSem.findIndex(function(x){return x.nome===USER.nome;})+1;
   var posRebuy=rankRebuy.findIndex(function(x){return x.nome===USER.nome;})+1;
   var posKO=rankKO.findIndex(function(x){return x.nome===USER.nome;})+1;
-  var nJog=JOGADORES.length||1;
+  var nJog=statsAll.filter(function(x){return x.total>0;}).length||JOGADORES.filter(function(j){return j.inscrito;}).length||1;
   var rodsRealizadas=RODADAS.filter(function(r){return r.realizada;}).length;
 
   // Hero cards — 2 classificações + 2 stats
   html+='<div class="hero-grid">';
 
   // CLASS 1: Com descarte — fundo VERDE
-  html+='<div class="hero-card" style="background:linear-gradient(135deg,#16A34A,#15803D);border:none">';
-  html+='<div class="hero-label" style="color:rgba(255,255,255,.7)">C/ Descarte</div>';
-  html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:64px;font-weight:900;color:#fff;line-height:1">'+(rodsRealizadas>=2?posSem+'º':'--')+'</div>';
-  html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:28px;font-weight:700;color:rgba(255,255,255,.9)">'+stats.totalSem+' pts</div>';
+  html+='<div class="hero-card" style="background:linear-gradient(135deg,#16A34A,#15803D);border:none;padding:12px">';
+  html+='<div class="hero-label" style="color:rgba(255,255,255,.7);font-size:10px">C/ Descarte</div>';
+  html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:44px;font-weight:900;color:#fff;line-height:1">'+(rodsRealizadas>=2?posSem+'º':'--')+'</div>';
+  html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:20px;font-weight:700;color:rgba(255,255,255,.9)">'+stats.totalSem+' pts</div>';
   if(rodsRealizadas>=2){
-    html+='<div style="font-size:10px;color:rgba(255,255,255,.55);margin-top:3px">de '+nJog+' jogadores</div>';
-    html+='<div style="font-size:10px;color:rgba(255,255,255,.45);margin-top:1px">descartou '+stats.piorPts+'pts</div>';
+    html+='<div style="font-size:9px;color:rgba(255,255,255,.5);margin-top:2px">-'+stats.piorPts+'pts descartado</div>';
   } else {
-    html+='<div style="font-size:10px;color:rgba(255,255,255,.5);margin-top:3px">disponível na 2ª rodada</div>';
+    html+='<div style="font-size:9px;color:rgba(255,255,255,.5);margin-top:2px">a partir da 2ª rodada</div>';
   }
   html+='</div>';
 
-  // CLASS 2: Sem descarte — fundo AZUL
-  html+='<div class="hero-card" style="background:linear-gradient(135deg,#2563EB,#1D4ED8);border:none">';
-  html+='<div class="hero-label" style="color:rgba(255,255,255,.7)">Sem Descarte</div>';
-  html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:64px;font-weight:900;color:#fff;line-height:1">'+posTotal+'º</div>';
-  html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:28px;font-weight:700;color:rgba(255,255,255,.9)">'+stats.total+' pts</div>';
-  html+='<div style="font-size:10px;color:rgba(255,255,255,.55);margin-top:3px">de '+nJog+' jogadores</div>';
+  html+='<div class="hero-card" style="background:linear-gradient(135deg,#2563EB,#1D4ED8);border:none;padding:12px">';
+  html+='<div class="hero-label" style="color:rgba(255,255,255,.7);font-size:10px">Sem Descarte</div>';
+  html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:44px;font-weight:900;color:#fff;line-height:1">'+posTotal+'º</div>';
+  html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:20px;font-weight:700;color:rgba(255,255,255,.9)">'+stats.total+' pts</div>';
+  html+='<div style="font-size:9px;color:rgba(255,255,255,.5);margin-top:2px">de '+nJog+' jogadores</div>';
   html+='</div>';
 
-  // Rebuys
-  html+='<div class="hero-card">';
-  html+='<div class="hero-label">&#x1F504; Rebuys</div>';
-  html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:48px;font-weight:900;color:var(--roxo);line-height:1">'+stats.rebuys+'</div>';
-  html+='<div style="font-size:11px;color:var(--texto3);margin-top:3px">'+posRebuy+'º de '+nJog+'</div>';
+  html+='<div class="hero-card" style="padding:12px">';
+  html+='<div class="hero-label" style="font-size:10px">&#x1F504; Rebuys</div>';
+  html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:36px;font-weight:900;color:var(--roxo);line-height:1">'+stats.rebuys+'</div>';
+  html+='<div style="font-size:10px;color:var(--texto3);margin-top:2px">'+posRebuy+'º de '+nJog+'</div>';
   html+='</div>';
 
-  // Rodelas
-  html+='<div class="hero-card">';
-  html+='<div class="hero-label">&#x1F480; Rodelas</div>';
-  html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:48px;font-weight:900;color:#92400E;line-height:1">'+stats.knockouts+'</div>';
-  html+='<div style="font-size:11px;color:var(--texto3);margin-top:3px">'+posKO+'º de '+nJog+'</div>';
+  html+='<div class="hero-card" style="padding:12px">';
+  html+='<div class="hero-label" style="font-size:10px">&#x1F94A; Rodelas</div>';
+  html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:36px;font-weight:900;color:#92400E;line-height:1">'+stats.knockouts+'</div>';
+  html+='<div style="font-size:10px;color:var(--texto3);margin-top:2px">'+posKO+'º de '+nJog+'</div>';
   html+='</div>';
 
   html+='</div>';
@@ -913,15 +916,31 @@ async function renderInicio(){
   var rodsRealizadasN=RODADAS.filter(function(r){return r.realizada;}).length;
   var jog=JOGADORES.find(function(j){return j.nome===USER.nome;});
   var jaDefiniu=jog&&(jog.inscrito===true||jog.status_inscricao==='avulso');
-  if(!USER.admin && rodsRealizadasN===0 && !jaDefiniu){
-    html+='<div style="background:linear-gradient(135deg,#1E3A5F,#0F172A);border-radius:var(--radius);padding:20px;margin-bottom:16px;border:1px solid #2563EB">';
-    html+='<div style="font-size:11px;color:#93C5FD;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">&#x1F3C6; Novo Semestre</div>';
-    html+='<div style="font-size:18px;font-weight:700;color:#fff;margin-bottom:4px">Confirme sua participação</div>';
-    html+='<div style="font-size:13px;color:#94A3B8;margin-bottom:16px">Deseja participar do torneio deste semestre e ser incluído na classificação?</div>';
-    html+='<div style="display:flex;gap:10px">';
-    html+='<button onclick="confirmarInscricao(true)" style="flex:1;padding:12px;border:none;border-radius:10px;background:linear-gradient(135deg,#16A34A,#15803D);color:#fff;font-size:14px;font-weight:700;cursor:pointer">&#x1F91D; Quero me inscrever</button>';
-    html+='<button onclick="confirmarInscricao(false)" style="flex:1;padding:12px;border:none;border-radius:10px;background:rgba(255,255,255,.08);color:#94A3B8;font-size:14px;font-weight:600;cursor:pointer;border:1px solid #334155">&#x1F3B2; Jogarei avulso</button>';
-    html+='</div></div>';
+  if(!USER.admin && rodsRealizadasN===0){
+    if(!jaDefiniu){
+      // Ainda não confirmou
+      html+='<div style="background:linear-gradient(135deg,#1E3A5F,#0F172A);border-radius:var(--radius);padding:20px;margin-bottom:16px;border:1px solid #2563EB">';
+      html+='<div style="font-size:11px;color:#93C5FD;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">&#x1F3C6; Novo Semestre</div>';
+      html+='<div style="font-size:18px;font-weight:700;color:#fff;margin-bottom:4px">Confirme sua participação</div>';
+      html+='<div style="font-size:13px;color:#94A3B8;margin-bottom:16px">Deseja participar do torneio deste semestre e ser incluído na classificação?</div>';
+      html+='<div style="display:flex;gap:10px">';
+      html+='<button onclick="confirmarInscricao(true)" style="flex:1;padding:12px;border:none;border-radius:10px;background:linear-gradient(135deg,#16A34A,#15803D);color:#fff;font-size:14px;font-weight:700;cursor:pointer">&#x1F91D; Quero me inscrever</button>';
+      html+='<button onclick="confirmarInscricao(false)" style="flex:1;padding:12px;border:none;border-radius:10px;background:rgba(255,255,255,.08);color:#94A3B8;font-size:14px;font-weight:600;cursor:pointer;border:1px solid #334155">&#x1F3B2; Jogarei avulso</button>';
+      html+='</div></div>';
+    } else {
+      // Já confirmou — mostra status com opção de cancelar
+      var isInscrito=jog&&jog.inscrito;
+      var corBg=isInscrito?'linear-gradient(135deg,#14532D,#052e16)':'linear-gradient(135deg,#1c1917,#0c0a09)';
+      var corBorda=isInscrito?'#16A34A':'#44403c';
+      html+='<div style="background:'+corBg+';border-radius:var(--radius);padding:16px 20px;margin-bottom:16px;border:1px solid '+corBorda+'">';
+      html+='<div style="display:flex;align-items:center;justify-content:space-between">';
+      html+='<div>';
+      html+='<div style="font-size:11px;color:'+(isInscrito?'#4ADE80':'#a8a29e')+';text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">&#x1F3C6; '+(isInscrito?'INSCRITO NO TORNEIO':'JOGADOR AVULSO')+'</div>';
+      html+='<div style="font-size:15px;font-weight:700;color:#fff">'+(isInscrito?'Você estará na classificação':'Você joga sem pontuar')+'</div>';
+      html+='</div>';
+      html+='<button onclick="cancelarInscricao()" style="font-size:11px;padding:6px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:rgba(255,255,255,.5);cursor:pointer">Alterar</button>';
+      html+='</div></div>';
+    }
   }
 
   // Próxima rodada
@@ -1011,6 +1030,25 @@ async function renderInicio(){
   el.innerHTML=html;
 }
 
+
+async function cancelarInscricao(){
+  var jog=JOGADORES.find(function(j){return j.nome===USER.nome;});
+  if(!jog) return;
+  var res=await fetch('https://gpnrixcftsjzufnygisa.supabase.co/rest/v1/poker_usuarios?id=eq.'+jog.id,{
+    method:'PATCH',
+    headers:Object.assign({},RHDR,{'Prefer':'return=minimal'}),
+    body:JSON.stringify({inscrito:false,status_inscricao:'pendente'})
+  });
+  if(res.ok){
+    jog.inscrito=false;
+    jog.status_inscricao='pendente';
+    toast('Inscrição cancelada — escolha novamente','ok');
+    await carregarTudo();
+    renderInicio();
+  } else {
+    toast('Erro ao cancelar','err');
+  }
+}
 
 async function confirmarInscricao(inscrito){
   var jog=JOGADORES.find(function(j){return j.nome===USER.nome;});
@@ -1309,16 +1347,26 @@ async function renderCampeoes(){
     if(kos.length===0){
       html+='<div class="card" style="text-align:center;padding:24px;color:var(--texto3)">Nenhum registro ainda.</div>';
     } else {
-      kos.forEach(function(c){
-        html+='<div class="camp-item">';
-        html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:22px;font-weight:900;color:#92400E;min-width:44px">#'+c.torneio+'</div>';
-        html+='<div style="flex:1">';
-        if(c.ano) html+='<div style="font-size:11px;color:var(--texto3);margin-bottom:3px">'+c.ano+'</div>';
-        if(c.primeiro) html+='<div class="camp-pos"><span class="camp-medal">🥇</span><span class="camp-nome">'+c.primeiro+'</span></div>';
-        if(c.segundo)  html+='<div class="camp-pos"><span class="camp-medal">🥈</span><span class="camp-nome">'+c.segundo+'</span></div>';
-        if(c.terceiro) html+='<div class="camp-pos"><span class="camp-medal">🥉</span><span class="camp-nome">'+c.terceiro+'</span></div>';
-        html+='</div></div>';
+      html+='<div style="overflow-x:auto;margin-bottom:12px">';
+      html+='<table style="width:100%;border-collapse:collapse;font-size:13px">';
+      html+='<thead><tr style="background:#0F172A">';
+      html+='<th style="color:#FFD700;padding:8px 6px;border:1px solid #334155;text-align:center">Ano</th>';
+      html+='<th style="color:#FFD700;padding:8px 6px;border:1px solid #334155;text-align:center">#</th>';
+      html+='<th style="color:#FFD700;padding:8px 6px;border:1px solid #334155;text-align:left">&#x1F947; Campeao KO</th>';
+      html+='<th style="color:#FFD700;padding:8px 6px;border:1px solid #334155;text-align:left">&#x1F948; Vice</th>';
+      html+='<th style="color:#FFD700;padding:8px 6px;border:1px solid #334155;text-align:left">&#x1F949; 3°</th>';
+      html+='</tr></thead><tbody>';
+      kos.forEach(function(c,i){
+        var rbg=i%2===0?'background:#fff':'background:#f8fafc';
+        html+='<tr style="'+rbg+'">';
+        html+='<td style="padding:7px 6px;border:1px solid #e5e7eb;text-align:center;color:var(--texto3);font-size:12px">'+(c.ano||'')+'</td>';
+        html+='<td style="padding:7px 6px;border:1px solid #e5e7eb;text-align:center;font-family:Barlow Condensed,sans-serif;font-size:18px;font-weight:900;color:#92400E">'+c.torneio+'</td>';
+        html+='<td style="padding:7px 6px;border:1px solid #e5e7eb;font-weight:700;color:var(--texto)">'+(c.primeiro||'—')+'</td>';
+        html+='<td style="padding:7px 6px;border:1px solid #e5e7eb;color:var(--texto2)">'+(c.segundo||'—')+'</td>';
+        html+='<td style="padding:7px 6px;border:1px solid #e5e7eb;color:var(--texto3)">'+(c.terceiro||'—')+'</td>';
+        html+='</tr>';
       });
+      html+='</tbody></table></div>';
     }
     if(USER.admin){
       html+='<div class="admin-card" style="margin-top:16px"><h3>➕ Adicionar Knockout</h3>';
