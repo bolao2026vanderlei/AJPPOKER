@@ -967,8 +967,8 @@ async function renderInicio(){
         html+='<div style="display:flex;align-items:center;gap:8px">';
         html+='<span style="font-size:24px">'+(isIn?'&#x1F44D;':'&#x1F44E;')+'</span>';
         html+='<div>';
-        html+='<div style="font-size:14px;font-weight:700;color:#fff">'+(isIn?'Você está IN':'Você está FOLD')+'</div>';
-        html+='<div style="font-size:11px;color:rgba(255,255,255,.5)">presença confirmada</div>';
+        html+='<div style="font-size:16px;font-weight:900;color:#fff">'+(isIn?'✅ Você está IN':'❌ Você está FOLD')+'</div>';
+        html+='<div style="font-size:12px;color:rgba(255,255,255,.75);margin-top:2px">'+(isIn?'Presença confirmada':'Ausência confirmada')+'</div>';
         html+='</div></div>';
         html+='<button data-rid="'+proxRodada.id+'" onclick="alterarPresenca(this.dataset.rid)" style="font-size:11px;padding:6px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:rgba(255,255,255,.6);cursor:pointer">Alterar</button>';
         html+='</div></div>';
@@ -982,7 +982,7 @@ async function renderInicio(){
     }
         html+='</div>';
     html+='<div class="confirmados">';
-    html+='<div class="confirmados-label">'+confirmados.length+' confirmados · '+folds.length+' fold</div>';
+    html+='<div class="confirmados-label" style="display:flex;gap:8px;margin-bottom:6px"><span style="background:rgba(74,222,128,.2);border:1px solid rgba(74,222,128,.4);border-radius:8px;padding:4px 10px;font-size:13px;font-weight:700;color:#4ade80">✅ '+confirmados.length+' IN</span><span style="background:rgba(248,113,113,.15);border:1px solid rgba(248,113,113,.3);border-radius:8px;padding:4px 10px;font-size:13px;font-weight:700;color:#f87171">❌ '+folds.length+' FOLD</span></div>';
     html+='<div class="chips-row">';
     confirmados.forEach(function(p){ html+='<span class="chip-in">'+p.nome+'</span>'; });
     folds.forEach(function(p){ html+='<span class="chip-fold">'+p.nome+'</span>'; });
@@ -1290,10 +1290,12 @@ function renderRanking(aba){
     sorted=stats.slice().sort(function(a,b){
       return b.rebuys-a.rebuys||a.rodadasJogadas-b.rodadasJogadas;
     });
+    var posRB=0,antRB=-1;
     sorted.forEach(function(s,i){
+      if(s.rebuys!==antRB){posRB=i+1;} antRB=s.rebuys;
       var me=s.nome===USER.nome;
       html+='<div class="rank-item'+(me?' me':'')+'">';
-      html+='<div class="rank-pos '+(i===0?'ouro':i===1?'prata':i===2?'bronze':'')+'"> '+(i+1)+'</div>';
+      html+='<div class="rank-pos '+(posRB===1?'ouro':posRB===2?'prata':posRB===3?'bronze':'')+'">'+posRB+'</div>';
       html+='<div class="rank-info">';
       html+='<div class="rank-nome">'+s.nome+'</div>';
       html+='<div class="rank-sub">'+s.rodadasJogadas+' rodadas jogadas</div>';
@@ -1307,10 +1309,12 @@ function renderRanking(aba){
     sorted=stats.slice().sort(function(a,b){
       return b.knockouts-a.knockouts||a.rodadasJogadas-b.rodadasJogadas;
     });
+    var posKO=0,antKO=-1;
     sorted.forEach(function(s,i){
+      if(s.knockouts!==antKO){posKO=i+1;} antKO=s.knockouts;
       var me=s.nome===USER.nome;
       html+='<div class="rank-item'+(me?' me':'')+'">';
-      html+='<div class="rank-pos '+(i===0?'ouro':i===1?'prata':i===2?'bronze':'')+'"> '+(i+1)+'</div>';
+      html+='<div class="rank-pos '+(posKO===1?'ouro':posKO===2?'prata':posKO===3?'bronze':'')+'">'+posKO+'</div>';
       html+='<div class="rank-info">';
       html+='<div class="rank-nome">'+s.nome+'</div>';
       html+='<div class="rank-sub">'+s.rodadasJogadas+' rodadas jogadas</div>';
