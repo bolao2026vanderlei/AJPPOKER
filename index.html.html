@@ -880,34 +880,42 @@ async function renderInicio(){
   html+='<div class="hero-grid">';
 
   // CLASS 1: Com descarte — fundo VERDE
+  // Só mostra posição se houver rodadas realizadas com dados reais
+  var temDados=rodsRealizadas>0&&stats.rodadasJogadas>0;
+  var posExibSem=temDados&&stats.totalSem>0?posSem+'º':'--';
+  var posExibTotal=temDados&&stats.total>0?posTotal+'º':'--';
+  var posExibRebuy=temDados&&stats.rebuys>0?posRebuy+'º':'--';
+  var posExibKO=temDados&&stats.knockouts>0?posKO+'º':'--';
+  var nJogExib=nJog>0?'de '+nJog:'';
+
   html+='<div class="hero-card" style="background:linear-gradient(135deg,#16A34A,#15803D);border:none;padding:12px">';
   html+='<div class="hero-label" style="color:rgba(255,255,255,.7);font-size:10px">C/ Descarte</div>';
-  html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:44px;font-weight:900;color:#fff;line-height:1">'+(rodsRealizadas>=2?posSem+'º':'--')+'</div>';
+  html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:44px;font-weight:900;color:#fff;line-height:1">'+(rodsRealizadas>=2&&stats.totalSem>0?posSem+'º':'--')+'</div>';
   html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:20px;font-weight:700;color:rgba(255,255,255,.9)">'+stats.totalSem+' pts</div>';
-  if(rodsRealizadas>=2){
+  if(rodsRealizadas>=2&&stats.piorPts>0){
     html+='<div style="font-size:9px;color:rgba(255,255,255,.5);margin-top:2px">-'+stats.piorPts+'pts descartado</div>';
-  } else {
+  } else if(rodsRealizadas<2){
     html+='<div style="font-size:9px;color:rgba(255,255,255,.5);margin-top:2px">a partir da 2ª rodada</div>';
   }
   html+='</div>';
 
   html+='<div class="hero-card" style="background:linear-gradient(135deg,#2563EB,#1D4ED8);border:none;padding:12px">';
   html+='<div class="hero-label" style="color:rgba(255,255,255,.7);font-size:10px">Sem Descarte</div>';
-  html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:44px;font-weight:900;color:#fff;line-height:1">'+posTotal+'º</div>';
+  html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:44px;font-weight:900;color:#fff;line-height:1">'+posExibTotal+'</div>';
   html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:20px;font-weight:700;color:rgba(255,255,255,.9)">'+stats.total+' pts</div>';
-  html+='<div style="font-size:9px;color:rgba(255,255,255,.5);margin-top:2px">de '+nJog+' jogadores</div>';
+  html+='<div style="font-size:9px;color:rgba(255,255,255,.5);margin-top:2px">'+nJogExib+'</div>';
   html+='</div>';
 
   html+='<div class="hero-card" style="padding:12px">';
   html+='<div class="hero-label" style="font-size:10px">&#x1F504; Rebuys</div>';
   html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:36px;font-weight:900;color:var(--roxo);line-height:1">'+stats.rebuys+'</div>';
-  html+='<div style="font-size:10px;color:var(--texto3);margin-top:2px">'+posRebuy+'º de '+nJog+'</div>';
+  html+='<div style="font-size:10px;color:var(--texto3);margin-top:2px">'+posExibRebuy+' '+nJogExib+'</div>';
   html+='</div>';
 
   html+='<div class="hero-card" style="padding:12px">';
   html+='<div class="hero-label" style="font-size:10px">&#x1F94A; Rodelas</div>';
   html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:36px;font-weight:900;color:#92400E;line-height:1">'+stats.knockouts+'</div>';
-  html+='<div style="font-size:10px;color:var(--texto3);margin-top:2px">'+posKO+'º de '+nJog+'</div>';
+  html+='<div style="font-size:10px;color:var(--texto3);margin-top:2px">'+posExibKO+' '+nJogExib+'</div>';
   html+='</div>';
 
   html+='</div>';
@@ -951,12 +959,26 @@ async function renderInicio(){
     html+='<div class="prox-data">📅 '+fmtData(proxRodada.data)+(proxRodada.horario?' às '+proxRodada.horario:'')+'</div>';
     if(proxRodada.local) html+='<div class="prox-local">📍 '+proxRodada.local+'</div>';
     if(!USER.admin){
-      var atvIn=minhaPresenca&&minhaPresenca.status==='in'?' ativo':'';
-      var atvFold=minhaPresenca&&minhaPresenca.status==='fold'?' ativo':'';
-      html+='<div class="presenca-btns">';
-      html+='<button class="btn-in'+atvIn+'" data-rid="'+proxRodada.id+'" data-rst="in" onclick="confirmarPresenca(this.dataset.rid,this.dataset.rst)">&#x1F44D; IN</button>';
-      html+='<button class="btn-fold'+atvFold+'" data-rid="'+proxRodada.id+'" data-rst="fold" onclick="confirmarPresenca(this.dataset.rid,this.dataset.rst)">&#x1F44E; FOLD</button>';
-      html+='</div>';
+      if(minhaPresenca){
+        // Já confirmou — mostra status com botão alterar
+        var isIn=minhaPresenca.status==='in';
+        html+='<div style="background:'+(isIn?'rgba(22,163,74,.15)':'rgba(220,38,38,.1)')+';border:1px solid '+(isIn?'rgba(22,163,74,.4)':'rgba(220,38,38,.3)')+';border-radius:10px;padding:12px;margin-top:4px">';
+        html+='<div style="display:flex;align-items:center;justify-content:space-between">';
+        html+='<div style="display:flex;align-items:center;gap:8px">';
+        html+='<span style="font-size:24px">'+(isIn?'&#x1F44D;':'&#x1F44E;')+'</span>';
+        html+='<div>';
+        html+='<div style="font-size:14px;font-weight:700;color:#fff">'+(isIn?'Você está IN':'Você está FOLD')+'</div>';
+        html+='<div style="font-size:11px;color:rgba(255,255,255,.5)">presença confirmada</div>';
+        html+='</div></div>';
+        html+='<button data-rid="'+proxRodada.id+'" onclick="alterarPresenca(this.dataset.rid)" style="font-size:11px;padding:6px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:rgba(255,255,255,.6);cursor:pointer">Alterar</button>';
+        html+='</div></div>';
+      } else {
+        // Ainda não confirmou
+        html+='<div class="presenca-btns">';
+        html+='<button class="btn-in" data-rid="'+proxRodada.id+'" data-rst="in" onclick="confirmarPresenca(this.dataset.rid,this.dataset.rst)">&#x1F44D; IN</button>';
+        html+='<button class="btn-fold" data-rid="'+proxRodada.id+'" data-rst="fold" onclick="confirmarPresenca(this.dataset.rid,this.dataset.rst)">&#x1F44E; FOLD</button>';
+        html+='</div>';
+      }
     }
         html+='</div>';
     html+='<div class="confirmados">';
@@ -1068,6 +1090,14 @@ async function confirmarInscricao(inscrito){
   } else {
     toast('Erro ao confirmar','err');
   }
+}
+
+function alterarPresenca(rodadaId){
+  // Remove presença local para mostrar botões novamente
+  if(PRESENCAS[rodadaId]){
+    PRESENCAS[rodadaId]=PRESENCAS[rodadaId].filter(function(p){return p.nome!==USER.nome;});
+  }
+  renderInicio();
 }
 
 async function confirmarPresenca(rodadaId, status){
@@ -1183,13 +1213,22 @@ function renderRodadas(){
       html+='<div style="font-size:12px;color:var(--texto3);margin-bottom:8px">'+conf+' confirmados · '+fold+' fold</div>';
       if(status==='proxima'){
         if(!USER.admin){
-        html+='<div class="presenca-btns">';
-        html+='<button class="btn-in'+(minhaP&&minhaP.status==='in'?' ativo':'')+
-          '" onclick="confirmarPresenca('+r.id+',\'in\')" style="font-size:12px;padding:8px">&#x1F44D; IN</button>';
-        html+='<button class="btn-fold'+(minhaP&&minhaP.status==='fold'?' ativo':'')+
-          '" onclick="confirmarPresenca('+r.id+',\'fold\')" style="font-size:12px;padding:8px">&#x1F44E; FOLD</button>';
-        html+='</div>';
-              }
+          if(minhaP){
+            var isInR=minhaP.status==='in';
+            html+='<div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px;background:'+(isInR?'rgba(22,163,74,.1)':'rgba(220,38,38,.08)')+';border:1px solid '+(isInR?'rgba(22,163,74,.3)':'rgba(220,38,38,.2)')+';border-radius:8px;padding:8px 12px">';
+            html+='<div style="display:flex;align-items:center;gap:6px">';
+            html+='<span style="font-size:20px">'+(isInR?'&#x1F44D;':'&#x1F44E;')+'</span>';
+            html+='<span style="font-size:13px;font-weight:700;color:'+(isInR?'var(--verde)':'var(--vermelho)')+'">'+minhaP.status.toUpperCase()+'</span>';
+            html+='</div>';
+            html+='<button data-rid="'+r.id+'" onclick="alterarPresenca(this.dataset.rid)" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid var(--cinza3);background:var(--cinza2);cursor:pointer">Alterar</button>';
+            html+='</div>';
+          } else {
+            html+='<div class="presenca-btns" style="margin-top:6px">';
+            html+='<button class="btn-in" data-rid="'+r.id+'" data-rst="in" onclick="confirmarPresenca(this.dataset.rid,this.dataset.rst)" style="font-size:12px;padding:8px">&#x1F44D; IN</button>';
+            html+='<button class="btn-fold" data-rid="'+r.id+'" data-rst="fold" onclick="confirmarPresenca(this.dataset.rid,this.dataset.rst)" style="font-size:12px;padding:8px">&#x1F44E; FOLD</button>';
+            html+='</div>';
+          }
+        }
 } else if(minhaP){
         html+='<span class="'+(minhaP.status==='in'?'chip-in':'chip-fold')+'">'+
           (minhaP.status==='in'?'✅ IN':'❌ FOLD')+'</span>';
