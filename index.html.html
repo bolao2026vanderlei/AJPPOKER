@@ -1052,6 +1052,39 @@ async function renderInicio(){
     html+='</div></div>';
   }
 
+  // CARD ACERTO DA RODADA
+  var ultimaRod=null;
+  for(var ri=RODADAS.length-1;ri>=0;ri--){
+    if(RODADAS[ri].realizada){ultimaRod=RODADAS[ri];break;}
+  }
+  if(ultimaRod&&!USER.admin){
+    var resUlt=(RESULTADOS[ultimaRod.id]||[]).find(function(x){return x.nome===USER.nome;});
+    if(resUlt){
+      var finUlt=calcFinanceiro(resUlt,ultimaRod);
+      var saldo=finUlt.saldo;
+      var positivo=saldo>=0;
+      var bgCard=positivo?'linear-gradient(135deg,#14532D,#052e16)':'linear-gradient(135deg,#450a0a,#1a0505)';
+      var corBorda=positivo?'rgba(74,222,128,.3)':'rgba(248,113,113,.3)';
+      var corLabel=positivo?'#4ade80':'#f87171';
+      html+='<div style="background:'+bgCard+';border-radius:var(--radius);padding:18px;margin-bottom:16px;border:1px solid '+corBorda+'">';
+      html+='<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:'+corLabel+';margin-bottom:6px">&#x1F4B0; Acerto — Rodada '+ultimaRod.numero+'</div>';
+      html+='<div style="font-size:36px;font-weight:900;color:#fff;line-height:1">'+(positivo?'+':'')+fmtMoeda(saldo)+'</div>';
+      html+='<div style="font-size:13px;color:rgba(255,255,255,.6);margin-top:4px">'+(positivo?'Você tem a receber':'Você tem a pagar')+'</div>';
+      if(!positivo){
+        html+='<div style="margin-top:14px;background:rgba(0,0,0,.25);border-radius:10px;padding:12px">';
+        html+='<div style="font-size:11px;color:rgba(255,255,255,.5);margin-bottom:4px">PIX para pagamento:</div>';
+        html+='<div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:8px">Juliano Sakamoto</div>';
+        html+='<div style="display:flex;align-items:center;gap:8px">';
+        html+='<div style="font-size:14px;color:#FCD34D;font-weight:700;flex:1;letter-spacing:1px">02446807950</div>';
+        html+='<button data-pix="02446807950" onclick="copiarPix(this.dataset.pix)" style="font-size:11px;padding:6px 14px;border-radius:8px;border:none;background:#16A34A;color:#fff;cursor:pointer;font-weight:700">&#x1F4CB; Copiar</button>';
+        html+='</div></div>';
+      } else {
+        html+='<div style="margin-top:10px;font-size:12px;color:rgba(255,255,255,.4)">Aguarde o pagamento pelo organizador</div>';
+      }
+      html+='</div>';
+    }
+  }
+
   el.innerHTML=html;
 }
 
