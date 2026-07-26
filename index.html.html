@@ -184,7 +184,7 @@ body{font-family:'Inter',sans-serif;background:var(--fundo);color:var(--texto);m
 .btn-fold.ativo{box-shadow:0 0 0 3px rgba(220,38,38,.3)}
 
 /* CONFIRMADOS */
-.confirmados{margin-top:12px}
+.confirmados{margin-top:12px;color:#fff}
 .confirmados-label{font-size:15px;font-weight:800;color:#ffffff;margin-bottom:10px}
 .chips-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px}
 .chip-in{background:#16A34A;color:#fff;
@@ -777,8 +777,14 @@ async function carregarTudo(){
     var jogadores=await dbGetRest('poker_usuarios','select=id,nome,senha,admin,nome_completo,whatsapp,pix,inscrito,status_inscricao&nome=neq.admin&order=nome.asc');
     var presencas=await dbGetRest('poker_presencas','');
     var resultados=await dbGetRest('poker_resultados','');
+    var acertos=await dbGetRest('poker_acertos','order=rodada_id.asc,nome.asc');
     RODADAS=rodadas||[];
     JOGADORES=jogadores||[];
+    ACERTOS={};
+    (acertos||[]).forEach(function(a){
+      if(!ACERTOS[a.rodada_id]) ACERTOS[a.rodada_id]={};
+      ACERTOS[a.rodada_id][a.nome]=a;
+    });
     PRESENCAS={};
     (presencas||[]).forEach(function(p){
       if(!PRESENCAS[p.rodada_id]) PRESENCAS[p.rodada_id]=[];
@@ -1066,19 +1072,33 @@ async function renderInicio(){
       var bgCard=positivo?'linear-gradient(135deg,#14532D,#052e16)':'linear-gradient(135deg,#450a0a,#1a0505)';
       var corBorda=positivo?'rgba(74,222,128,.3)':'rgba(248,113,113,.3)';
       var corLabel=positivo?'#4ade80':'#f87171';
+      var acertoReg=ACERTOS[ultimaRod.id]&&ACERTOS[ultimaRod.id][USER.nome];
+      var pagoJ=acertoReg&&acertoReg.pago_jogador;
+      var pagoA=acertoReg&&acertoReg.confirmado_admin;
+      var obsAdmin=acertoReg&&acertoReg.obs_admin;
       html+='<div style="background:'+bgCard+';border-radius:var(--radius);padding:18px;margin-bottom:16px;border:1px solid '+corBorda+'">';
       html+='<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:'+corLabel+';margin-bottom:6px">&#x1F4B0; Acerto — Rodada '+ultimaRod.numero+'</div>';
       html+='<div style="font-size:36px;font-weight:900;color:#fff;line-height:1">'+(positivo?'+':'')+fmtMoeda(saldo)+'</div>';
       html+='<div style="font-size:13px;color:rgba(255,255,255,.6);margin-top:4px">'+(positivo?'Você tem a receber':'Você tem a pagar')+'</div>';
-      if(!positivo){
+      // Status pagamento
+      if(pagoA){
+        html+='<div style="margin-top:12px;background:rgba(74,222,128,.15);border:1px solid rgba(74,222,128,.3);border-radius:8px;padding:10px;font-size:13px;font-weight:700;color:#4ade80">&#x2705; Pagamento confirmado pelo admin'+(obsAdmin?' · '+obsAdmin:'')+'</div>';
+      } else if(pagoJ&&!positivo){
+        html+='<div style="margin-top:12px;background:rgba(250,204,21,.1);border:1px solid rgba(250,204,21,.3);border-radius:8px;padding:10px;font-size:13px;font-weight:700;color:#fde047">&#x23F3; Pagamento enviado — aguardando confirmação</div>';
+      }
+      if(!positivo&&!pagoA){
         html+='<div style="margin-top:14px;background:rgba(0,0,0,.25);border-radius:10px;padding:12px">';
         html+='<div style="font-size:11px;color:rgba(255,255,255,.5);margin-bottom:4px">PIX para pagamento:</div>';
         html+='<div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:8px">Juliano Sakamoto</div>';
-        html+='<div style="display:flex;align-items:center;gap:8px">';
+        html+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">';
         html+='<div style="font-size:14px;color:#FCD34D;font-weight:700;flex:1;letter-spacing:1px">02446807950</div>';
-        html+='<button data-pix="02446807950" onclick="copiarPix(this.dataset.pix)" style="font-size:11px;padding:6px 14px;border-radius:8px;border:none;background:#16A34A;color:#fff;cursor:pointer;font-weight:700">&#x1F4CB; Copiar</button>';
-        html+='</div></div>';
-      } else {
+        html+='<button data-pix="02446807950" onclick="copiarPix(this.dataset.pix)" style="font-size:11px;padding:6px 12px;border-radius:8px;border:none;background:#16A34A;color:#fff;cursor:pointer;font-weight:700">&#x1F4CB; Copiar</button>';
+        html+='</div>';
+        if(!pagoJ){
+          html+='<button data-rid="'+ultimaRod.id+'" data-nome="'+USER.nome+'" data-saldo="'+saldo+'" onclick="marcarPagoJogador(this.dataset.rid,this.dataset.nome,this.dataset.saldo)" style="width:100%;padding:12px;border:none;border-radius:10px;background:#2563EB;color:#fff;font-size:14px;font-weight:700;cursor:pointer">&#x1F4E4; Marquei como pago</button>';
+        }
+        html+='</div>';
+      } else if(positivo&&!pagoA){
         html+='<div style="margin-top:10px;font-size:12px;color:rgba(255,255,255,.4)">Aguarde o pagamento pelo organizador</div>';
       }
       html+='</div>';
@@ -1088,6 +1108,38 @@ async function renderInicio(){
   el.innerHTML=html;
 }
 
+
+async function marcarPagoJogador(rodadaId, nome, saldo){
+  var acerto=ACERTOS[rodadaId]&&ACERTOS[rodadaId][nome];
+  if(acerto){
+    // Atualiza
+    await fetch('https://gpnrixcftsjzufnygisa.supabase.co/rest/v1/poker_acertos?id=eq.'+acerto.id,{
+      method:'PATCH', headers:Object.assign({},RHDR,{'Prefer':'return=minimal'}),
+      body:JSON.stringify({pago_jogador:true})
+    });
+  } else {
+    // Insere
+    await dbInsertRest('poker_acertos',[{rodada_id:parseInt(rodadaId),nome:nome,saldo:saldo,pago_jogador:true}]);
+  }
+  toast('Pagamento marcado!','ok');
+  await carregarTudo();
+  renderInicio();
+}
+
+async function confirmarPagamentoAdmin(rodadaId, nome, saldo, obs){
+  var acerto=ACERTOS[rodadaId]&&ACERTOS[rodadaId][nome];
+  if(acerto){
+    await fetch('https://gpnrixcftsjzufnygisa.supabase.co/rest/v1/poker_acertos?id=eq.'+acerto.id,{
+      method:'PATCH', headers:Object.assign({},RHDR,{'Prefer':'return=minimal'}),
+      body:JSON.stringify({confirmado_admin:true, obs_admin:obs||null})
+    });
+  } else {
+    await dbInsertRest('poker_acertos',[{rodada_id:parseInt(rodadaId),nome:nome,saldo:saldo,confirmado_admin:true,obs_admin:obs||null}]);
+  }
+  toast('Confirmado!','ok');
+  await carregarTudo();
+  renderAdmin();
+}
 
 async function cancelarInscricao(){
   var jog=JOGADORES.find(function(j){return j.nome===USER.nome;});
@@ -1669,6 +1721,81 @@ function renderRegras(){
 }
 
 
+function gerarRelatorio(){
+  var stats=calcStatsAll();
+  var rodsReal=RODADAS.filter(function(r){return r.realizada;}).length;
+  var sep='----------------------';
+  var linhas=[];
+
+  linhas.push('*AJP POKER - Classificacao*');
+  linhas.push(sep);
+
+  // Sem descarte
+  linhas.push('*SEM DESCARTE*');
+  var rankP=stats.slice().sort(function(a,b){return b.total-a.total||b.totalSem-a.totalSem;});
+  var posP=0,antP=-1;
+  rankP.forEach(function(s,i){
+    if(s.total!==antP){posP=i+1;} antP=s.total;
+    var m=posP<=3?posP+'o':'  '+posP+'o';
+    linhas.push(m+' '+s.nome+' - '+s.total+' pts');
+  });
+
+  // Com descarte
+  if(rodsReal>=2){
+    linhas.push('');
+    linhas.push(sep);
+    linhas.push('*C/ DESCARTE*');
+    var rankD=stats.slice().sort(function(a,b){return b.totalSem-a.totalSem||b.total-a.total;});
+    var posD=0,antD=-1;
+    rankD.forEach(function(s,i){
+      if(s.totalSem!==antD){posD=i+1;} antD=s.totalSem;
+      var m=posD<=3?posD+'o':'  '+posD+'o';
+      linhas.push(m+' '+s.nome+' - '+s.totalSem+' pts'+(s.piorPts>0?' (-'+s.piorPts+')':''));
+    });
+  }
+
+  // King of Rebuy
+  linhas.push('');
+  linhas.push(sep);
+  linhas.push('*KING OF REBUY*');
+  var rankR=stats.slice().sort(function(a,b){return b.rebuys-a.rebuys;});
+  var posR=0,antR=-1;
+  rankR.forEach(function(s,i){
+    if(s.rebuys!==antR){posR=i+1;} antR=s.rebuys;
+    var m=posR<=3?posR+'o':'  '+posR+'o';
+    linhas.push(m+' '+s.nome+' - '+s.rebuys+' rebuys');
+  });
+
+  // Knockout
+  linhas.push('');
+  linhas.push(sep);
+  linhas.push('*KNOCKOUT*');
+  var rankK=stats.slice().sort(function(a,b){return b.knockouts-a.knockouts;});
+  var posK=0,antK=-1;
+  rankK.forEach(function(s,i){
+    if(s.knockouts!==antK){posK=i+1;} antK=s.knockouts;
+    var m=posK<=3?posK+'o':'  '+posK+'o';
+    linhas.push(m+' '+s.nome+' - '+s.knockouts+' KOs');
+  });
+
+  linhas.push('');
+  linhas.push(sep);
+  var now=new Date();
+  linhas.push('Data: '+now.toLocaleDateString('pt-BR')+' '+now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}));
+  linhas.push('AJP Poker - Londrina PR');
+
+  var txt=linhas.join('\n');
+
+  var el=document.getElementById('relatorio-output');
+  el.style.display='block';
+  el.innerHTML=
+    '<textarea style="width:100%;height:300px;font-size:11px;padding:10px;border-radius:8px;border:1px solid var(--cinza3);background:var(--cinza2);color:var(--texto);resize:none;line-height:1.6;font-family:monospace" id="rel-txt">'+txt+'</textarea>'+
+    '<div style="display:flex;gap:8px;margin-top:8px">'+
+    '<button onclick="navigator.clipboard.writeText(document.getElementById(\'rel-txt\').value).then(function(){toast(\'Copiado para area de transferencia!\',\'ok\')})" class="btn-sv" style="flex:1">Copiar</button>'+
+    '<button onclick="window.open(\'https://wa.me/?text=\'+encodeURIComponent(document.getElementById(\'rel-txt\').value),\'_blank\')" style="flex:1;padding:10px;border-radius:8px;border:none;background:#25D366;color:#fff;font-weight:700;cursor:pointer;font-size:13px">WhatsApp</button>'+
+    '</div>';
+}
+
 async function excluirMembro(uid, nome){
   if(!confirm('Excluir o jogador '+nome+'? Esta ação não pode ser desfeita.')) return;
   var res=await fetch('https://gpnrixcftsjzufnygisa.supabase.co/rest/v1/poker_usuarios?id=eq.'+uid,{
@@ -1924,6 +2051,27 @@ async function renderAdmin(){
   html+='<button class="btn-sv" onclick="salvarRodada()">Salvar Rodada</button>';
   html+='</div>';
 
+  // PAINEL DE ACERTOS
+  var rodsRealizadasAdm=RODADAS.filter(function(r){return r.realizada;});
+  if(rodsRealizadasAdm.length>0){
+    html+='<div class="admin-card">';
+    html+='<h3>&#x1F4B0; Controle de Acertos</h3>';
+    html+='<select class="ainput" id="acerto-rod-sel" onchange="renderAcertoAdmin()" style="width:100%;margin-bottom:12px">';
+    html+='<option value="">Selecione a rodada...</option>';
+    rodsRealizadasAdm.forEach(function(r){ html+='<option value="'+r.id+'">Rodada '+r.numero+' — '+fmtData(r.data)+'</option>'; });
+    html+='</select>';
+    html+='<div id="painel-acerto"></div>';
+    html+='</div>';
+  }
+
+  // RELATÓRIO WHATSAPP
+  html+='<div class="admin-card">';
+  html+='<h3>&#x1F4E4; Relatório para WhatsApp</h3>';
+  html+='<div style="font-size:12px;color:var(--texto3);margin-bottom:10px">Gera as 4 tabelas de classificação atualizadas para enviar pelo WhatsApp</div>';
+  html+='<button onclick="gerarRelatorio()" class="btn-sv" style="width:100%">&#x1F4CA; Gerar Relatório</button>';
+  html+='<div id="relatorio-output" style="display:none;margin-top:12px"></div>';
+  html+='</div>';
+
   // INSCRITOS NO TORNEIO
   html+='<div class="admin-card">';
   html+='<h3>&#x1F3C6; Inscritos no Torneio</h3>';
@@ -1944,6 +2092,48 @@ async function renderAdmin(){
 
   el.innerHTML=html;
 }
+function renderAcertoAdmin(){
+  var rodId=document.getElementById('acerto-rod-sel').value;
+  var el=document.getElementById('painel-acerto');
+  if(!rodId||!el){return}
+  var res=RESULTADOS[parseInt(rodId)]||[];
+  var rod=RODADAS.find(function(r){return r.id===parseInt(rodId);});
+  if(!res.length){el.innerHTML='<div style="color:var(--texto3);font-size:13px">Nenhum resultado nesta rodada.</div>';return}
+  var html='';
+  res.sort(function(a,b){return a.posicao-b.posicao;});
+  res.forEach(function(r){
+    var fin=calcFinanceiro(r,rod);
+    var saldo=fin.saldo;
+    var acerto=ACERTOS[parseInt(rodId)]&&ACERTOS[parseInt(rodId)][r.nome];
+    var pagoJ=acerto&&acerto.pago_jogador;
+    var pagoA=acerto&&acerto.confirmado_admin;
+    var cor=saldo>=0?'var(--verde)':'var(--vermelho)';
+    html+='<div style="display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--cinza3)">';
+    html+='<div style="flex:1">';
+    html+='<div style="font-size:13px;font-weight:700">'+r.posicao+'º '+r.nome+'</div>';
+    html+='<div style="font-size:12px;color:'+cor+';font-weight:700">'+(saldo>=0?'+':'')+fmtMoeda(saldo)+'</div>';
+    if(pagoJ&&!pagoA) html+='<div style="font-size:10px;color:var(--amarelo)">&#x23F3; Jogador marcou como pago</div>';
+    if(pagoA) html+='<div style="font-size:10px;color:var(--verde)">&#x2705; Confirmado</div>';
+    html+='</div>';
+    if(!pagoA&&saldo<0){
+      html+='<button data-rid="'+rodId+'" data-nome="'+r.nome+'" data-saldo="'+saldo+'" onclick="adminConfirmarPgto(this.dataset.rid,this.dataset.nome,this.dataset.saldo)" style="font-size:11px;padding:6px 10px;border-radius:8px;border:none;background:var(--verde);color:#fff;cursor:pointer;font-weight:700;white-space:nowrap">&#x2714; Confirmar</button>';
+    } else if(pagoA){
+      html+='<span style="font-size:11px;color:var(--verde);font-weight:700">&#x2714; OK</span>';
+    } else if(saldo>=0){
+      html+='<span style="font-size:11px;color:var(--texto3)">A receber</span>';
+    }
+    html+='</div>';
+  });
+  el.innerHTML=html;
+}
+
+async function adminConfirmarPgto(rodId, nome, saldo){
+  var obs=prompt('Observação (opcional):','');
+  if(obs===null) return;
+  await confirmarPagamentoAdmin(rodId, nome, parseFloat(saldo), obs);
+  renderAcertoAdmin();
+}
+
 async function toggleInscrito(el){
   var jid=el.dataset.jid;
   var atual=el.dataset.jinscrito==='1';
