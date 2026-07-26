@@ -185,7 +185,7 @@ body{font-family:'Inter',sans-serif;background:var(--fundo);color:var(--texto);m
 
 /* CONFIRMADOS */
 .confirmados{margin-top:12px}
-.confirmados-label{font-size:11px;color:#94A3B8;margin-bottom:8px}
+.confirmados-label{font-size:15px;font-weight:800;color:#ffffff;margin-bottom:10px}
 .chips-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px}
 .chip-in{background:#16A34A;color:#fff;
   border:none;
@@ -983,7 +983,7 @@ async function renderInicio(){
     }
         html+='</div>';
     html+='<div class="confirmados">';
-    html+='<div style="font-size:14px;font-weight:700;color:rgba(255,255,255,.9);margin-bottom:10px;letter-spacing:.5px">&#x2705; '+confirmados.length+' confirmados — Rodada '+proxRodada.numero+'</div>';
+    html+='<div style="font-size:15px;font-weight:800;color:#ffffff;margin-bottom:10px">&#x2705; '+confirmados.length+' confirmados — Rodada '+proxRodada.numero+'</div>';
     html+='<div class="chips-row">';
     confirmados.sort(function(a,b){return a.nome.localeCompare(b.nome);});
     html+='<div style="display:flex;flex-wrap:wrap;gap:6px">';
