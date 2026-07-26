@@ -983,7 +983,7 @@ async function renderInicio(){
     }
         html+='</div>';
     html+='<div class="confirmados">';
-    html+='<div class="confirmados-label" style="display:flex;gap:8px;margin-bottom:6px"><span style="background:rgba(74,222,128,.2);border:1px solid rgba(74,222,128,.4);border-radius:8px;padding:4px 10px;font-size:13px;font-weight:700;color:#4ade80">✅ '+confirmados.length+' IN</span><span style="background:rgba(248,113,113,.15);border:1px solid rgba(248,113,113,.3);border-radius:8px;padding:4px 10px;font-size:13px;font-weight:700;color:#f87171">❌ '+folds.length+' FOLD</span></div>';
+    html+='<div style="font-size:14px;font-weight:700;color:rgba(255,255,255,.9);margin-bottom:10px;letter-spacing:.5px">&#x2705; '+confirmados.length+' confirmados — Rodada '+proxRodada.numero+'</div>';
     html+='<div class="chips-row">';
     confirmados.sort(function(a,b){return a.nome.localeCompare(b.nome);});
     html+='<div style="display:flex;flex-wrap:wrap;gap:6px">';
@@ -1207,7 +1207,10 @@ function renderRodadas(){
       html+='<span class="res-tag res-pts">'+pts+' pts</span>';
       html+='<span class="res-tag" style="background:var(--cinza2);color:var(--texto2)">'+meuRes.rebuy||0+' rebuy</span>';
       if(meuRes.knockout>0) html+='<span class="res-tag" style="background:#FEF9C3;color:#854D0E">💀 '+meuRes.knockout+' KO</span>';
-      html+='<span class="res-tag res-fin">'+(fin.saldo>=0?'+':'')+fmtMoeda(fin.saldo)+'</span>';
+      // Valor R$ só para o próprio jogador ou admin
+      if(USER.admin||meuRes){
+        html+='<span class="res-tag res-fin">'+(fin.saldo>=0?'+':'')+fmtMoeda(fin.saldo)+'</span>';
+      }
       html+='</div>';
     } else if(!r.realizada){
       var conf=pres.filter(function(p){return p.status==='in'}).length;
