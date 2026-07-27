@@ -446,6 +446,7 @@ body{font-family:'Inter',sans-serif;background:var(--fundo);color:var(--texto);m
   <!-- SECOES -->
   <div class="secao on" id="s-inicio"></div>
   <div class="secao" id="s-rodadas"></div>
+  <div class="secao" id="s-acerto"></div>
   <div class="secao" id="s-ranking"></div>
   <div class="secao" id="s-campeoes"></div>
   <div class="secao" id="s-regras"></div>
@@ -465,6 +466,10 @@ body{font-family:'Inter',sans-serif;background:var(--fundo);color:var(--texto);m
     <button class="nav-btn" id="bn-participantes" style="display:none" onclick="ir('participantes')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
       Membros
+    </button>
+    <button class="nav-btn" id="bn-acerto" onclick="ir('acerto')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+      Acerto
     </button>
     <button class="nav-btn" id="bn-ranking" onclick="ir('ranking')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
@@ -800,7 +805,7 @@ async function carregarTudo(){
 
 
 function ir(s){
-  ['inicio','rodadas','ranking','campeoes','regras','participantes','admin'].forEach(function(id){
+  ['inicio','acerto','rodadas','ranking','campeoes','regras','participantes','admin'].forEach(function(id){
     var el=document.getElementById('s-'+id);
     if(el) el.style.display=id===s?'block':'none';
   });
@@ -808,6 +813,7 @@ function ir(s){
     b.classList.toggle('on',b.id==='bn-'+s);
   });
   if(s==='inicio'){ if(USER&&USER.admin){ ir('admin'); return; } renderInicio(); }
+  if(s==='acerto') renderAcerto();
   if(s==='rodadas') renderRodadas();
   if(s==='ranking') renderRanking('pontos');
   if(s==='campeoes') renderCampeoes();
@@ -1111,19 +1117,18 @@ async function renderInicio(){
 
 async function marcarPagoJogador(rodadaId, nome, saldo){
   var acerto=ACERTOS[rodadaId]&&ACERTOS[rodadaId][nome];
+  // Marca pago pelo jogador E confirmado automaticamente
   if(acerto){
-    // Atualiza
     await fetch('https://gpnrixcftsjzufnygisa.supabase.co/rest/v1/poker_acertos?id=eq.'+acerto.id,{
       method:'PATCH', headers:Object.assign({},RHDR,{'Prefer':'return=minimal'}),
-      body:JSON.stringify({pago_jogador:true})
+      body:JSON.stringify({pago_jogador:true, confirmado_admin:true})
     });
   } else {
-    // Insere
-    await dbInsertRest('poker_acertos',[{rodada_id:parseInt(rodadaId),nome:nome,saldo:saldo,pago_jogador:true}]);
+    await dbInsertRest('poker_acertos',[{rodada_id:parseInt(rodadaId),nome:nome,saldo:parseFloat(saldo),pago_jogador:true,confirmado_admin:true}]);
   }
-  toast('Pagamento marcado!','ok');
+  toast('Pagamento confirmado!','ok');
   await carregarTudo();
-  renderInicio();
+  renderAcerto();
 }
 
 async function confirmarPagamentoAdmin(rodadaId, nome, saldo, obs){
@@ -1139,6 +1144,99 @@ async function confirmarPagamentoAdmin(rodadaId, nome, saldo, obs){
   toast('Confirmado!','ok');
   await carregarTudo();
   renderAdmin();
+}
+
+function renderAcerto(){
+  var el=document.getElementById('s-acerto');
+  if(!el) return;
+  var ultimaRod=null;
+  for(var ri=RODADAS.length-1;ri>=0;ri--){
+    if(RODADAS[ri].realizada){ultimaRod=RODADAS[ri];break;}
+  }
+  var html='<h2 style="font-family:Barlow Condensed,sans-serif;font-size:24px;font-weight:900;margin-bottom:16px">&#x1F4B0; Acerto da Rodada</h2>';
+
+  if(!ultimaRod){
+    html+='<div class="card" style="text-align:center;padding:24px;color:var(--texto3)">Nenhuma rodada realizada ainda.</div>';
+    el.innerHTML=html; return;
+  }
+
+  if(USER.admin){
+    // Admin: visão geral de todos
+    html+='<div style="font-size:13px;color:var(--texto3);margin-bottom:12px">Rodada '+ultimaRod.numero+' — '+fmtData(ultimaRod.data)+'</div>';
+    var res=(RESULTADOS[ultimaRod.id]||[]).slice().sort(function(a,b){return a.posicao-b.posicao;});
+    if(!res.length){html+='<div class="card" style="text-align:center;padding:24px;color:var(--texto3)">Sem resultados.</div>';el.innerHTML=html;return;}
+    res.forEach(function(r){
+      var fin=calcFinanceiro(r,ultimaRod);
+      var saldo=fin.saldo;
+      var acerto=ACERTOS[ultimaRod.id]&&ACERTOS[ultimaRod.id][r.nome];
+      var pagoJ=acerto&&acerto.pago_jogador;
+      var pagoA=acerto&&acerto.confirmado_admin;
+      var positivo=saldo>=0;
+      var cor=positivo?'var(--verde)':'var(--vermelho)';
+      html+='<div class="card" style="margin-bottom:8px;padding:12px">';
+      html+='<div style="display:flex;align-items:center;justify-content:space-between">';
+      html+='<div><div style="font-size:14px;font-weight:700">'+r.posicao+'º '+r.nome+'</div>';
+      html+='<div style="font-size:13px;font-weight:700;color:'+cor+'">'+(positivo?'+':'')+fmtMoeda(saldo)+'</div>';
+      if(pagoJ&&!pagoA) html+='<div style="font-size:11px;color:var(--amarelo)">&#x23F3; Pago pelo jogador</div>';
+      if(pagoA) html+='<div style="font-size:11px;color:var(--verde)">&#x2705; Confirmado</div>';
+      html+='</div>';
+      if(!pagoA&&saldo<0){
+        html+='<button data-rid="'+ultimaRod.id+'" data-nome="'+r.nome+'" data-saldo="'+saldo+'" onclick="adminConfirmarPgto(this.dataset.rid,this.dataset.nome,this.dataset.saldo)" style="font-size:11px;padding:6px 12px;border-radius:8px;border:none;background:var(--verde);color:#fff;cursor:pointer;font-weight:700">&#x2714; Confirmar</button>';
+      } else if(pagoA){
+        html+='<span style="font-size:20px">&#x2705;</span>';
+      } else {
+        html+='<span style="font-size:11px;color:var(--texto3)">a receber</span>';
+      }
+      html+='</div></div>';
+    });
+  } else {
+    // Jogador: só o seu acerto
+    var resUlt=(RESULTADOS[ultimaRod.id]||[]).find(function(x){return x.nome===USER.nome;});
+    if(!resUlt){
+      html+='<div class="card" style="text-align:center;padding:24px;color:var(--texto3)">Você não jogou a última rodada.</div>';
+      el.innerHTML=html; return;
+    }
+    var finUlt=calcFinanceiro(resUlt,ultimaRod);
+    var saldo=finUlt.saldo;
+    var positivo=saldo>=0;
+    var acerto=ACERTOS[ultimaRod.id]&&ACERTOS[ultimaRod.id][USER.nome];
+    var pagoJ=acerto&&acerto.pago_jogador;
+    var pagoA=acerto&&acerto.confirmado_admin;
+    var obsAdmin=acerto&&acerto.obs_admin;
+    var bgCard=positivo?'linear-gradient(135deg,#14532D,#052e16)':'linear-gradient(135deg,#450a0a,#1a0505)';
+    var corBorda=positivo?'rgba(74,222,128,.3)':'rgba(248,113,113,.3)';
+    var corLabel=positivo?'#4ade80':'#f87171';
+
+    html+='<div style="background:'+bgCard+';border-radius:var(--radius);padding:20px;border:1px solid '+corBorda+'">';
+    html+='<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:'+corLabel+';margin-bottom:6px">Rodada '+ultimaRod.numero+' — '+fmtData(ultimaRod.data)+'</div>';
+    html+='<div style="font-size:40px;font-weight:900;color:#fff;line-height:1">'+(positivo?'+':'')+fmtMoeda(saldo)+'</div>';
+    html+='<div style="font-size:13px;color:rgba(255,255,255,.6);margin-top:4px">'+(positivo?'Você tem a receber':'Você tem a pagar')+'</div>';
+    html+='<div style="margin-top:12px;font-size:12px;color:rgba(255,255,255,.5)">'+resUlt.posicao+'º lugar · '+getPts((RESULTADOS[ultimaRod.id]||[]).length,resUlt.posicao)+' pts</div>';
+
+    if(pagoA){
+      html+='<div style="margin-top:14px;background:rgba(74,222,128,.15);border:1px solid rgba(74,222,128,.3);border-radius:8px;padding:10px;font-size:13px;font-weight:700;color:#4ade80">&#x2705; Pagamento confirmado'+(obsAdmin?' · '+obsAdmin:'')+'</div>';
+    } else if(pagoJ&&!positivo){
+      html+='<div style="margin-top:14px;background:rgba(74,222,128,.15);border:1px solid rgba(74,222,128,.3);border-radius:8px;padding:10px;font-size:13px;font-weight:700;color:#4ade80">&#x2705; Pagamento confirmado!</div>';
+    }
+
+    if(!positivo&&!pagoA){
+      html+='<div style="margin-top:14px;background:rgba(0,0,0,.25);border-radius:10px;padding:14px">';
+      html+='<div style="font-size:11px;color:rgba(255,255,255,.5);margin-bottom:4px">PIX para pagamento:</div>';
+      html+='<div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:8px">Juliano Sakamoto</div>';
+      html+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">';
+      html+='<div style="font-size:15px;color:#FCD34D;font-weight:700;flex:1;letter-spacing:1px">02446807950</div>';
+      html+='<button data-pix="02446807950" onclick="copiarPix(this.dataset.pix)" style="font-size:11px;padding:6px 12px;border-radius:8px;border:none;background:#16A34A;color:#fff;cursor:pointer;font-weight:700">&#x1F4CB; Copiar</button>';
+      html+='</div>';
+      if(!pagoJ){
+        html+='<button data-rid="'+ultimaRod.id+'" data-nome="'+USER.nome+'" data-saldo="'+saldo+'" onclick="marcarPagoJogador(this.dataset.rid,this.dataset.nome,this.dataset.saldo)" style="width:100%;padding:12px;border:none;border-radius:10px;background:#2563EB;color:#fff;font-size:14px;font-weight:700;cursor:pointer">&#x1F4E4; Marquei como pago</button>';
+      }
+      html+='</div>';
+    } else if(positivo&&!pagoA){
+      html+='<div style="margin-top:12px;font-size:12px;color:rgba(255,255,255,.35)">Aguarde o pagamento pelo organizador</div>';
+    }
+    html+='</div>';
+  }
+  el.innerHTML=html;
 }
 
 async function cancelarInscricao(){
@@ -2310,12 +2408,8 @@ function gerarLinhasJogadores(){
     html+='<td style="padding:3px"><input class="ainput" id="jog-fichas-'+i+'" type="number" min="0" value="0" style="padding:6px;width:100%"></td>';
     html+='<td style="padding:3px"><input class="ainput" id="jog-ko-'+i+'" type="number" min="0" value="0" style="padding:6px;text-align:center;width:100%"></td>';
     html+='</tr>';
-    html+='<input class="ainput" id="jog-rebuy-'+i+'" type="number" min="0" max="4" placeholder="RB" style="width:48px">';
-    html+='<input class="ainput" id="jog-addon-'+i+'" type="number" min="0" max="1" placeholder="AD" style="width:48px">';
-    html+='<input class="ainput" id="jog-fichas-'+i+'" type="number" min="0" placeholder="Fichas" style="width:80px">';
-    html+='<input class="ainput" id="jog-ko-'+i+'" type="number" min="0" placeholder="KO" style="width:48px">';
-    html+='</div>';
   }
+  html+='</tbody></table></div>';
   el.innerHTML=html;
 }
 
