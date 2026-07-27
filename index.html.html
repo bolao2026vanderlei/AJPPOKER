@@ -952,7 +952,7 @@ async function renderInicio(){
       html+='<div>';
       html+='<div style="font-size:11px;color:'+(isInscrito?'#4ADE80':'#a8a29e')+';text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">&#x1F3C6; '+(isInscrito?'INSCRITO NO TORNEIO':'JOGADOR AVULSO')+'</div>';
       html+='<div style="font-size:15px;font-weight:700;color:#fff">'+(isInscrito?'Você estará na classificação':'Você joga sem pontuar')+'</div>';
-      html+='</div>';
+      html+='</tr>';
       html+='<button onclick="cancelarInscricao()" style="font-size:11px;padding:6px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:rgba(255,255,255,.5);cursor:pointer">Alterar</button>';
       html+='</div></div>';
     }
@@ -1791,9 +1791,68 @@ function gerarRelatorio(){
   el.innerHTML=
     '<textarea style="width:100%;height:300px;font-size:11px;padding:10px;border-radius:8px;border:1px solid var(--cinza3);background:var(--cinza2);color:var(--texto);resize:none;line-height:1.6;font-family:monospace" id="rel-txt">'+txt+'</textarea>'+
     '<div style="display:flex;gap:8px;margin-top:8px">'+
-    '<button onclick="navigator.clipboard.writeText(document.getElementById(\'rel-txt\').value).then(function(){toast(\'Copiado para area de transferencia!\',\'ok\')})" class="btn-sv" style="flex:1">Copiar</button>'+
+    '<button onclick="copiarRelatorio()" class="btn-sv" style="flex:1">Copiar</button>'+
     '<button onclick="window.open(\'https://wa.me/?text=\'+encodeURIComponent(document.getElementById(\'rel-txt\').value),\'_blank\')" style="flex:1;padding:10px;border-radius:8px;border:none;background:#25D366;color:#fff;font-weight:700;cursor:pointer;font-size:13px">WhatsApp</button>'+
     '</div>';
+}
+
+function gerarRelatorioRodada(){
+  var ultimaRod=null;
+  for(var ri=RODADAS.length-1;ri>=0;ri--){
+    if(RODADAS[ri].realizada){ultimaRod=RODADAS[ri];break;}
+  }
+  if(!ultimaRod){toast('Nenhuma rodada realizada ainda','err');return}
+  var res=(RESULTADOS[ultimaRod.id]||[]).slice().sort(function(a,b){return a.posicao-b.posicao;});
+  if(!res.length){toast('Sem resultados nesta rodada','err');return}
+  var nj=res.length;
+  var linhas=[];
+  linhas.push('*RESULTADO — Rodada '+ultimaRod.numero+'*');
+  linhas.push('Data: '+fmtData(ultimaRod.data));
+  linhas.push('Jogadores: '+nj);
+  linhas.push('----------------------');
+  linhas.push('Pos | Jogador        | RB | AD | Fichas | KO | Pts');
+  linhas.push('----------------------');
+  res.forEach(function(r){
+    var pts=getPts(nj,r.posicao);
+    var pos=('  '+r.posicao).slice(-2)+'o';
+    var nome=(r.nome+'               ').slice(0,14);
+    var rb=(' '+( r.rebuy||0)).slice(-2);
+    var ad=(r.addon||0);
+    var fi=('    '+(r.fichas||0)).slice(-5);
+    var ko=(r.knockout||0);
+    linhas.push(pos+' | '+nome+' | '+rb+' | '+ad+' | '+fi+' | '+ko+' | '+pts);
+  });
+  linhas.push('----------------------');
+  // Totais
+  var totRb=res.reduce(function(s,r){return s+(r.rebuy||0);},0);
+  var totKo=res.reduce(function(s,r){return s+(r.knockout||0);},0);
+  var totAd=res.reduce(function(s,r){return s+(r.addon||0);},0);
+  linhas.push('Total rebuys: '+totRb+' | Addons: '+totAd+' | KOs: '+totKo);
+  linhas.push('');
+  // Financeiro
+  if(ultimaRod.rateio_intervalo){
+    linhas.push('Rateio intervalo: R$'+ultimaRod.rateio_intervalo);
+  }
+  linhas.push('AJP Poker - Londrina PR');
+  var txt=linhas.join(String.fromCharCode(10));
+  var el=document.getElementById('relatorio-output');
+  el.style.display='block';
+  el.innerHTML=
+    '<textarea style="width:100%;height:320px;font-size:11px;padding:10px;border-radius:8px;border:1px solid var(--cinza3);background:var(--cinza2);color:var(--texto);resize:none;line-height:1.6;font-family:monospace" id="rel-txt">'+txt+'</textarea>'+
+    '<div style="display:flex;gap:8px;margin-top:8px">'+
+    '<button onclick="copiarRelatorio()" class="btn-sv" style="flex:1">Copiar</button>'+
+    '<button onclick="abrirWhatsRel()" style="flex:1;padding:10px;border-radius:8px;border:none;background:#25D366;color:#fff;font-weight:700;cursor:pointer;font-size:13px">WhatsApp</button>'+
+    '</div>';
+}
+
+function abrirWhatsRel(){
+  var t=document.getElementById('rel-txt');
+  if(t) window.open('https://wa.me/?text='+encodeURIComponent(t.value),'_blank');
+}
+
+function copiarRelatorio(){
+  var t=document.getElementById('rel-txt');
+  if(t) navigator.clipboard.writeText(t.value).then(function(){toast('Copiado!','ok');});
 }
 
 async function excluirMembro(uid, nome){
@@ -1983,7 +2042,7 @@ async function renderAdmin(){
   html+='</div>';
   html+='<div class="ainput-label">Rateio Intervalo (R$)</div>';
   html+='<input class="ainput" id="res-rateio" type="number" step="0.01" placeholder="Ex: 150.00" style="margin-bottom:10px;width:100%">';
-  html+='<div id="linhas-jogadores"></div>';
+  html+='<div id="linhas-jogadores" style="overflow-x:auto"></div>';
   html+='<button class="btn-sv" onclick="salvarResultados()" style="margin-top:8px">&#x1F4BE; Salvar Resultados</button>';
   html+='</div>';
 
@@ -2068,7 +2127,8 @@ async function renderAdmin(){
   html+='<div class="admin-card">';
   html+='<h3>&#x1F4E4; Relatório para WhatsApp</h3>';
   html+='<div style="font-size:12px;color:var(--texto3);margin-bottom:10px">Gera as 4 tabelas de classificação atualizadas para enviar pelo WhatsApp</div>';
-  html+='<button onclick="gerarRelatorio()" class="btn-sv" style="width:100%">&#x1F4CA; Gerar Relatório</button>';
+  html+='<button onclick="gerarRelatorio()" class="btn-sv" style="width:100%;margin-bottom:8px">&#x1F4CA; Gerar Ranking (4 tabelas)</button>';
+  html+='<button onclick="gerarRelatorioRodada()" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--azul);background:var(--azul-light);color:var(--azul);font-weight:700;cursor:pointer;font-size:13px">&#x1F4CB; Relatório da Última Rodada</button>';
   html+='<div id="relatorio-output" style="display:none;margin-top:12px"></div>';
   html+='</div>';
 
@@ -2228,17 +2288,28 @@ function gerarLinhasJogadores(){
   var datalist='<datalist id="jog-list">';
   JOGADORES.forEach(function(j){ datalist+='<option value="'+j.nome+'">'; });
   datalist+='</datalist>';
-  var html=datalist+'<div style="display:grid;grid-template-columns:28px 1fr 44px 44px 70px 44px;gap:4px;font-size:11px;font-weight:700;color:var(--texto3);margin-bottom:6px;padding:0 4px">'+
-    '<span>#</span><span>Jogador</span><span>RB</span><span>AD</span><span>Fichas</span><span>KO</span></div>';
+  var html=datalist;
+  // Tabela fixa com scroll
+  html+='<div style="overflow-x:auto;-webkit-overflow-scrolling:touch">';
+  html+='<table style="width:100%;border-collapse:collapse;min-width:320px">';
+  html+='<thead><tr style="background:#0F172A">';
+  html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:28px">#</th>';
+  html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:left">Jogador</th>';
+  html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:40px">RB</th>';
+  html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:40px">AD</th>';
+  html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:64px">Fichas</th>';
+  html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:40px">KO</th>';
+  html+='</tr></thead><tbody>';
   for(var i=1;i<=nj;i++){
-    html+='<div style="display:grid;grid-template-columns:28px 1fr 44px 44px 70px 44px;gap:4px;margin-bottom:6px;align-items:center">';
-    html+='<span style="font-weight:700;font-size:14px;color:var(--verde)">'+i+'º</span>';
-    html+='<input class="ainput" id="jog-nome-'+i+'" list="jog-list" placeholder="Nome..." style="padding:8px;font-size:13px">';
-    html+='<input class="ainput" id="jog-rebuy-'+i+'" type="number" min="0" max="8" value="0" style="padding:8px;text-align:center">';
-    html+='<input class="ainput" id="jog-addon-'+i+'" type="number" min="0" max="1" value="0" style="padding:8px;text-align:center">';
-    html+='<input class="ainput" id="jog-fichas-'+i+'" type="number" min="0" value="0" style="padding:8px">';
-    html+='<input class="ainput" id="jog-ko-'+i+'" type="number" min="0" value="0" style="padding:8px;text-align:center">';
-    html+='</div>';
+    var bg=i%2===0?'background:#f8fafc':'background:#fff';
+    html+='<tr style="'+bg+'">';
+    html+='<td style="text-align:center;font-weight:700;font-size:13px;color:var(--verde);padding:4px">'+i+'º</td>';
+    html+='<td style="padding:3px"><input class="ainput" id="jog-nome-'+i+'" list="jog-list" placeholder="Nome..." style="padding:6px;font-size:12px;width:100%;min-width:90px"></td>';
+    html+='<td style="padding:3px"><input class="ainput" id="jog-rebuy-'+i+'" type="number" min="0" max="8" value="0" style="padding:6px;text-align:center;width:100%"></td>';
+    html+='<td style="padding:3px"><input class="ainput" id="jog-addon-'+i+'" type="number" min="0" max="1" value="0" style="padding:6px;text-align:center;width:100%"></td>';
+    html+='<td style="padding:3px"><input class="ainput" id="jog-fichas-'+i+'" type="number" min="0" value="0" style="padding:6px;width:100%"></td>';
+    html+='<td style="padding:3px"><input class="ainput" id="jog-ko-'+i+'" type="number" min="0" value="0" style="padding:6px;text-align:center;width:100%"></td>';
+    html+='</tr>';
     html+='<input class="ainput" id="jog-rebuy-'+i+'" type="number" min="0" max="4" placeholder="RB" style="width:48px">';
     html+='<input class="ainput" id="jog-addon-'+i+'" type="number" min="0" max="1" placeholder="AD" style="width:48px">';
     html+='<input class="ainput" id="jog-fichas-'+i+'" type="number" min="0" placeholder="Fichas" style="width:80px">';
