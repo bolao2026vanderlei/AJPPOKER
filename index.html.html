@@ -933,76 +933,81 @@ async function renderInicio(){
 
   html+='</div>';
 
-  // CARD DE INSCRIÇÃO — aparece até 1ª rodada ser realizada
+  // ── CARD INSCRIÇÃO SEMESTRAL ── separado, antes da próxima rodada
   var rodsRealizadasN=RODADAS.filter(function(r){return r.realizada;}).length;
   var jog=JOGADORES.find(function(j){return j.nome===USER.nome;});
   var jaDefiniu=jog&&(jog.inscrito===true||jog.status_inscricao==='avulso');
   if(!USER.admin && rodsRealizadasN===0){
     if(!jaDefiniu){
-      // Ainda não confirmou
-      html+='<div style="background:linear-gradient(135deg,#1E3A5F,#0F172A);border-radius:var(--radius);padding:20px;margin-bottom:16px;border:1px solid #2563EB">';
-      html+='<div style="font-size:11px;color:#93C5FD;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">&#x1F3C6; Novo Semestre</div>';
-      html+='<div style="font-size:18px;font-weight:700;color:#fff;margin-bottom:4px">Confirme sua participação</div>';
-      html+='<div style="font-size:13px;color:#94A3B8;margin-bottom:16px">Deseja participar do torneio deste semestre e ser incluído na classificação?</div>';
-      html+='<div style="display:flex;gap:10px">';
-      html+='<button onclick="confirmarInscricao(true)" style="flex:1;padding:12px;border:none;border-radius:10px;background:linear-gradient(135deg,#16A34A,#15803D);color:#fff;font-size:14px;font-weight:700;cursor:pointer">&#x1F91D; Quero me inscrever</button>';
-      html+='<button onclick="confirmarInscricao(false)" style="flex:1;padding:12px;border:none;border-radius:10px;background:rgba(255,255,255,.08);color:#94A3B8;font-size:14px;font-weight:600;cursor:pointer;border:1px solid #334155">&#x1F3B2; Jogarei avulso</button>';
+      html+='<div style="background:linear-gradient(135deg,#78350F,#451A03);border-radius:var(--radius);padding:16px;margin-bottom:14px;border:1px solid #D97706">';
+      html+='<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#FCD34D;margin-bottom:6px">🏆 Novo Semestre — Inscrição</div>';
+      html+='<div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:3px">Confirme sua participação</div>';
+      html+='<div style="font-size:12px;color:rgba(255,255,255,.6);margin-bottom:14px">Deseja pontuar na classificação deste semestre?</div>';
+      html+='<div style="display:flex;gap:8px">';
+      html+='<button onclick="confirmarInscricao(true)" style="flex:1;padding:11px;border:none;border-radius:10px;background:#16A34A;color:#fff;font-size:13px;font-weight:700;cursor:pointer">🤝 Inscrever</button>';
+      html+='<button onclick="confirmarInscricao(false)" style="flex:1;padding:11px;border-radius:10px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.6);font-size:13px;font-weight:600;cursor:pointer;border:1px solid rgba(255,255,255,.15)">🎲 Avulso</button>';
       html+='</div></div>';
     } else {
-      // Já confirmou — mostra status com opção de cancelar
       var isInscrito=jog&&jog.inscrito;
-      var corBg=isInscrito?'linear-gradient(135deg,#14532D,#052e16)':'linear-gradient(135deg,#1c1917,#0c0a09)';
-      var corBorda=isInscrito?'#16A34A':'#44403c';
-      html+='<div style="background:'+corBg+';border-radius:var(--radius);padding:16px 20px;margin-bottom:16px;border:1px solid '+corBorda+'">';
+      html+='<div style="background:'+(isInscrito?'linear-gradient(135deg,#14532D,#052e16)':'linear-gradient(135deg,#1c1917,#0c0a09)')+';border-radius:var(--radius);padding:12px 16px;margin-bottom:14px;border:1px solid '+(isInscrito?'#16A34A':'#44403c')+'">';
       html+='<div style="display:flex;align-items:center;justify-content:space-between">';
       html+='<div>';
-      html+='<div style="font-size:11px;color:'+(isInscrito?'#4ADE80':'#a8a29e')+';text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">&#x1F3C6; '+(isInscrito?'INSCRITO NO TORNEIO':'JOGADOR AVULSO')+'</div>';
-      html+='<div style="font-size:15px;font-weight:700;color:#fff">'+(isInscrito?'Você estará na classificação':'Você joga sem pontuar')+'</div>';
-      html+='</tr>';
-      html+='<button onclick="cancelarInscricao()" style="font-size:11px;padding:6px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:rgba(255,255,255,.5);cursor:pointer">Alterar</button>';
+      html+='<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:'+(isInscrito?'#4ade80':'#a8a29e')+';margin-bottom:2px">'+(isInscrito?'✅ Inscrito no Torneio':'🎲 Jogador Avulso')+'</div>';
+      html+='<div style="font-size:13px;font-weight:600;color:#fff">'+(isInscrito?'Você está na classificação':'Joga sem pontuar no ranking')+'</div>';
+      html+='</div>';
+      html+='<button onclick="cancelarInscricao()" style="font-size:11px;padding:5px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:rgba(255,255,255,.5);cursor:pointer">Alterar</button>';
       html+='</div></div>';
     }
   }
 
-  // Próxima rodada
+  // ── PRÓXIMA RODADA ──
   if(proxRodada){
     html+='<div class="prox-card">';
-    html+='<div class="prox-label">Próxima Rodada</div>';
-    html+='<div class="prox-titulo">Rodada '+proxRodada.numero+'</div>';
-    html+='<div class="prox-data">📅 '+fmtData(proxRodada.data)+(proxRodada.horario?' às '+proxRodada.horario:'')+'</div>';
+    html+='<div class="prox-num">Rodada '+proxRodada.numero+'</div>';
+    html+='<div style="font-size:28px;font-weight:900;color:#fff;font-family:Barlow Condensed,sans-serif;letter-spacing:1px;margin-bottom:2px">📅 '+fmtData(proxRodada.data)+'</div>';
+    if(proxRodada.horario) html+='<div style="font-size:16px;color:#94A3B8;margin-bottom:12px">🕑 das '+proxRodada.horario+' às 18h15</div>';
     if(proxRodada.local) html+='<div class="prox-local">📍 '+proxRodada.local+'</div>';
+
+    // Status de presença
     if(!USER.admin){
       if(minhaPresenca){
-        // Já confirmou — mostra status com botão alterar
         var isIn=minhaPresenca.status==='in';
-        html+='<div style="background:'+(isIn?'rgba(22,163,74,.15)':'rgba(220,38,38,.1)')+';border:1px solid '+(isIn?'rgba(22,163,74,.4)':'rgba(220,38,38,.3)')+';border-radius:10px;padding:12px;margin-top:4px">';
+        html+='<div style="background:'+(isIn?'rgba(22,163,74,.15)':'rgba(220,38,38,.1)')+';border:1px solid '+(isIn?'rgba(22,163,74,.4)':'rgba(220,38,38,.3)')+';border-radius:10px;padding:12px;margin-top:8px">';
         html+='<div style="display:flex;align-items:center;justify-content:space-between">';
         html+='<div style="display:flex;align-items:center;gap:8px">';
-        html+='<span style="font-size:24px">'+(isIn?'&#x1F44D;':'&#x1F44E;')+'</span>';
+        html+='<span style="font-size:24px">'+(isIn?'👍':'👎')+'</span>';
         html+='<div>';
         html+='<div style="font-size:16px;font-weight:900;color:#fff">'+(isIn?'✅ Você está IN':'❌ Você está FOLD')+'</div>';
-        html+='<div style="font-size:12px;color:rgba(255,255,255,.75);margin-top:2px">'+(isIn?'Presença confirmada':'Ausência confirmada')+'</div>';
+        html+='<div style="font-size:12px;color:rgba(255,255,255,.7);margin-top:2px">'+(isIn?'Presença confirmada':'Ausência confirmada')+'</div>';
         html+='</div></div>';
         html+='<button data-rid="'+proxRodada.id+'" onclick="alterarPresenca(this.dataset.rid)" style="font-size:11px;padding:6px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:rgba(255,255,255,.6);cursor:pointer">Alterar</button>';
         html+='</div></div>';
       } else {
-        // Ainda não confirmou
         html+='<div class="presenca-btns">';
-        html+='<button class="btn-in" data-rid="'+proxRodada.id+'" data-rst="in" onclick="confirmarPresenca(this.dataset.rid,this.dataset.rst)">&#x1F44D; IN</button>';
-        html+='<button class="btn-fold" data-rid="'+proxRodada.id+'" data-rst="fold" onclick="confirmarPresenca(this.dataset.rid,this.dataset.rst)">&#x1F44E; FOLD</button>';
+        html+='<button class="btn-in" data-rid="'+proxRodada.id+'" data-rst="in" onclick="confirmarPresenca(this.dataset.rid,this.dataset.rst)">👍 IN</button>';
+        html+='<button class="btn-fold" data-rid="'+proxRodada.id+'" data-rst="fold" onclick="confirmarPresenca(this.dataset.rid,this.dataset.rst)">👎 FOLD</button>';
         html+='</div>';
       }
     }
+    html+='</div>';
+
+    // ── CONFIRMADOS ── card laranja/amarelo separado
+    if(confirmados.length>0){
+      confirmados.sort(function(a,b){return a.nome.localeCompare(b.nome);});
+      html+='<div style="background:linear-gradient(135deg,#78350F,#92400E);border-radius:var(--radius);padding:14px;margin-top:8px;border:1px solid #D97706">';
+      html+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">';
+      html+='<div style="width:36px;height:36px;border-radius:50%;background:#D97706;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:#fff;flex-shrink:0">'+confirmados.length+'</div>';
+      html+='<div><div style="font-size:16px;font-weight:800;color:#fff">Confirmados IN</div>';
+      html+='<div style="font-size:11px;color:rgba(255,255,255,.6)">Rodada '+proxRodada.numero+'</div></div>';
+      html+='</div>';
+      html+='<div style="display:flex;flex-wrap:wrap;gap:6px">';
+      confirmados.forEach(function(p){
+        html+='<div style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:5px 10px">';
+        html+='<span style="font-size:13px;font-weight:600;color:#fff">'+p.nome+'</span>';
         html+='</div>';
-    html+='<div class="confirmados">';
-    html+='<div style="font-size:15px;font-weight:800;color:#ffffff;margin-bottom:10px">&#x2705; '+confirmados.length+' confirmados — Rodada '+proxRodada.numero+'</div>';
-    html+='<div class="chips-row">';
-    confirmados.sort(function(a,b){return a.nome.localeCompare(b.nome);});
-    html+='<div style="display:flex;flex-wrap:wrap;gap:6px">';
-    confirmados.forEach(function(p){ html+='<span class="chip-in">'+p.nome+'</span>'; });
-    html+='</div>';
-    html+='</div></div>';
-    html+='</div>';
+      });
+      html+='</div></div>';
+    }
   } else {
     html+='<div class="card" style="text-align:center;padding:24px;color:var(--texto3)">🏁 Todas as rodadas foram realizadas!</div>';
   }
@@ -1110,6 +1115,7 @@ async function renderInicio(){
       html+='</div>';
     }
   }
+
 
   el.innerHTML=html;
 }
