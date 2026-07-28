@@ -862,7 +862,13 @@ function ir(s){
 async function renderInicio(){
   var el=document.getElementById('s-inicio');
   var proxRodada=RODADAS.find(function(r){return !r.realizada})||null;
-  var minhaPresenca=proxRodada&&PRESENCAS[proxRodada.id]
+
+  // Só libera confirmação se a rodada anterior foi realizada
+  var proxIdx=proxRodada?RODADAS.indexOf(proxRodada):-1;
+  var anteriorRealizada=proxIdx<=0||(RODADAS[proxIdx-1]&&RODADAS[proxIdx-1].realizada);
+  var podeConfirmar=proxRodada&&anteriorRealizada;
+
+  var minhaPresenca=podeConfirmar&&PRESENCAS[proxRodada.id]
     ?PRESENCAS[proxRodada.id].find(function(p){return p.nome===USER.nome})
     :null;
 
@@ -979,7 +985,9 @@ async function renderInicio(){
 
     // Status de presença
     if(!USER.admin){
-      if(minhaPresenca){
+      if(!podeConfirmar){
+        html+='<div style="margin-top:8px;font-size:12px;color:rgba(255,255,255,.5);text-align:center">Confirmação disponível após o fechamento da rodada anterior</div>';
+      } else if(minhaPresenca){
         var isIn=minhaPresenca.status==='in';
         html+='<div style="background:'+(isIn?'rgba(22,163,74,.15)':'rgba(220,38,38,.1)')+';border:1px solid '+(isIn?'rgba(22,163,74,.4)':'rgba(220,38,38,.3)')+';border-radius:10px;padding:12px;margin-top:8px">';
         html+='<div style="display:flex;align-items:center;justify-content:space-between">';
@@ -1421,8 +1429,12 @@ function renderRodadas(){
       html+='<div style="margin-top:8px">';
       html+='<div style="font-size:12px;color:var(--texto3);margin-bottom:8px">'+conf+' confirmados · '+fold+' fold</div>';
       if(status==='proxima'){
+        var rodIdx=RODADAS.indexOf(r);
+        var antRealizada=rodIdx<=0||(RODADAS[rodIdx-1]&&RODADAS[rodIdx-1].realizada);
         if(!USER.admin){
-          if(minhaP){
+          if(!antRealizada){
+            html+='<div style="font-size:11px;color:var(--texto3);margin-top:4px">Disponível após rodada anterior</div>';
+          } else if(minhaP){
             var isInR=minhaP.status==='in';
             html+='<div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px;background:'+(isInR?'rgba(22,163,74,.1)':'rgba(220,38,38,.08)')+';border:1px solid '+(isInR?'rgba(22,163,74,.3)':'rgba(220,38,38,.2)')+';border-radius:8px;padding:8px 12px">';
             html+='<div style="display:flex;align-items:center;gap:6px">';
