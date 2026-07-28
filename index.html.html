@@ -2336,6 +2336,85 @@ async function cancelarPresenca(rodadaId, nome){
   }
 }
 
+function carregarEdicao(){
+  var rodadaId=parseInt(document.getElementById('edit-rodada').value);
+  var el=document.getElementById('linhas-edicao');
+  if(!rodadaId||!el){el.innerHTML='';return}
+  var res=(RESULTADOS[rodadaId]||[]).slice().sort(function(a,b){return a.posicao-b.posicao;});
+  if(!res.length){el.innerHTML='<div style="color:var(--texto3);font-size:13px;padding:8px">Nenhum resultado salvo.</div>';return}
+
+  var datalist='<datalist id="edit-jog-list">';
+  JOGADORES.forEach(function(j){ datalist+='<option value="'+j.nome+'">'; });
+  datalist+='</datalist>';
+
+  var html=datalist;
+  html+='<div style="overflow-x:auto">';
+  html+='<table style="width:100%;border-collapse:collapse;min-width:300px">';
+  html+='<thead><tr style="background:#0F172A">';
+  html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:28px">#</th>';
+  html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:left">Jogador</th>';
+  html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:40px">RB</th>';
+  html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:40px">AD</th>';
+  html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:64px">Fichas</th>';
+  html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:40px">KO</th>';
+  html+='</tr></thead><tbody>';
+
+  res.forEach(function(r){
+    var bg=r.posicao%2===0?'background:#f8fafc':'background:#fff';
+    html+='<tr style="'+bg+'">';
+    html+='<td style="text-align:center;font-weight:700;font-size:13px;color:var(--verde);padding:4px">'+r.posicao+'º</td>';
+    html+='<td style="padding:3px"><input class="ainput" id="edit-nome-'+r.posicao+'" list="edit-jog-list" value="'+r.nome+'" style="padding:6px;font-size:12px;width:100%;min-width:90px"></td>';
+    html+='<td style="padding:3px"><input class="ainput" id="edit-rebuy-'+r.posicao+'" type="number" min="0" max="8" value="'+(r.rebuy||0)+'" style="padding:6px;text-align:center;width:100%"></td>';
+    html+='<td style="padding:3px"><input class="ainput" id="edit-addon-'+r.posicao+'" type="number" min="0" max="1" value="'+(r.addon||0)+'" style="padding:6px;text-align:center;width:100%"></td>';
+    html+='<td style="padding:3px"><input class="ainput" id="edit-fichas-'+r.posicao+'" type="number" min="0" value="'+(r.fichas||0)+'" style="padding:6px;width:100%"></td>';
+    html+='<td style="padding:3px"><input class="ainput" id="edit-ko-'+r.posicao+'" type="number" min="0" value="'+(r.knockout||0)+'" style="padding:6px;text-align:center;width:100%"></td>';
+    html+='</tr>';
+  });
+  html+='</tbody></table></div>';
+
+  var rodObj=RODADAS.find(function(r){return r.id===rodadaId;});
+  html+='<div class="aform-row" style="margin-top:10px">';
+  html+='<div style="flex:1"><div class="ainput-label">Rateio individual (R$)</div>';
+  html+='<input class="ainput" id="edit-rateio" type="number" step="0.01" value="'+(rodObj&&rodObj.rateio_intervalo||0)+'"></div>';
+  html+='</div>';
+  html+='<button class="btn-amarelo btn-sv" onclick="salvarEdicaoResultados('+rodadaId+','+res.length+')" style="margin-top:10px;width:100%">&#x1F4BE; Salvar Alterações</button>';
+
+  el.innerHTML=html;
+}
+
+async function salvarEdicaoResultados(rodadaId, nj){
+  var rateio=parseFloat(document.getElementById('edit-rateio').value)||0;
+  var rows=[];
+  for(var i=1;i<=nj;i++){
+    var nomeEl=document.getElementById('edit-nome-'+i);
+    if(!nomeEl) continue;
+    var nome=nomeEl.value.trim();
+    if(!nome) continue;
+    rows.push({
+      rodada_id:rodadaId,
+      nome:nome,
+      posicao:i,
+      rebuy:parseInt(document.getElementById('edit-rebuy-'+i).value)||0,
+      addon:parseInt(document.getElementById('edit-addon-'+i).value)||0,
+      fichas:parseFloat(document.getElementById('edit-fichas-'+i).value)||0,
+      knockout:parseInt(document.getElementById('edit-ko-'+i).value)||0,
+    });
+  }
+  if(!rows.length){toast('Nenhum jogador preenchido!','err');return}
+  await fetch('https://gpnrixcftsjzufnygisa.supabase.co/rest/v1/poker_resultados?rodada_id=eq.'+rodadaId,{
+    method:'DELETE', headers:Object.assign({},RHDR,{'Prefer':'return=minimal'})
+  });
+  var ins=await dbInsertRest('poker_resultados',rows);
+  if(ins&&ins.error){toast('Erro: '+ins.error.message,'err');return}
+  await fetch('https://gpnrixcftsjzufnygisa.supabase.co/rest/v1/poker_rodadas?id=eq.'+rodadaId,{
+    method:'PATCH', headers:Object.assign({},RHDR,{'Prefer':'return=minimal'}),
+    body:JSON.stringify({rateio_intervalo:rateio})
+  });
+  toast('Resultados atualizados!','ok');
+  await carregarTudo();
+  renderAdmin();
+}
+
 function toggleEditRodada(rid){
   var el=document.getElementById('edit-rod-'+rid);
   if(el) el.style.display=el.style.display==='none'?'block':'none';
