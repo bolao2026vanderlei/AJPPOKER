@@ -2173,6 +2173,9 @@ async function renderAdmin(){
     rodsComRes.forEach(function(r){ html+='<option value="'+r.id+'">Rodada '+r.numero+' ('+fmtData(r.data)+')</option>'; });
     html+='</select>';
     html+='<div id="linhas-edicao"></div>';
+    html+='<div id="acoes-edicao" style="display:none;margin-top:10px">';
+    html+='<button onclick="cancelarResultados()" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--vermelho);background:var(--vermelho-light);color:var(--vermelho);font-weight:700;cursor:pointer;font-size:13px">&#x1F6AB; Cancelar resultados e reabrir rodada</button>';
+    html+='</div>';
     html+='</div>';
   }
 
@@ -2402,7 +2405,36 @@ function carregarEdicao(){
   html+='</div>';
   html+='<button class="btn-amarelo btn-sv" onclick="salvarEdicaoResultados('+rodadaId+','+res.length+')" style="margin-top:10px;width:100%">&#x1F4BE; Salvar Alterações</button>';
 
+  // Mostra botão de cancelar
+  var acoes=document.getElementById('acoes-edicao');
+  if(acoes) acoes.style.display='block';
   el.innerHTML=html;
+}
+
+async function cancelarResultados(){
+  var rodadaId=document.getElementById('edit-rodada').value;
+  if(!rodadaId){toast('Selecione uma rodada','err');return}
+  var rod=RODADAS.find(function(r){return r.id===parseInt(rodadaId);});
+  var num=rod?rod.numero:'?';
+  if(!confirm('Cancelar todos os resultados da Rodada '+num+' e reabrir para nova inserção?')) return;
+
+  // Deleta resultados
+  await fetch('https://gpnrixcftsjzufnygisa.supabase.co/rest/v1/poker_resultados?rodada_id=eq.'+rodadaId,{
+    method:'DELETE', headers:Object.assign({},RHDR,{'Prefer':'return=minimal'})
+  });
+  // Marca rodada como não realizada
+  await fetch('https://gpnrixcftsjzufnygisa.supabase.co/rest/v1/poker_rodadas?id=eq.'+rodadaId,{
+    method:'PATCH', headers:Object.assign({},RHDR,{'Prefer':'return=minimal'}),
+    body:JSON.stringify({realizada:false})
+  });
+  // Deleta acertos desta rodada
+  await fetch('https://gpnrixcftsjzufnygisa.supabase.co/rest/v1/poker_acertos?rodada_id=eq.'+rodadaId,{
+    method:'DELETE', headers:Object.assign({},RHDR,{'Prefer':'return=minimal'})
+  });
+
+  toast('Rodada '+num+' reaberta!','ok');
+  await carregarTudo();
+  renderAdmin();
 }
 
 async function salvarEdicaoResultados(rodadaId, nj){
