@@ -1190,12 +1190,18 @@ function renderAcerto(){
       if(pagoJ&&!pagoA) html+='<div style="font-size:11px;color:var(--amarelo)">&#x23F3; Pago pelo jogador</div>';
       if(pagoA) html+='<div style="font-size:11px;color:var(--verde)">&#x2705; Confirmado</div>';
       html+='</div>';
-      if(!pagoA&&saldo<0){
-        html+='<button data-rid="'+ultimaRod.id+'" data-nome="'+r.nome+'" data-saldo="'+saldo+'" onclick="adminConfirmarPgto(this.dataset.rid,this.dataset.nome,this.dataset.saldo)" style="font-size:11px;padding:6px 12px;border-radius:8px;border:none;background:var(--verde);color:#fff;cursor:pointer;font-weight:700">&#x2714; Confirmar</button>';
-      } else if(pagoA){
-        html+='<span style="font-size:20px">&#x2705;</span>';
+      if(pagoA||pagoJ){
+        html+='<span style="font-size:18px">&#x2705;</span>';
+      } else if(saldo<0){
+        html+='<span style="font-size:11px;color:var(--texto3)">aguardando</span>';
       } else {
-        html+='<span style="font-size:11px;color:var(--texto3)">a receber</span>';
+        var jogObj=JOGADORES.find(function(j){return j.nome===r.nome;});
+        var pixJog=jogObj&&jogObj.pix?jogObj.pix:'nao cadastrado';
+        html+='<div style="text-align:right">';
+        html+='<div style="font-size:9px;color:var(--texto3)">PIX do jogador:</div>';
+        html+='<div style="font-size:11px;font-weight:700;color:var(--verde)">'+pixJog+'</div>';
+        if(jogObj&&jogObj.pix) html+='<button data-pix="'+jogObj.pix+'" onclick="copiarPix(this.dataset.pix)" style="font-size:10px;padding:3px 8px;border-radius:6px;border:1px solid var(--verde);background:var(--verde-light);color:var(--verde-dark);cursor:pointer;margin-top:3px">Copiar</button>';
+        html+='</div>';
       }
       html+='</div></div>';
     });
@@ -1485,7 +1491,6 @@ function renderRanking(aba){
       html+='</div>';
       html+='<div style="text-align:right">';
       html+='<div class="rank-pts">'+s.totalSem+'</div>';
-      html+='<div style="font-size:10px;color:var(--texto3)">'+s.total+' bruto</div>';
       html+='</div></div>';
     });
   } else if(RANK_ABA==='descarte'){
