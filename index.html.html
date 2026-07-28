@@ -716,13 +716,26 @@ async function abrirApp(){
 }
 
 function sair(){
-  USER=null;RODADAS=[];JOGADORES=[];PRESENCAS={};RESULTADOS={};
+  USER=null;RODADAS=[];JOGADORES=[];PRESENCAS={};RESULTADOS={};ACERTOS={};
   localStorage.removeItem('poker_user');
+  // Reseta tela de login completamente
   document.getElementById('app').style.display='none';
   document.getElementById('tela-login').style.display='flex';
   document.getElementById('lerro').textContent='';
+  document.getElementById('e-nome').value='';
   document.getElementById('e-senha').value='';
   document.getElementById('bn-admin').style.display='none';
+  document.getElementById('bn-participantes').style.display='none';
+  // Reativa botão entrar caso estivesse desabilitado
+  var btn=document.getElementById('btn-e');
+  if(btn){btn.disabled=false;btn.textContent='ENTRAR';}
+  // Volta para aba Entrar
+  setTab('e');
+  // Limpa form de cadastro
+  var nc=document.getElementById('c-nome'); if(nc) nc.value='';
+  var ns=document.getElementById('c-senha'); if(ns) ns.value='';
+  var ns2=document.getElementById('c-senha2'); if(ns2) ns2.value='';
+  var cerro=document.getElementById('cerro'); if(cerro) cerro.textContent='';
 }
 
 
