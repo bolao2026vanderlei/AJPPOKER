@@ -1076,11 +1076,11 @@ async function renderInicio(){
     html+='<div class="fin-label">💰 Resultado — Rodada '+ultRodada.numero+'</div>';
     html+='<div class="fin-valor '+(fin.saldo>=0?'positivo':'negativo')+'">'+fmtMoeda(fin.saldo)+'</div>';
     html+='<div style="margin-top:10px;background:rgba(0,0,0,.2);border-radius:8px;padding:10px;font-size:12px;color:rgba(255,255,255,.8);line-height:1.8">';
-    html+='<div style="display:flex;justify-content:space-between"><span>Fichas ('+meuRes.fichas+'× R$1,50)</span><span style="color:#4ade80">+'+fmtMoeda(fin.premio)+'</span></div>';
-    html+='<div style="display:flex;justify-content:space-between"><span>Buy-in</span><span style="color:#f87171">-R$15</span></div>';
-    if(fin.custoRebuy>0) html+='<div style="display:flex;justify-content:space-between"><span>Rebuy ('+meuRes.rebuy+'× R$20)</span><span style="color:#f87171">-'+fmtMoeda(fin.custoRebuy)+'</span></div>';
-    if(fin.custoAddon>0) html+='<div style="display:flex;justify-content:space-between"><span>Addon ('+meuRes.addon+'× R$30)</span><span style="color:#f87171">-'+fmtMoeda(fin.custoAddon)+'</span></div>';
-    if(fin.rateio>0) html+='<div style="display:flex;justify-content:space-between"><span>Rateio intervalo</span><span style="color:#f87171">-'+fmtMoeda(fin.rateio)+'</span></div>';
+    html+='<div style="display:flex;justify-content:space-between"><span>Fichas ('+meuRes.fichas+'× R$ 1,50)</span><span style="color:#4ade80">+ R$ '+Math.abs(fin.premio).toFixed(2).replace('.',',')+'</span></div>';
+    html+='<div style="display:flex;justify-content:space-between"><span>Buy-in</span><span style="color:#f87171">- R$ 15,00</span></div>';
+    if(fin.custoRebuy>0) html+='<div style="display:flex;justify-content:space-between"><span>Rebuy ('+meuRes.rebuy+'× R$ 20,00)</span><span style="color:#f87171">- R$ '+Math.abs(fin.custoRebuy).toFixed(2).replace('.',',')+'</span></div>';
+    if(fin.custoAddon>0) html+='<div style="display:flex;justify-content:space-between"><span>Addon ('+meuRes.addon+'× R$ 30,00)</span><span style="color:#f87171">- R$ '+Math.abs(fin.custoAddon).toFixed(2).replace('.',',')+'</span></div>';
+    if(fin.rateio>0) html+='<div style="display:flex;justify-content:space-between"><span>Rateio intervalo</span><span style="color:#f87171">- R$ '+Math.abs(fin.rateio).toFixed(2).replace('.',',')+'</span></div>';
     html+='<div style="border-top:1px solid rgba(255,255,255,.2);margin-top:6px;padding-top:6px;display:flex;justify-content:space-between;font-weight:700;font-size:14px">';
     html+='<span>Total</span><span style="color:'+(fin.saldo>=0?'#4ade80':'#f87171')+'">'+fmtMoeda(fin.saldo)+'</span></div>';
     html+='</div></div>';
@@ -2295,20 +2295,35 @@ function renderAcertoAdmin(){
     var pagoJ=acerto&&acerto.pago_jogador;
     var pagoA=acerto&&acerto.confirmado_admin;
     var cor=saldo>=0?'var(--verde)':'var(--vermelho)';
-    html+='<div style="display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--cinza3)">';
+    var jogObj=JOGADORES.find(function(j){return j.nome===r.nome;});
+    var pixJog=jogObj&&jogObj.pix?jogObj.pix:null;
+    html+='<div style="padding:10px 0;border-bottom:1px solid var(--cinza3)">';
+    html+='<div style="display:flex;align-items:center;gap:8px">';
     html+='<div style="flex:1">';
     html+='<div style="font-size:13px;font-weight:700">'+r.posicao+'º '+r.nome+'</div>';
-    html+='<div style="font-size:12px;color:'+cor+';font-weight:700">'+(saldo>=0?'+':'')+fmtMoeda(saldo)+'</div>';
-    if(pagoJ&&!pagoA) html+='<div style="font-size:10px;color:var(--amarelo)">&#x23F3; Jogador marcou como pago</div>';
-    if(pagoA) html+='<div style="font-size:10px;color:var(--verde)">&#x2705; Confirmado</div>';
+    html+='<div style="font-size:14px;font-weight:900;color:'+cor+'">'+(saldo>=0?'+ ':'- ')+'R$ '+Math.abs(saldo).toFixed(2).replace('.',',')+'</div>';
+    if(pagoJ||pagoA) html+='<div style="font-size:11px;color:var(--verde);margin-top:2px">&#x2705; Pago</div>';
     html+='</div>';
-    if(!pagoA&&saldo<0){
-      html+='<button data-rid="'+rodId+'" data-nome="'+r.nome+'" data-saldo="'+saldo+'" onclick="adminConfirmarPgto(this.dataset.rid,this.dataset.nome,this.dataset.saldo)" style="font-size:11px;padding:6px 10px;border-radius:8px;border:none;background:var(--verde);color:#fff;cursor:pointer;font-weight:700;white-space:nowrap">&#x2714; Confirmar</button>';
-    } else if(pagoA){
-      html+='<span style="font-size:11px;color:var(--verde);font-weight:700">&#x2714; OK</span>';
-    } else if(saldo>=0){
-      html+='<span style="font-size:11px;color:var(--texto3)">A receber</span>';
+    // Lado direito
+    html+='<div style="text-align:right;flex-shrink:0">';
+    if(saldo>=0){
+      // A receber — mostra PIX do jogador
+      if(pixJog){
+        html+='<div style="font-size:9px;color:var(--texto3)">PIX do jogador:</div>';
+        html+='<div style="font-size:11px;font-weight:700;color:var(--verde);max-width:120px;word-break:break-all">'+pixJog+'</div>';
+        html+='<button data-pix="'+pixJog+'" onclick="copiarPix(this.dataset.pix)" style="font-size:10px;padding:3px 8px;border-radius:6px;border:1px solid var(--verde);background:var(--verde-light);color:var(--verde-dark);cursor:pointer;margin-top:4px;font-weight:700">&#x1F4CB; Copiar PIX</button>';
+      } else {
+        html+='<div style="font-size:10px;color:var(--texto3)">PIX não cadastrado</div>';
+      }
+    } else if(!(pagoJ||pagoA)){
+      // A pagar — aguardando jogador
+      html+='<div style="font-size:10px;color:var(--texto3);margin-bottom:4px">PIX Juliano:</div>';
+      html+='<div style="font-size:11px;font-weight:700;color:#FCD34D">02446807950</div>';
+      html+='<button data-pix="02446807950" onclick="copiarPix(this.dataset.pix)" style="font-size:10px;padding:3px 8px;border-radius:6px;border:1px solid var(--amarelo);background:rgba(252,211,77,.1);color:#FCD34D;cursor:pointer;margin-top:4px;font-weight:700">&#x1F4CB; Copiar</button>';
+    } else {
+      html+='<span style="font-size:18px">&#x2705;</span>';
     }
+    html+='</div></div></div>';
     html+='</div>';
   });
   el.innerHTML=html;
@@ -2604,4 +2619,9 @@ document.addEventListener('DOMContentLoaded', async function(){
 });
 </script>
 </body>
-</html>
+</html>html+=\'<div style="display:flex;justify-content:space-between"><span>Fichas (\'+meuRes.fichas+\'× R$ 1,50)</span><span style="color:#4ade80">R$ \'+Math.abs(fin.premio).toFixed(2).replace(\'.\',\'\\,\')+\'</span></div>\';
+    html+=\'<div style="display:flex;justify-content:space-between"><span>Buy-in</span><span style="color:#f87171">- R$ 15,00</span></div>\';
+    if(fin.custoRebuy>0) html+=\'<div style="display:flex;justify-content:space-between"><span>Rebuy (\'+meuRes.rebuy+\'× R$ 20,00)</span><span style="color:#f87171">- R$ \'+Math.abs(fin.custoRebuy).toFixed(2).replace(\'.\',\'\\,\')+\'</span></div>\';
+    if(fin.custoAddon>0) html+=\'<div style="display:flex;justify-content:space-between"><span>Addon (\'+meuRes.addon+\'× R$ 30,00)</span><span style="color:#f87171">- R$ \'+Math.abs(fin.custoAddon).toFixed(2).replace(\'.\',\'\\,\')+\'</span></div>\';
+    if(fin.rateio>0) html+=\'<div style="display:flex;justify-content:space-between"><span>Rateio intervalo</span><span style="color:#f87171">- R$ \'+Math.abs(fin.rateio).toFixed(2).replace(\'.\',\'\\,\')+\'</span></div>\';
+    
