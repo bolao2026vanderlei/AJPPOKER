@@ -467,10 +467,7 @@ body{font-family:'Inter',sans-serif;background:var(--fundo);color:var(--texto);m
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
       Membros
     </button>
-    <button class="nav-btn" id="bn-acerto" onclick="ir('acerto')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-      Acerto
-    </button>
+
     <button class="nav-btn" id="bn-ranking" onclick="ir('ranking')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
       Ranking
@@ -805,7 +802,7 @@ async function carregarTudo(){
 
 
 function ir(s){
-  ['inicio','acerto','rodadas','ranking','campeoes','regras','participantes','admin'].forEach(function(id){
+  ['inicio','rodadas','ranking','campeoes','regras','participantes','admin'].forEach(function(id){
     var el=document.getElementById('s-'+id);
     if(el) el.style.display=id===s?'block':'none';
   });
@@ -813,7 +810,6 @@ function ir(s){
     b.classList.toggle('on',b.id==='bn-'+s);
   });
   if(s==='inicio'){ if(USER&&USER.admin){ ir('admin'); return; } renderInicio(); }
-  if(s==='acerto') renderAcerto();
   if(s==='rodadas') renderRodadas();
   if(s==='ranking') renderRanking('pontos');
   if(s==='campeoes') renderCampeoes();
@@ -1039,9 +1035,11 @@ async function renderInicio(){
         html+='<div style="text-align:right">';
         html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:26px;font-weight:900;color:'+(isPior?'#DC2626':'var(--verde)')+'">'+pts+'pts'+(isPior?' &#x2715;':'')+'</div>';
         html+='<div style="font-size:13px;font-weight:700;color:var(--texto2)">'+meuRes.posicao+'° lugar</div>';
-        if(meuRes.rebuy>0) html+='<div style="font-size:12px;color:var(--roxo)">'+meuRes.rebuy+' rebuy</div>';
-        if(meuRes.knockout>0) html+='<div style="font-size:12px;color:#92400E">&#x1F480; '+meuRes.knockout+' KO</div>';
-        html+='<div style="font-size:13px;font-weight:700;color:'+(fin.saldo>=0?'var(--verde)':'var(--vermelho)')+'">'+fmtMoeda(fin.saldo)+'</div>';
+        if(meuRes.rebuy>0) html+='<div style="font-size:11px;color:var(--roxo)">'+meuRes.rebuy+'× rebuy</div>';
+        if(meuRes.knockout>0) html+='<div style="font-size:11px;color:#92400E">&#x1F94A; '+meuRes.knockout+' KO</div>';
+        if(USER.admin||true){
+          html+='<div style="font-size:13px;font-weight:700;color:'+(fin.saldo>=0?'var(--verde)':'var(--vermelho)')+'">'+fmtMoeda(fin.saldo)+'</div>';
+        }
         html+='</div>';
       } else if(!r.realizada&&minhaP){
         html+='<span style="font-size:18px">'+(minhaP.status==='in'?'&#x1F91A;':'&#x1F919;')+'</span>';
@@ -1064,8 +1062,14 @@ async function renderInicio(){
     html+='<div class="fin-card">';
     html+='<div class="fin-label">💰 Resultado — Rodada '+ultRodada.numero+'</div>';
     html+='<div class="fin-valor '+(fin.saldo>=0?'positivo':'negativo')+'">'+fmtMoeda(fin.saldo)+'</div>';
-    html+='<div style="font-size:12px;color:rgba(255,255,255,.6);margin-top:4px">';
-    html+='Fichas: '+fmtMoeda(fin.premio)+' | Custo: '+fmtMoeda(fin.custo);
+    html+='<div style="margin-top:10px;background:rgba(0,0,0,.2);border-radius:8px;padding:10px;font-size:12px;color:rgba(255,255,255,.8);line-height:1.8">';
+    html+='<div style="display:flex;justify-content:space-between"><span>Fichas ('+meuRes.fichas+'× R$1,50)</span><span style="color:#4ade80">+'+fmtMoeda(fin.premio)+'</span></div>';
+    html+='<div style="display:flex;justify-content:space-between"><span>Buy-in</span><span style="color:#f87171">-R$15</span></div>';
+    if(fin.custoRebuy>0) html+='<div style="display:flex;justify-content:space-between"><span>Rebuy ('+meuRes.rebuy+'× R$20)</span><span style="color:#f87171">-'+fmtMoeda(fin.custoRebuy)+'</span></div>';
+    if(fin.custoAddon>0) html+='<div style="display:flex;justify-content:space-between"><span>Addon ('+meuRes.addon+'× R$30)</span><span style="color:#f87171">-'+fmtMoeda(fin.custoAddon)+'</span></div>';
+    if(fin.rateio>0) html+='<div style="display:flex;justify-content:space-between"><span>Rateio intervalo</span><span style="color:#f87171">-'+fmtMoeda(fin.rateio)+'</span></div>';
+    html+='<div style="border-top:1px solid rgba(255,255,255,.2);margin-top:6px;padding-top:6px;display:flex;justify-content:space-between;font-weight:700;font-size:14px">';
+    html+='<span>Total</span><span style="color:'+(fin.saldo>=0?'#4ade80':'#f87171')+'">'+fmtMoeda(fin.saldo)+'</span></div>';
     html+='</div></div>';
   }
 
@@ -1353,15 +1357,16 @@ function calcStatsAll(){
 
 
 function calcFinanceiro(res,rodada){
-  if(!res) return{saldo:0,premio:0,custo:0};
+  if(!res) return{saldo:0,premio:0,custo:0,rateio:0,buyin:0,custoRebuy:0,custoAddon:0};
   var buyin=15, rebuyVal=20, addonVal=30;
-  var custo=buyin+(res.rebuy||0)*rebuyVal+(res.addon||0)*addonVal;
-  var premio=(res.fichas||0)*1.5;
-  var rateio=rodada.rateio_intervalo||0;
-  var nJog=RESULTADOS[rodada.id]?RESULTADOS[rodada.id].length:1;
-  var rateioPorJog=nJog>0?rateio/nJog:0;
-  var saldo=premio-custo-rateioPorJog;
-  return{saldo:saldo,premio:premio,custo:custo};
+  var custoRebuy=(res.rebuy||0)*rebuyVal;
+  var custoAddon=(res.addon||0)*addonVal;
+  var rateio=rodada&&rodada.rateio_intervalo?parseFloat(rodada.rateio_intervalo):0;
+  // fichas * 1.5 arredondado para inteiro (sem centavos)
+  var premio=Math.round((res.fichas||0)*1.5);
+  var custo=buyin+custoRebuy+custoAddon+rateio;
+  var saldo=premio-custo;
+  return{saldo:saldo,premio:premio,custo:custo,rateio:rateio,buyin:buyin,custoRebuy:custoRebuy,custoAddon:custoAddon};
 }
 
 
