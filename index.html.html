@@ -1048,9 +1048,9 @@ async function renderInicio(){
         html+='<div style="text-align:right">';
         html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:26px;font-weight:900;color:'+(isPior?'#DC2626':'var(--verde)')+'">'+pts+'pts'+(isPior?' &#x2715;':'')+'</div>';
         html+='<div style="font-size:13px;font-weight:700;color:var(--texto2)">'+meuRes.posicao+'° lugar</div>';
-        if(meuRes.rebuy>0) html+='<div style="font-size:11px;color:var(--roxo)">'+meuRes.rebuy+'× rebuy</div>';
+        if(meuRes.rebuy>0) html+='<div style="font-size:11px;color:var(--roxo)">&#x1F504; '+meuRes.rebuy+'× rebuy</div>';
         if(meuRes.knockout>0) html+='<div style="font-size:11px;color:#92400E">&#x1F94A; '+meuRes.knockout+' KO</div>';
-        if(USER.admin||true){
+        if(USER.admin||meuRes){
           html+='<div style="font-size:13px;font-weight:700;color:'+(fin.saldo>=0?'var(--verde)':'var(--vermelho)')+'">'+fmtMoeda(fin.saldo)+'</div>';
         }
         html+='</div>';
@@ -1062,28 +1062,6 @@ async function renderInicio(){
       html+='</div>';
     });
     html+='</div>';
-  }
-
-  // Resultado financeiro da última rodada
-  var minhasRodadas=RODADAS.filter(function(r){
-    return r.realizada&&RESULTADOS[r.id]&&RESULTADOS[r.id].find(function(x){return x.nome===USER.nome});
-  });
-  if(minhasRodadas.length>0){
-    var ultRodada=minhasRodadas[minhasRodadas.length-1];
-    var meuRes=RESULTADOS[ultRodada.id].find(function(x){return x.nome===USER.nome});
-    var fin=calcFinanceiro(meuRes,ultRodada);
-    html+='<div class="fin-card">';
-    html+='<div class="fin-label">💰 Resultado — Rodada '+ultRodada.numero+'</div>';
-    html+='<div class="fin-valor '+(fin.saldo>=0?'positivo':'negativo')+'">'+fmtMoeda(fin.saldo)+'</div>';
-    html+='<div style="margin-top:10px;background:rgba(0,0,0,.2);border-radius:8px;padding:10px;font-size:12px;color:rgba(255,255,255,.8);line-height:1.8">';
-    html+='<div style="display:flex;justify-content:space-between"><span>Fichas ('+meuRes.fichas+'× R$ 1,50)</span><span style="color:#4ade80">+ R$ '+Math.abs(fin.premio).toFixed(2).replace('.',',')+'</span></div>';
-    html+='<div style="display:flex;justify-content:space-between"><span>Buy-in</span><span style="color:#f87171">- R$ 15,00</span></div>';
-    if(fin.custoRebuy>0) html+='<div style="display:flex;justify-content:space-between"><span>Rebuy ('+meuRes.rebuy+'× R$ 20,00)</span><span style="color:#f87171">- R$ '+Math.abs(fin.custoRebuy).toFixed(2).replace('.',',')+'</span></div>';
-    if(fin.custoAddon>0) html+='<div style="display:flex;justify-content:space-between"><span>Addon ('+meuRes.addon+'× R$ 30,00)</span><span style="color:#f87171">- R$ '+Math.abs(fin.custoAddon).toFixed(2).replace('.',',')+'</span></div>';
-    if(fin.rateio>0) html+='<div style="display:flex;justify-content:space-between"><span>Rateio intervalo</span><span style="color:#f87171">- R$ '+Math.abs(fin.rateio).toFixed(2).replace('.',',')+'</span></div>';
-    html+='<div style="border-top:1px solid rgba(255,255,255,.2);margin-top:6px;padding-top:6px;display:flex;justify-content:space-between;font-weight:700;font-size:14px">';
-    html+='<span>Total</span><span style="color:'+(fin.saldo>=0?'#4ade80':'#f87171')+'">'+fmtMoeda(fin.saldo)+'</span></div>';
-    html+='</div></div>';
   }
 
   // CARD ACERTO DA RODADA
