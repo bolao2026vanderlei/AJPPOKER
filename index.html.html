@@ -1502,10 +1502,9 @@ function renderRanking(aba){
       html+='<div class="rank-pos '+pc+'">'+pos+'</div>';
       html+='<div class="rank-info">';
       html+='<div class="rank-nome">'+s.nome+(me?' <span style="font-size:10px;color:var(--verde)">(você)</span>':'')+'</div>';
-      html+='<div class="rank-sub">'+s.rodadasJogadas+' rodada(s) · '+s.rebuys+' rebuys · '+s.knockouts+' KOs</div>';
       html+='</div>';
       html+='<div style="text-align:right">';
-      html+='<div class="rank-pts">'+s.totalSem+'</div>';
+      html+='<div class="rank-pts">'+s.total+'</div>';
       html+='</div></div>';
     });
   } else if(RANK_ABA==='descarte'){
@@ -1542,8 +1541,6 @@ function renderRanking(aba){
         html+='<div class="rank-nome">'+s.nome+(me?' <span style="font-size:10px;color:var(--verde)">(você)</span>':'')+'</div>';
         if(rodDescartada){
           html+='<div style="font-size:10px;color:#DC2626;margin-top:2px">&#x2702; descartou '+rodDescartada+'</div>';
-        } else {
-          html+='<div class="rank-sub">'+s.rodadasJogadas+' rodada(s)</div>';
         }
         html+='</div>';
         html+='<div style="text-align:right">';
