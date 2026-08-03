@@ -1475,6 +1475,47 @@ function renderRodadas(){
       }
       html+='</div>';
     }
+    // Tabela expandível de resultados
+    if(r.realizada){
+      var todosResT=(RESULTADOS[r.id]||[]).slice().sort(function(a,b){return a.posicao-b.posicao;});
+      var njtT=todosResT.length;
+      html+='<div id="det-rod-'+r.id+'" style="display:none;margin-top:8px;overflow-x:auto">';
+      html+='<table style="width:100%;border-collapse:collapse;font-size:11px">';
+      html+='<thead><tr style="background:#0F172A">';
+      html+='<th style="color:#FFD700;padding:5px 4px;text-align:center">#</th>';
+      html+='<th style="color:#FFD700;padding:5px 4px;text-align:left">Jogador</th>';
+      html+='<th style="color:#FFD700;padding:5px 4px;text-align:center">RB</th>';
+      html+='<th style="color:#FFD700;padding:5px 4px;text-align:center">AD</th>';
+      html+='<th style="color:#FFD700;padding:5px 4px;text-align:center">Fichas</th>';
+      html+='<th style="color:#FFD700;padding:5px 4px;text-align:center">KO</th>';
+      html+='<th style="color:#FFD700;padding:5px 4px;text-align:center">Pts</th>';
+      html+='</tr></thead><tbody>';
+      todosResT.forEach(function(resT,riT){
+        var ptsT=getPts(njtT,resT.posicao);
+        var isMeT=resT.nome===USER.nome;
+        var bgT=isMeT?'background:#e8f5eb':riT%2===0?'background:#fff':'background:#f8fafc';
+        html+='<tr style="'+bgT+'">';
+        html+='<td style="padding:4px 3px;border:1px solid #e5e7eb;text-align:center;font-weight:700;color:var(--verde)">'+resT.posicao+'°</td>';
+        html+='<td style="padding:4px 5px;border:1px solid #e5e7eb;'+(isMeT?'color:#1a5c28;font-weight:700':'')+'">'+resT.nome+'</td>';
+        html+='<td style="padding:4px 3px;border:1px solid #e5e7eb;text-align:center">'+(resT.rebuy||0)+'</td>';
+        html+='<td style="padding:4px 3px;border:1px solid #e5e7eb;text-align:center">'+(resT.addon||0)+'</td>';
+        html+='<td style="padding:4px 3px;border:1px solid #e5e7eb;text-align:center">'+(resT.fichas||0)+'</td>';
+        html+='<td style="padding:4px 3px;border:1px solid #e5e7eb;text-align:center">'+(resT.knockout||0)+'</td>';
+        html+='<td style="padding:4px 3px;border:1px solid #e5e7eb;text-align:center;font-weight:700;color:'+(isMeT?'#1a5c28':'var(--texto)')+'">'+ptsT+'</td>';
+        html+='</tr>';
+      });
+      // Total de fichas
+      var totalFichasT=todosResT.reduce(function(s,r){return s+(r.fichas||0);},0);
+      var totalRbT=todosResT.reduce(function(s,r){return s+(r.rebuy||0);},0);
+      var totalKoT=todosResT.reduce(function(s,r){return s+(r.knockout||0);},0);
+      html+='<tr style="background:#0F172A">';
+      html+='<td colspan="4" style="padding:4px 6px;color:#FFD700;font-weight:700;font-size:11px">Total</td>';
+      html+='<td style="padding:4px 3px;border-top:1px solid #334155;text-align:center;color:#FFD700;font-weight:700;font-size:11px">'+totalFichasT+'</td>';
+      html+='<td style="padding:4px 3px;border-top:1px solid #334155;text-align:center;color:#FFD700;font-weight:700;font-size:11px">'+totalKoT+'</td>';
+      html+='<td style="padding:4px 3px;border-top:1px solid #334155;text-align:center;color:#FFD700;font-weight:700;font-size:11px">'+njtT+' jog</td>';
+      html+='</tr>';
+      html+='</tbody></table></div>';
+    }
     html+='</div>';
   });
 
@@ -2423,6 +2464,7 @@ function carregarEdicao(){
     html+='<td style="padding:3px"><input class="ainput" id="edit-addon-'+r.posicao+'" type="number" min="0" max="1" value="'+(r.addon||0)+'" style="padding:6px;text-align:center;width:100%"></td>';
     html+='<td style="padding:3px"><input class="ainput" id="edit-fichas-'+r.posicao+'" type="number" min="0" value="'+(r.fichas||0)+'" style="padding:6px;width:100%"></td>';
     html+='<td style="padding:3px"><input class="ainput" id="edit-ko-'+r.posicao+'" type="number" min="0" value="'+(r.knockout||0)+'" style="padding:6px;text-align:center;width:100%"></td>';
+    html+='<td style="padding:3px"><input class="ainput" id="edit-cred-'+r.posicao+'" type="number" min="0" step="0.01" value="'+(r.credito||0)+'" style="padding:6px;text-align:center;width:100%"></td>';
     html+='</tr>';
   });
   html+='</tbody></table></div>';
@@ -2474,6 +2516,7 @@ async function salvarEdicaoResultados(rodadaId, nj){
     if(!nomeEl) continue;
     var nome=nomeEl.value.trim();
     if(!nome) continue;
+    var credEl2=document.getElementById('edit-cred-'+i);
     rows.push({
       rodada_id:rodadaId,
       nome:nome,
@@ -2482,6 +2525,7 @@ async function salvarEdicaoResultados(rodadaId, nj){
       addon:parseInt(document.getElementById('edit-addon-'+i).value)||0,
       fichas:parseFloat(document.getElementById('edit-fichas-'+i).value)||0,
       knockout:parseInt(document.getElementById('edit-ko-'+i).value)||0,
+      credito:credEl2?parseFloat(credEl2.value)||0:0,
     });
   }
   if(!rows.length){toast('Nenhum jogador preenchido!','err');return}
