@@ -196,18 +196,18 @@ body{font-family:'Inter',sans-serif;background:var(--fundo);color:var(--texto);m
   border-radius:8px;padding:5px 12px;font-size:12px;font-weight:600}
 
 /* RANKING */
-.rank-item{display:flex;align-items:center;gap:12px;padding:12px;
-  background:var(--card);border-radius:var(--radius);margin-bottom:8px;
-  box-shadow:var(--shadow);border:1px solid var(--borda)}
-.rank-item.me{border-color:var(--verde);background:#F0FDF4}
-.rank-pos{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;
-  min-width:36px;text-align:center}
+.rank-item{display:flex;align-items:center;gap:8px;padding:5px 10px;
+  background:var(--card);border-radius:8px;margin-bottom:2px;
+  border:1px solid var(--borda)}
+.rank-item.me{border-color:#1a5c28;background:#e8f5eb}
+.rank-pos{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:900;
+  min-width:26px;text-align:center}
 .rank-pos.ouro{color:#D97706}
 .rank-pos.prata{color:#6B7280}
 .rank-pos.bronze{color:#92400E}
-.rank-nome{font-size:14px;font-weight:600;color:var(--texto)}
+.rank-nome{font-size:13px;font-weight:700;color:var(--texto)}
 .rank-info{flex:1}
-.rank-pts{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:900;
+.rank-pts{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:900;
   color:var(--verde);text-align:right}
 .rank-sub{font-size:11px;color:var(--texto3);margin-top:2px}
 
@@ -1305,6 +1305,21 @@ async function confirmarInscricao(inscrito){
   }
 }
 
+function toggleDetalhesRodada(rid){
+  var el=document.getElementById('det-rod-'+rid);
+  if(!el) return;
+  var btn=document.querySelector('button[data-rid="'+rid+'"]');
+  if(el.style.display==='none'){
+    el.style.display='block';
+    if(btn) btn.style.background='var(--verde-light)';
+    if(btn) btn.style.color='var(--verde-dark)';
+  } else {
+    el.style.display='none';
+    if(btn) btn.style.background='var(--cinza2)';
+    if(btn) btn.style.color='var(--texto2)';
+  }
+}
+
 function alterarPresenca(rodadaId){
   // Remove presença local para mostrar botões novamente
   if(PRESENCAS[rodadaId]){
@@ -1408,6 +1423,10 @@ function renderRodadas(){
     html+='<span class="rodada-badge badge-'+status+'">'+
       (status==='realizada'?'Realizada':status==='proxima'?'Próxima':'Futura')+'</span>';
     html+='</div>';
+    // Botão ver resultados
+    if(r.realizada){
+      html+='<button data-rid="'+r.id+'" onclick="toggleDetalhesRodada(this.dataset.rid)" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid var(--borda);background:var(--cinza2);color:var(--texto2);cursor:pointer;margin-top:6px">&#x1F4CA; Ver resultados</button>';
+    }
 
     if(r.realizada&&meuRes){
       var nj=res.length;
@@ -2392,6 +2411,7 @@ function carregarEdicao(){
   html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:40px">AD</th>';
   html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:64px">Fichas</th>';
   html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:40px">KO</th>';
+  html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:50px">Créd.</th>';
   html+='</tr></thead><tbody>';
 
   res.forEach(function(r){
@@ -2551,6 +2571,7 @@ function gerarLinhasJogadores(){
   html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:40px">AD</th>';
   html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:64px">Fichas</th>';
   html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:40px">KO</th>';
+  html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:50px">Créd.</th>';
   html+='</tr></thead><tbody>';
   for(var i=1;i<=nj;i++){
     var bg=i%2===0?'background:#f8fafc':'background:#fff';
@@ -2561,6 +2582,7 @@ function gerarLinhasJogadores(){
     html+='<td style="padding:3px"><input class="ainput" id="jog-addon-'+i+'" type="number" min="0" max="1" value="0" style="padding:6px;text-align:center;width:100%"></td>';
     html+='<td style="padding:3px"><input class="ainput" id="jog-fichas-'+i+'" type="number" min="0" value="0" style="padding:6px;width:100%"></td>';
     html+='<td style="padding:3px"><input class="ainput" id="jog-ko-'+i+'" type="number" min="0" value="0" style="padding:6px;text-align:center;width:100%"></td>';
+    html+='<td style="padding:3px"><input class="ainput" id="jog-cred-'+i+'" type="number" min="0" value="0" step="0.01" style="padding:6px;text-align:center;width:100%"></td>';
     html+='</tr>';
   }
   html+='</tbody></table></div>';
@@ -2586,6 +2608,7 @@ async function salvarResultados(){
       addon:parseInt(document.getElementById('jog-addon-'+i).value)||0,
       fichas:parseFloat(document.getElementById('jog-fichas-'+i).value)||0,
       knockout:parseInt(document.getElementById('jog-ko-'+i).value)||0,
+      credito:parseFloat(document.getElementById('jog-cred-'+i)?document.getElementById('jog-cred-'+i).value:0)||0,
     });
   }
 
