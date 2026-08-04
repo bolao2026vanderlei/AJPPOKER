@@ -1102,6 +1102,7 @@ async function renderInicio(){
       if(finUlt.custoRebuy>0) html+='<div style="display:flex;justify-content:space-between"><span>Rebuy ('+resUlt.rebuy+'× R$ 20,00)</span><span style="color:#f87171">- R$ '+Math.abs(finUlt.custoRebuy).toFixed(2).replace('.',',')+'</span></div>';
       if(finUlt.custoAddon>0) html+='<div style="display:flex;justify-content:space-between"><span>Addon ('+resUlt.addon+'× R$ 30,00)</span><span style="color:#f87171">- R$ '+Math.abs(finUlt.custoAddon).toFixed(2).replace('.',',')+'</span></div>';
       if(finUlt.rateio>0) html+='<div style="display:flex;justify-content:space-between"><span>Rateio intervalo</span><span style="color:#f87171">- R$ '+Math.abs(finUlt.rateio).toFixed(2).replace('.',',')+'</span></div>';
+      if(finUlt.credito>0) html+='<div style="display:flex;justify-content:space-between"><span>Crédito</span><span style="color:#4ade80">+ R$ '+Math.abs(finUlt.credito).toFixed(2).replace('.',',')+'</span></div>';
       html+='<div style="border-top:1px solid rgba(255,255,255,.2);margin-top:6px;padding-top:6px;display:flex;justify-content:space-between;font-weight:700;font-size:14px">';
       html+='<span>Total</span><span style="color:'+(positivo?'#4ade80':'#f87171')+'">'+(positivo?'+ ':'- ')+'R$ '+Math.abs(saldo).toFixed(2).replace('.',',')+'</span></div>';
       html+='</div>';
@@ -1396,9 +1397,10 @@ function calcFinanceiro(res,rodada){
   var rateio=rodada&&rodada.rateio_intervalo?parseFloat(rodada.rateio_intervalo):0;
   // 1000 fichas = R$ 1,50 — arredondado para 2 casas
   var premio=Math.round((res.fichas||0)/1000*1.5*100)/100;
+  var credito=parseFloat(res.credito)||0;
   var custo=buyin+custoRebuy+custoAddon+rateio;
-  var saldo=premio-custo;
-  return{saldo:saldo,premio:premio,custo:custo,rateio:rateio,buyin:buyin,custoRebuy:custoRebuy,custoAddon:custoAddon};
+  var saldo=premio-custo+credito;
+  return{saldo:saldo,premio:premio,custo:custo,rateio:rateio,buyin:buyin,custoRebuy:custoRebuy,custoAddon:custoAddon,credito:credito};
 }
 
 
@@ -1908,6 +1910,92 @@ function renderRegras(){
 
 
 function gerarRelatorio(){
+  var stats=calcStatsAll();
+  var rodsReal=RODADAS.filter(function(r){return r.realizada;}).length;
+  var now=new Date();
+  var dataHoje=now.toLocaleDateString('pt-BR')+' '+now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  var linhas=[];
+
+  // Cabeçalho
+  linhas.push('');
+  linhas.push('━━━━━━━━━━━━━━━━━━━━━━━━━');
+  linhas.push('🃏  *AJP POKER — LONDRINA*');
+  linhas.push('━━━━━━━━━━━━━━━━━━━━━━━━━');
+  linhas.push('');
+
+  // 1. Sem descarte
+  linhas.push('📋 *CLASSIFICAÇÃO SEM DESCARTE*');
+  linhas.push('─────────────────────────');
+  var rankP=stats.slice().sort(function(a,b){return b.total-a.total||b.totalSem-a.totalSem;});
+  var posP=0,antP=-1;
+  rankP.forEach(function(s,i){
+    if(s.total!==antP){posP=i+1;} antP=s.total;
+    var med=posP===1?'🥇':posP===2?'🥈':posP===3?'🥉':posP+'°';
+    var linha=med+' '+s.nome;
+    var espacos=' '.repeat(Math.max(1,20-s.nome.length));
+    linhas.push(linha+espacos+s.total+' pts');
+  });
+  linhas.push('');
+
+  // 2. Com descarte
+  if(rodsReal>=2){
+    linhas.push('✂️  *CLASSIFICAÇÃO C/ DESCARTE*');
+    linhas.push('─────────────────────────');
+    var rankD=stats.slice().sort(function(a,b){return b.totalSem-a.totalSem||b.total-a.total;});
+    var posD=0,antD=-1;
+    rankD.forEach(function(s,i){
+      if(s.totalSem!==antD){posD=i+1;} antD=s.totalSem;
+      var med=posD===1?'🥇':posD===2?'🥈':posD===3?'🥉':posD+'°';
+      var linha=med+' '+s.nome;
+      var espacos=' '.repeat(Math.max(1,20-s.nome.length));
+      linhas.push(linha+espacos+s.totalSem+' pts'+(s.piorPts>0?' (-'+s.piorPts+')':''));
+    });
+    linhas.push('');
+  }
+
+  // 3. King of Rebuy
+  linhas.push('👑 *KING OF REBUY*');
+  linhas.push('─────────────────────────');
+  var rankR=stats.slice().sort(function(a,b){return b.rebuys-a.rebuys;});
+  var posR=0,antR=-1;
+  rankR.forEach(function(s,i){
+    if(s.rebuys!==antR){posR=i+1;} antR=s.rebuys;
+    var med=posR===1?'👑':posR===2?'🥈':posR===3?'🥉':posR+'°';
+    var linha=med+' '+s.nome;
+    var espacos=' '.repeat(Math.max(1,20-s.nome.length));
+    linhas.push(linha+espacos+s.rebuys+' rebuys');
+  });
+  linhas.push('');
+
+  // 4. Knockout
+  linhas.push('🥊 *KNOCKOUT*');
+  linhas.push('─────────────────────────');
+  var rankK=stats.slice().sort(function(a,b){return b.knockouts-a.knockouts;});
+  var posK=0,antK=-1;
+  rankK.forEach(function(s,i){
+    if(s.knockouts!==antK){posK=i+1;} antK=s.knockouts;
+    var med=posK===1?'🥇':posK===2?'🥈':posK===3?'🥉':posK+'°';
+    var linha=med+' '+s.nome;
+    var espacos=' '.repeat(Math.max(1,20-s.nome.length));
+    linhas.push(linha+espacos+s.knockouts+' KOs');
+  });
+
+  linhas.push('');
+  linhas.push('━━━━━━━━━━━━━━━━━━━━━━━━━');
+  linhas.push('📅 '+dataHoje);
+  linhas.push('🏙️ AJP Poker — Londrina PR');
+
+  var txt=linhas.join(String.fromCharCode(10));
+  var el=document.getElementById('relatorio-output');
+  el.style.display='block';
+  el.innerHTML=
+    '<textarea style="width:100%;height:340px;font-size:11px;padding:10px;border-radius:8px;border:1px solid var(--cinza3);background:var(--cinza2);color:var(--texto);resize:none;line-height:1.6;font-family:monospace" id="rel-txt">'+txt+'</textarea>'+
+    '<div style="display:flex;gap:8px;margin-top:8px">'+
+    '<button onclick="copiarRelatorio()" class="btn-sv" style="flex:1">📋 Copiar</button>'+
+    '<button onclick="abrirWhatsRel()" style="flex:1;padding:10px;border-radius:8px;border:none;background:#25D366;color:#fff;font-weight:700;cursor:pointer;font-size:13px">📲 WhatsApp</button>'+
+    '</div>';
+}
+function _gerarRelatorioOLD(){
   var stats=calcStatsAll();
   var rodsReal=RODADAS.filter(function(r){return r.realizada;}).length;
   var sep='----------------------';
