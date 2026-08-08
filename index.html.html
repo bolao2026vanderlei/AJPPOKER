@@ -1102,7 +1102,8 @@ async function renderInicio(){
       if(finUlt.custoRebuy>0) html+='<div style="display:flex;justify-content:space-between"><span>Rebuy ('+resUlt.rebuy+'× R$ 20,00)</span><span style="color:#f87171">- R$ '+Math.abs(finUlt.custoRebuy).toFixed(2).replace('.',',')+'</span></div>';
       if(finUlt.custoAddon>0) html+='<div style="display:flex;justify-content:space-between"><span>Addon ('+resUlt.addon+'× R$ 30,00)</span><span style="color:#f87171">- R$ '+Math.abs(finUlt.custoAddon).toFixed(2).replace('.',',')+'</span></div>';
       if(finUlt.rateio>0) html+='<div style="display:flex;justify-content:space-between"><span>Rateio intervalo</span><span style="color:#f87171">- R$ '+Math.abs(finUlt.rateio).toFixed(2).replace('.',',')+'</span></div>';
-      if(finUlt.credito>0) html+='<div style="display:flex;justify-content:space-between"><span>Crédito</span><span style="color:#4ade80">+ R$ '+Math.abs(finUlt.credito).toFixed(2).replace('.',',')+'</span></div>';
+      if(finUlt.lanche>0) html+='<div style="display:flex;justify-content:space-between"><span>Lanche</span><span style="color:#f87171">- R$ '+Math.abs(finUlt.lanche).toFixed(2).replace('.',',')+'</span></div>';
+    if(finUlt.credito>0) html+='<div style="display:flex;justify-content:space-between"><span>Crédito</span><span style="color:#4ade80">+ R$ '+Math.abs(finUlt.credito).toFixed(2).replace('.',',')+'</span></div>';
       html+='<div style="border-top:1px solid rgba(255,255,255,.2);margin-top:6px;padding-top:6px;display:flex;justify-content:space-between;font-weight:700;font-size:14px">';
       html+='<span>Total</span><span style="color:'+(positivo?'#4ade80':'#f87171')+'">'+(positivo?'+ ':'- ')+'R$ '+Math.abs(saldo).toFixed(2).replace('.',',')+'</span></div>';
       html+='</div>';
@@ -1398,9 +1399,10 @@ function calcFinanceiro(res,rodada){
   // 1000 fichas = R$ 1,50 — arredondado para 2 casas
   var premio=Math.round((res.fichas||0)/1000*1.5*100)/100;
   var credito=parseFloat(res.credito)||0;
-  var custo=buyin+custoRebuy+custoAddon+rateio;
+  var lanche=parseFloat(res.lanche)||0;
+  var custo=buyin+custoRebuy+custoAddon+rateio+lanche;
   var saldo=premio-custo+credito;
-  return{saldo:saldo,premio:premio,custo:custo,rateio:rateio,buyin:buyin,custoRebuy:custoRebuy,custoAddon:custoAddon,credito:credito};
+  return{saldo:saldo,premio:premio,custo:custo,rateio:rateio,buyin:buyin,custoRebuy:custoRebuy,custoAddon:custoAddon,credito:credito,lanche:lanche};
 }
 
 
@@ -2079,54 +2081,58 @@ function gerarRelatorioRodada(){
   var res=(RESULTADOS[ultimaRod.id]||[]).slice().sort(function(a,b){return a.posicao-b.posicao;});
   if(!res.length){toast('Sem resultados nesta rodada','err');return}
   var nj=res.length;
+  var nl=String.fromCharCode(10);
+
+  function pad(s,n,dir){
+    s=String(s);
+    while(s.length<n) s=dir==='r'?s+' ':' '+s;
+    return s.slice(0,n);
+  }
+
   var linhas=[];
-  linhas.push('*RESULTADO — Rodada '+ultimaRod.numero+'*');
-  linhas.push('Data: '+fmtData(ultimaRod.data));
-  linhas.push('Jogadores: '+nj);
-  linhas.push('----------------------');
-  linhas.push('Pos | Jogador        | RB | AD | Fichas | KO | Pts');
-  linhas.push('----------------------');
+  linhas.push('');
+  linhas.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  linhas.push('  🃏 AJP POKER — RESULTADO');
+  linhas.push('  Rodada '+ultimaRod.numero+' · '+fmtData(ultimaRod.data));
+  linhas.push('  '+nj+' jogadores');
+  linhas.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  linhas.push('');
+  // Cabeçalho
+  linhas.push(pad('#',3)+' '+pad('Jogador',14)+' '+pad('RB',2)+' '+pad('AD',2)+' '+pad('KO',2)+' '+pad('Pts',3));
+  linhas.push('─────────────────────────────────');
+  // Linhas
   res.forEach(function(r){
     var pts=getPts(nj,r.posicao);
-    var pos=('  '+r.posicao).slice(-2)+'o';
-    var nome=(r.nome+'               ').slice(0,14);
-    var rb=(' '+( r.rebuy||0)).slice(-2);
-    var ad=(r.addon||0);
-    var fi=('    '+(r.fichas||0)).slice(-5);
-    var ko=(r.knockout||0);
-    linhas.push(pos+' | '+nome+' | '+rb+' | '+ad+' | '+fi+' | '+ko+' | '+pts);
+    var med=r.posicao===1?'🥇':r.posicao===2?'🥈':r.posicao===3?'🥉':pad(r.posicao+'°',3);
+    linhas.push(
+      med+' '+
+      pad(r.nome,14)+' '+
+      pad(r.rebuy||0,2,'r')+' '+
+      pad(r.addon||0,2,'r')+' '+
+      pad(r.knockout||0,2,'r')+' '+
+      pad(pts,3,'r')
+    );
   });
-  linhas.push('----------------------');
+  linhas.push('─────────────────────────────────');
   // Totais
   var totRb=res.reduce(function(s,r){return s+(r.rebuy||0);},0);
   var totKo=res.reduce(function(s,r){return s+(r.knockout||0);},0);
   var totAd=res.reduce(function(s,r){return s+(r.addon||0);},0);
-  linhas.push('Total rebuys: '+totRb+' | Addons: '+totAd+' | KOs: '+totKo);
+  var totFi=res.reduce(function(s,r){return s+(r.fichas||0);},0);
+  linhas.push('  Fichas: '+totFi+'  RB: '+totRb+'  AD: '+totAd+'  KO: '+totKo);
   linhas.push('');
-  // Financeiro
-  if(ultimaRod.rateio_intervalo){
-    linhas.push('Rateio intervalo: R$'+ultimaRod.rateio_intervalo);
-  }
-  linhas.push('AJP Poker - Londrina PR');
-  var txt=linhas.join(String.fromCharCode(10));
+  linhas.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  linhas.push('🏙️ AJP Poker — Londrina PR');
+
+  var txt=linhas.join(nl);
   var el=document.getElementById('relatorio-output');
   el.style.display='block';
   el.innerHTML=
-    '<textarea style="width:100%;height:320px;font-size:11px;padding:10px;border-radius:8px;border:1px solid var(--cinza3);background:var(--cinza2);color:var(--texto);resize:none;line-height:1.6;font-family:monospace" id="rel-txt">'+txt+'</textarea>'+
+    '<textarea style="width:100%;height:340px;font-size:11px;padding:10px;border-radius:8px;border:1px solid var(--cinza3);background:var(--cinza2);color:var(--texto);resize:none;line-height:1.6;font-family:monospace" id="rel-txt">'+txt+'</textarea>'+
     '<div style="display:flex;gap:8px;margin-top:8px">'+
-    '<button onclick="copiarRelatorio()" class="btn-sv" style="flex:1">Copiar</button>'+
-    '<button onclick="abrirWhatsRel()" style="flex:1;padding:10px;border-radius:8px;border:none;background:#25D366;color:#fff;font-weight:700;cursor:pointer;font-size:13px">WhatsApp</button>'+
+    '<button onclick="copiarRelatorio()" class="btn-sv" style="flex:1">📋 Copiar</button>'+
+    '<button onclick="abrirWhatsRel()" style="flex:1;padding:10px;border-radius:8px;border:none;background:#25D366;color:#fff;font-weight:700;cursor:pointer;font-size:13px">📲 WhatsApp</button>'+
     '</div>';
-}
-
-function abrirWhatsRel(){
-  var t=document.getElementById('rel-txt');
-  if(t) window.open('https://wa.me/?text='+encodeURIComponent(t.value),'_blank');
-}
-
-function copiarRelatorio(){
-  var t=document.getElementById('rel-txt');
-  if(t) navigator.clipboard.writeText(t.value).then(function(){toast('Copiado!','ok');});
 }
 
 async function excluirMembro(uid, nome){
@@ -2541,6 +2547,7 @@ function carregarEdicao(){
   html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:64px">Fichas</th>';
   html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:40px">KO</th>';
   html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:50px">Créd.</th>';
+  html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:50px">Lanche</th>';
   html+='</tr></thead><tbody>';
 
   res.forEach(function(r){
@@ -2553,6 +2560,7 @@ function carregarEdicao(){
     html+='<td style="padding:3px"><input class="ainput" id="edit-fichas-'+r.posicao+'" type="number" min="0" value="'+(r.fichas||0)+'" style="padding:6px;width:100%"></td>';
     html+='<td style="padding:3px"><input class="ainput" id="edit-ko-'+r.posicao+'" type="number" min="0" value="'+(r.knockout||0)+'" style="padding:6px;text-align:center;width:100%"></td>';
     html+='<td style="padding:3px"><input class="ainput" id="edit-cred-'+r.posicao+'" type="number" min="0" step="0.01" value="'+(r.credito||0)+'" style="padding:6px;text-align:center;width:100%"></td>';
+    html+='<td style="padding:3px"><input class="ainput" id="edit-lanche-'+r.posicao+'" type="number" min="0" step="0.01" value="'+(r.lanche||0)+'" style="padding:6px;text-align:center;width:100%"></td>';
     html+='</tr>';
   });
   html+='</tbody></table></div>';
@@ -2614,6 +2622,7 @@ async function salvarEdicaoResultados(rodadaId, nj){
       fichas:parseFloat(document.getElementById('edit-fichas-'+i).value)||0,
       knockout:parseInt(document.getElementById('edit-ko-'+i).value)||0,
       credito:credEl2?parseFloat(credEl2.value)||0:0,
+      lanche:parseFloat(document.getElementById('edit-lanche-'+i)?document.getElementById('edit-lanche-'+i).value:0)||0,
     });
   }
   if(!rows.length){toast('Nenhum jogador preenchido!','err');return}
@@ -2704,6 +2713,7 @@ function gerarLinhasJogadores(){
   html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:64px">Fichas</th>';
   html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:40px">KO</th>';
   html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:50px">Créd.</th>';
+  html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:50px">Lanche</th>';
   html+='</tr></thead><tbody>';
   for(var i=1;i<=nj;i++){
     var bg=i%2===0?'background:#f8fafc':'background:#fff';
@@ -2715,6 +2725,7 @@ function gerarLinhasJogadores(){
     html+='<td style="padding:3px"><input class="ainput" id="jog-fichas-'+i+'" type="number" min="0" value="0" style="padding:6px;width:100%"></td>';
     html+='<td style="padding:3px"><input class="ainput" id="jog-ko-'+i+'" type="number" min="0" value="0" style="padding:6px;text-align:center;width:100%"></td>';
     html+='<td style="padding:3px"><input class="ainput" id="jog-cred-'+i+'" type="number" min="0" value="0" step="0.01" style="padding:6px;text-align:center;width:100%"></td>';
+    html+='<td style="padding:3px"><input class="ainput" id="jog-lanche-'+i+'" type="number" min="0" value="0" step="0.01" style="padding:6px;text-align:center;width:100%"></td>';
     html+='</tr>';
   }
   html+='</tbody></table></div>';
@@ -2724,7 +2735,7 @@ function gerarLinhasJogadores(){
 async function salvarResultados(){
   var rodadaId=document.getElementById('res-rodada').value;
   var nj=parseInt(document.getElementById('res-njog').value)||0;
-  var rateio=parseFloat(document.getElementById('res-rateio').value)||0;
+  var rateio=0; // Rateio agora é individual por jogador (campo lanche)
   if(!rodadaId||nj<9){toast('Selecione a rodada e informe nº de jogadores (mín 9)!','err');return}
 
   var rows=[];
@@ -2741,6 +2752,7 @@ async function salvarResultados(){
       fichas:parseFloat(document.getElementById('jog-fichas-'+i).value)||0,
       knockout:parseInt(document.getElementById('jog-ko-'+i).value)||0,
       credito:parseFloat(document.getElementById('jog-cred-'+i)?document.getElementById('jog-cred-'+i).value:0)||0,
+      lanche:parseFloat(document.getElementById('jog-lanche-'+i)?document.getElementById('jog-lanche-'+i).value:0)||0,
     });
   }
 
