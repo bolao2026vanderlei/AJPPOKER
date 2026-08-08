@@ -1101,8 +1101,7 @@ async function renderInicio(){
       html+='<div style="display:flex;justify-content:space-between"><span>Buy-in</span><span style="color:#f87171">- R$ 15,00</span></div>';
       if(finUlt.custoRebuy>0) html+='<div style="display:flex;justify-content:space-between"><span>Rebuy ('+resUlt.rebuy+'× R$ 20,00)</span><span style="color:#f87171">- R$ '+Math.abs(finUlt.custoRebuy).toFixed(2).replace('.',',')+'</span></div>';
       if(finUlt.custoAddon>0) html+='<div style="display:flex;justify-content:space-between"><span>Addon ('+resUlt.addon+'× R$ 30,00)</span><span style="color:#f87171">- R$ '+Math.abs(finUlt.custoAddon).toFixed(2).replace('.',',')+'</span></div>';
-      if(finUlt.rateio>0) html+='<div style="display:flex;justify-content:space-between"><span>Rateio intervalo</span><span style="color:#f87171">- R$ '+Math.abs(finUlt.rateio).toFixed(2).replace('.',',')+'</span></div>';
-      if(finUlt.lanche>0) html+='<div style="display:flex;justify-content:space-between"><span>Lanche</span><span style="color:#f87171">- R$ '+Math.abs(finUlt.lanche).toFixed(2).replace('.',',')+'</span></div>';
+        if(finUlt.lanche>0) html+='<div style="display:flex;justify-content:space-between"><span>Lanche</span><span style="color:#f87171">- R$ '+Math.abs(finUlt.lanche).toFixed(2).replace('.',',')+'</span></div>';
     if(finUlt.credito>0) html+='<div style="display:flex;justify-content:space-between"><span>Crédito</span><span style="color:#4ade80">+ R$ '+Math.abs(finUlt.credito).toFixed(2).replace('.',',')+'</span></div>';
       html+='<div style="border-top:1px solid rgba(255,255,255,.2);margin-top:6px;padding-top:6px;display:flex;justify-content:space-between;font-weight:700;font-size:14px">';
       html+='<span>Total</span><span style="color:'+(positivo?'#4ade80':'#f87171')+'">'+(positivo?'+ ':'- ')+'R$ '+Math.abs(saldo).toFixed(2).replace('.',',')+'</span></div>';
