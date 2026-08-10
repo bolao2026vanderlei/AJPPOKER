@@ -678,6 +678,7 @@ async function entrar(){
   if(!nome){erro.textContent='Digite seu apelido.';return}
   if(!senha){erro.textContent='Digite sua senha.';return}
   btn.disabled=true;btn.innerHTML='<span style="display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px"></span>Entrando...';
+  var resetBtn=function(){btn.disabled=false;btn.textContent='ENTRAR';};
 
   if(nome==='admin'){
     if(senha!==ADMIN_SENHA){erro.textContent='Senha incorreta.';btn.disabled=false;btn.textContent='ENTRAR';return}
@@ -690,8 +691,10 @@ async function entrar(){
     USER={nome:u.nome,admin:u.admin||false};
   }
 
-  localStorage.setItem('poker_user',JSON.stringify(USER));
-  localStorage.setItem('poker_app_version',APP_VERSION);
+  try{
+    localStorage.setItem('poker_user',JSON.stringify(USER));
+    localStorage.setItem('poker_app_version',APP_VERSION);
+  }catch(e){}
   await abrirApp();
 }
 
@@ -705,8 +708,15 @@ async function abrirApp(){
     document.getElementById('bn-inicio').style.display='none';
   }
   loading('Carregando dados...');
-  await reloadSchema();
-  await carregarTudo();
+  try{
+    await Promise.race([
+      carregarTudo(),
+      new Promise(function(_,reject){setTimeout(function(){reject(new Error('timeout'));},15000);})
+    ]);
+  }catch(e){
+    console.error('Timeout ou erro ao carregar:',e);
+    toast('Erro ao carregar. Tente novamente.','err');
+  }
   noloading();
   if(USER.admin){
     ir('admin');
@@ -795,6 +805,8 @@ async function carregarTudo(){
     var acertos=await dbGetRest('poker_acertos','order=rodada_id.asc,nome.asc');
     RODADAS=rodadas||[];
     JOGADORES=jogadores||[];
+    if(!Array.isArray(RODADAS)) RODADAS=[];
+    if(!Array.isArray(JOGADORES)) JOGADORES=[];
     ACERTOS={};
     (acertos||[]).forEach(function(a){
       if(!ACERTOS[a.rodada_id]) ACERTOS[a.rodada_id]={};
@@ -810,7 +822,7 @@ async function carregarTudo(){
       if(!RESULTADOS[r.rodada_id]) RESULTADOS[r.rodada_id]=[];
       RESULTADOS[r.rodada_id].push(r);
     });
-  }catch(e){ console.error('Erro ao carregar:',e); }
+  }catch(e){ console.error('Erro ao carregar:',e); noloading(); toast('Erro ao carregar dados. Verifique sua conexão.','err'); }
 }
 
 
@@ -2786,9 +2798,6 @@ document.addEventListener('DOMContentLoaded', async function(){
       var u=JSON.parse(saved);
       if(u&&u.nome){
         USER={nome:u.nome,admin:u.admin||false};
-        loading();
-        await carregarTudo();
-        noloading();
         await abrirApp();
         return;
       }
