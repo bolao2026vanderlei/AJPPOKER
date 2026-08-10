@@ -1097,7 +1097,7 @@ async function renderInicio(){
 
       // Tabela de detalhamento dos custos
       html+='<div style="margin-top:12px;background:rgba(0,0,0,.25);border-radius:10px;padding:12px;font-size:12px;color:rgba(255,255,255,.85);line-height:1.9">';
-      html+='<div style="display:flex;justify-content:space-between"><span>Fichas ('+resUlt.fichas+' × R$1,50/mil)</span><span style="color:#4ade80">+ R$ '+Math.abs(finUlt.premio).toFixed(0)+'</span></div>';
+      html+='<div style="display:flex;justify-content:space-between"><span>Fichas ('+resUlt.fichas+' × R$1,50/mil)</span><span style="color:#4ade80">+ R$ '+Math.abs(finUlt.premio).toFixed(2).replace('.',',')+'</span></div>';
       html+='<div style="display:flex;justify-content:space-between"><span>Buy-in</span><span style="color:#f87171">- R$ 15,00</span></div>';
       if(finUlt.custoRebuy>0) html+='<div style="display:flex;justify-content:space-between"><span>Rebuy ('+resUlt.rebuy+'× R$ 20,00)</span><span style="color:#f87171">- R$ '+Math.abs(finUlt.custoRebuy).toFixed(2).replace('.',',')+'</span></div>';
       if(finUlt.custoAddon>0) html+='<div style="display:flex;justify-content:space-between"><span>Addon ('+resUlt.addon+'× R$ 30,00)</span><span style="color:#f87171">- R$ '+Math.abs(finUlt.custoAddon).toFixed(2).replace('.',',')+'</span></div>';
@@ -2531,6 +2531,7 @@ function carregarEdicao(){
   var rodadaId=parseInt(document.getElementById('edit-rodada').value);
   var el=document.getElementById('linhas-edicao');
   if(!rodadaId||!el){el.innerHTML='';return}
+  var rodSel=RODADAS.find(function(r){return r.id===rodadaId;})||null;
   var res=(RESULTADOS[rodadaId]||[]).slice().sort(function(a,b){return a.posicao-b.posicao;});
   if(!res.length){el.innerHTML='<div style="color:var(--texto3);font-size:13px;padding:8px">Nenhum resultado salvo.</div>';return}
 
@@ -2572,11 +2573,6 @@ function carregarEdicao(){
   });
   html+='</tbody></table></div>';
 
-  var rodObj=RODADAS.find(function(r){return r.id===rodadaId;});
-  html+='<div class="aform-row" style="margin-top:10px">';
-  html+='<div style="flex:1"><div class="ainput-label">Rateio individual (R$)</div>';
-  html+='<input class="ainput" id="edit-rateio" type="number" step="0.01" value="'+(rodObj&&rodObj.rateio_intervalo||0)+'"></div>';
-  html+='</div>';
   html+='<button class="btn-amarelo btn-sv" onclick="salvarEdicaoResultados('+rodadaId+','+res.length+')" style="margin-top:10px;width:100%">&#x1F4BE; Salvar Alterações</button>';
 
   // Mostra botão de cancelar
@@ -2612,7 +2608,7 @@ async function cancelarResultados(){
 }
 
 async function salvarEdicaoResultados(rodadaId, nj){
-  var rateio=parseFloat(document.getElementById('edit-rateio').value)||0;
+  var rateio=0; // rateio individual por jogador
   var rows=[];
   for(var i=1;i<=nj;i++){
     var nomeEl=document.getElementById('edit-nome-'+i);
