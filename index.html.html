@@ -707,20 +707,24 @@ async function abrirApp(){
     document.getElementById('bn-participantes').style.display='flex';
     document.getElementById('bn-inicio').style.display='none';
   }
-  loading('Carregando dados...');
+  loading('Conectando...');
   var carregouOk=false;
   try{
+    loading('Buscando dados...');
     await Promise.race([
       carregarTudo().then(function(){carregouOk=true;}),
-      new Promise(function(_,reject){setTimeout(function(){reject(new Error('timeout'));},12000);})
+      new Promise(function(_,reject){setTimeout(function(){reject(new Error('timeout'));},10000);})
     ]);
   }catch(e){
-    console.error('Erro ao carregar:',e);
+    console.error('Erro:',e);
   }
   noloading();
   if(!carregouOk){
-    toast('Erro ao conectar. Verifique sua internet.','err');
-    sair();
+    document.getElementById('tela-login').style.display='flex';
+    document.getElementById('app').style.display='none';
+    document.getElementById('lerro').textContent='Erro ao conectar. Tente novamente.';
+    var btnE=document.getElementById('btn-e');
+    if(btnE){btnE.disabled=false;btnE.textContent='ENTRAR';}
     return;
   }
   if(USER.admin){
@@ -759,10 +763,18 @@ var RURL='https://gpnrixcftsjzufnygisa.supabase.co/rest/v1/';
 var RHDR={'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdwbnJpeGNmdHNqenVmbnlnaXNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ3NzQ3MjAsImV4cCI6MjEwMDM1MDcyMH0.dX8n0fkL9RYzEAvWiYeM7LbbxKQyjhCQJ3aVBgA2RXE','Authorization':'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdwbnJpeGNmdHNqenVmbnlnaXNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ3NzQ3MjAsImV4cCI6MjEwMDM1MDcyMH0.dX8n0fkL9RYzEAvWiYeM7LbbxKQyjhCQJ3aVBgA2RXE','Content-Type':'application/json'};
 
 async function dbGetRest(tabela, query){
-  var url=RURL+tabela+(query?'?'+query:'');
-  var res=await fetch(url,{headers:Object.assign({},RHDR,{'Prefer':'return=representation'})});
-  if(!res.ok) return [];
-  return await res.json();
+  try{
+    var url=RURL+tabela+(query?'?'+query:'');
+    var res=await fetch(url,{headers:Object.assign({},RHDR,{'Prefer':'return=representation'})});
+    if(!res.ok){
+      console.error('dbGetRest erro',tabela,res.status,await res.text());
+      return [];
+    }
+    return await res.json();
+  }catch(e){
+    console.error('dbGetRest exception',tabela,e);
+    return [];
+  }
 }
 
 async function dbInsertRest(tabela, dados){
@@ -797,10 +809,15 @@ async function reloadSchema(){
 
 async function carregarTudo(){
   try{
+    loading('Carregando rodadas...');
     var rodadas=await dbGetRest('poker_rodadas','order=numero.asc');
+    loading('Carregando jogadores...');
     var jogadores=await dbGetRest('poker_usuarios','select=id,nome,senha,admin,nome_completo,whatsapp,pix,inscrito,status_inscricao&nome=neq.admin&order=nome.asc');
+    loading('Carregando presenças...');
     var presencas=await dbGetRest('poker_presencas','');
+    loading('Carregando resultados...');
     var resultados=await dbGetRest('poker_resultados','order=rodada_id.asc,posicao.asc');
+    loading('Carregando acertos...');
     var acertos=await dbGetRest('poker_acertos','order=rodada_id.asc,nome.asc');
     RODADAS=rodadas||[];
     JOGADORES=jogadores||[];
