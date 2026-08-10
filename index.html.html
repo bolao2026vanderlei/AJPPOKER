@@ -2313,18 +2313,27 @@ async function renderAdmin(){
   }
 
   // INSERIR RESULTADO
+  var rodAdmSelId=0; // será atualizado pelo onchange
+  var isRod1Adm=false; // detectado no onchange
   html+='<div class="admin-card">';
   html+='<h3>🎯 Inserir Resultado da Rodada</h3>';
   html+='<div class="aform-row">';
   html+='<div style="flex:1"><div class="ainput-label">Rodada</div>';
-  html+='<select class="ainput" id="res-rodada" onchange="carregarFormResultado()">';
+  html+='<select class="ainput" id="res-rodada" onchange="onChangeRodadaAdmin()">';
   html+='<option value="">Selecione...</option>';
   RODADAS.forEach(function(r){ html+='<option value="'+r.id+'">Rodada '+r.numero+' ('+fmtData(r.data)+')</option>'; });
   html+='</select></div>';
   html+='<div style="flex:1"><div class="ainput-label">Nº Jogadores</div><input class="ainput" id="res-njog" type="number" min="9" max="25" placeholder="9-25" onchange="gerarLinhasJogadores()"></div>';
   html+='</div>';
-  html+='<div class="ainput-label">Rateio Intervalo (R$)</div>';
-  html+='<div id="linhas-jogadores" style="overflow-x:auto"></div>';
+  html+='<div style="background:var(--cinza2);border-radius:8px;padding:10px;margin-top:8px;border:1px solid var(--borda)">';
+  html+='<div style="font-size:11px;font-weight:700;color:var(--texto3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Valores padrão — clique para aplicar a todos</div>';
+  html+='<div style="display:flex;gap:8px;flex-wrap:wrap">';
+  html+='<div style="flex:1;min-width:120px"><div class="ainput-label">Rateio intervalo (R$)</div>';
+  html+='<div style="display:flex;gap:4px"><input class="ainput" id="res-rateio-padrao" type="number" min="0" step="0.01" value="30" style="flex:1"><button onclick="preencherRateioPadrao()" style="padding:6px 10px;border-radius:6px;border:none;background:var(--azul);color:#fff;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">✓ Todos</button></div></div>';
+  html+='<div id="div-inscricao-padrao" style="flex:1;min-width:120px;display:none"><div class="ainput-label">Inscrição (R$)</div>';
+  html+='<div style="display:flex;gap:4px"><input class="ainput" id="res-inscricao-padrao" type="number" min="0" step="0.01" value="30" style="flex:1"><button onclick="preencherInscricaoPadrao()" style="padding:6px 10px;border-radius:6px;border:none;background:var(--amarelo);color:#1a1a1a;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">✓ Todos</button></div></div>';
+  html+='</div></div>';
+  html+='<div id="linhas-jogadores" style="overflow-x:auto;margin-top:8px"></div>';
   html+='<button class="btn-sv" onclick="salvarResultados()" style="margin-top:8px">&#x1F4BE; Salvar Resultados</button>';
   html+='</div>';
 
@@ -2696,6 +2705,34 @@ async function salvarRodada(){
   }
 }
 
+function onChangeRodadaAdmin(){
+  var rodSelId=parseInt(document.getElementById('res-rodada').value)||0;
+  var rodSel2=RODADAS.find(function(r){return r.id===rodSelId;})||null;
+  var is1=rodSel2&&rodSel2.numero===1;
+  // Mostra/oculta campo inscrição padrão
+  var divInscr=document.getElementById('div-inscricao-padrao');
+  if(divInscr) divInscr.style.display=is1?'':'none';
+  gerarLinhasJogadores();
+}
+
+function preencherRateioPadrao(){
+  var val=parseFloat(document.getElementById('res-rateio-padrao').value)||0;
+  var nj=parseInt(document.getElementById('res-njog').value)||0;
+  for(var i=1;i<=nj;i++){
+    var el=document.getElementById('jog-rateio-'+i);
+    if(el) el.value=val;
+  }
+}
+
+function preencherInscricaoPadrao(){
+  var val=parseFloat(document.getElementById('res-inscricao-padrao').value)||0;
+  var nj=parseInt(document.getElementById('res-njog').value)||0;
+  for(var i=1;i<=nj;i++){
+    var el=document.getElementById('jog-inscricao-'+i);
+    if(el) el.value=val;
+  }
+}
+
 function gerarLinhasJogadores(){
   var nj=parseInt(document.getElementById('res-njog').value)||0;
   var el=document.getElementById('linhas-jogadores');
@@ -2735,9 +2772,11 @@ function gerarLinhasJogadores(){
     html+='<td style="padding:3px"><input class="ainput" id="jog-fichas-'+i+'" type="number" min="0" value="0" style="padding:6px;width:100%"></td>';
     html+='<td style="padding:3px"><input class="ainput" id="jog-ko-'+i+'" type="number" min="0" value="0" style="padding:6px;text-align:center;width:100%"></td>';
     html+='<td style="padding:3px"><input class="ainput" id="jog-cred-'+i+'" type="number" min="0" value="0" step="0.01" style="padding:6px;text-align:center;width:100%"></td>';
-    html+='<td style="padding:3px"><input class="ainput" id="jog-rateio-'+i+'" type="number" min="0" value="0" step="0.01" style="padding:6px;text-align:center;width:100%"></td>';
+    var rateioPad=parseFloat(document.getElementById('res-rateio-padrao')?document.getElementById('res-rateio-padrao').value:0)||0;
+    var inscrPad=parseFloat(document.getElementById('res-inscricao-padrao')?document.getElementById('res-inscricao-padrao').value:30)||30;
+    html+='<td style="padding:3px"><input class="ainput" id="jog-rateio-'+i+'" type="number" min="0" value="'+rateioPad+'" step="0.01" style="padding:6px;text-align:center;width:100%"></td>';
     if(isRod1){
-      html+='<td style="padding:3px"><input class="ainput" id="jog-inscricao-'+i+'" type="number" min="0" value="0" step="0.01" style="padding:6px;text-align:center;width:100%" placeholder="30"></td>';
+      html+='<td style="padding:3px"><input class="ainput" id="jog-inscricao-'+i+'" type="number" min="0" value="'+inscrPad+'" step="0.01" style="padding:6px;text-align:center;width:100%"></td>';
       html+='<td style="padding:3px"><input class="ainput" id="jog-credant-'+i+'" type="number" min="0" value="0" step="0.01" style="padding:6px;text-align:center;width:100%"></td>';
     }
     html+='</tr>';
