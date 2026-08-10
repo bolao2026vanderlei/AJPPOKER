@@ -23,7 +23,7 @@
 body{font-family:'Inter',sans-serif;background:var(--fundo);color:var(--texto);min-height:100vh}
 
 /* LOADING */
-#loading{position:fixed;inset:0;background:#0F172A;display:flex;flex-direction:column;
+#loading{position:fixed;inset:0;background:#0F172A;display:none;flex-direction:column;
   align-items:center;justify-content:center;z-index:9999;gap:16px}
 .bspin{width:48px;height:48px;border:4px solid rgba(255,255,255,.15);
   border-top-color:#16A34A;border-radius:50%;animation:spin .8s linear infinite}
@@ -2806,25 +2806,28 @@ async function adminConfirmarPgto(rodId, nome, saldo){
   renderAcertoAdmin();
 }
 
-document.addEventListener('DOMContentLoaded', async function(){
-  // Auto-login via localStorage
+document.addEventListener('DOMContentLoaded', function(){
+  // Mostra tela de login por padrão
+  document.getElementById('tela-login').style.display='flex';
+  document.getElementById('app').style.display='none';
+  document.getElementById('loading').style.display='none';
+
+  // Verifica auto-login
   try{
     var saved=localStorage.getItem('poker_user');
     if(saved){
       var u=JSON.parse(saved);
       if(u&&u.nome){
         USER={nome:u.nome,admin:u.admin||false};
-        await abrirApp();
+        // Esconde login e abre app
+        document.getElementById('tela-login').style.display='none';
+        abrirApp();
         return;
       }
     }
-  }catch(e){}
-  // Sem sessão - mostra tela de login
-  document.getElementById('tela-login').style.display='flex';
-  document.getElementById('app').style.display='none';
-  // Reseta botão entrar
-  var btnE=document.getElementById('btn-e');
-  if(btnE){btnE.disabled=false;btnE.textContent='ENTRAR';}
+  }catch(e){
+    console.error('Auto-login erro:',e);
+  }
 });
 
 </script>
