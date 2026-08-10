@@ -761,24 +761,18 @@ async function dbGetRest(tabela, query){
 }
 
 async function dbInsertRest(tabela, dados){
-  for(var tentativa=0; tentativa<3; tentativa++){
-    var res = await fetch('https://gpnrixcftsjzufnygisa.supabase.co/rest/v1/'+tabela, {
-      method: 'POST',
-      headers: Object.assign({},RHDR,{'Prefer':'return=minimal'}),
-      body: JSON.stringify(dados)
+  try{
+    var res=await fetch('https://gpnrixcftsjzufnygisa.supabase.co/rest/v1/'+tabela,{
+      method:'POST',
+      headers:Object.assign({},RHDR,{'Prefer':'return=minimal'}),
+      body:JSON.stringify(dados)
     });
-    if(res.ok) return {error: null};
-    var errTxt = await res.text();
-    var errObj = {};
-    try{ errObj=JSON.parse(errTxt); }catch(e){}
-    // Se PGRST205 (schema cache), aguarda e tenta de novo
-    if(errObj.code==='PGRST205' && tentativa<2){
-      await new Promise(function(r){setTimeout(r,1500);});
-      continue;
-    }
-    return {error: {message: errObj.message||errTxt}};
-  }
-  return {error: {message: 'Falha após 3 tentativas'}};
+    if(res.ok) return {error:null};
+    var errTxt=await res.text();
+    var errObj={};
+    try{errObj=JSON.parse(errTxt);}catch(e){}
+    return {error:{message:errObj.message||errTxt}};
+  }catch(e){return {error:{message:e.message}};}
 }
 
 async function reloadSchema(){
@@ -801,7 +795,7 @@ async function carregarTudo(){
     var rodadas=await dbGetRest('poker_rodadas','order=numero.asc');
     var jogadores=await dbGetRest('poker_usuarios','select=id,nome,senha,admin,nome_completo,whatsapp,pix,inscrito,status_inscricao&nome=neq.admin&order=nome.asc');
     var presencas=await dbGetRest('poker_presencas','');
-    var resultados=await dbGetRest('poker_resultados','');
+    var resultados=await dbGetRest('poker_resultados','select=id,rodada_id,nome,posicao,rebuy,addon,fichas,knockout,credito,rateio_ind,inscricao,cred_anterior&order=rodada_id.asc,posicao.asc');
     var acertos=await dbGetRest('poker_acertos','order=rodada_id.asc,nome.asc');
     RODADAS=rodadas||[];
     JOGADORES=jogadores||[];
