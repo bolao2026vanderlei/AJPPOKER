@@ -1097,11 +1097,13 @@ async function renderInicio(){
 
       // Tabela de detalhamento dos custos
       html+='<div style="margin-top:12px;background:rgba(0,0,0,.25);border-radius:10px;padding:12px;font-size:12px;color:rgba(255,255,255,.85);line-height:1.9">';
-      html+='<div style="display:flex;justify-content:space-between"><span>Fichas ('+resUlt.fichas+' × R$1,50/mil)</span><span style="color:#4ade80">+ R$ '+Math.abs(finUlt.premio).toFixed(2).replace('.',',')+'</span></div>';
+      html+='<div style="display:flex;justify-content:space-between"><span>Fichas ('+resUlt.fichas+' × R$1,50/mil)</span><span style="color:#4ade80">+ R$ '+Math.abs(finUlt.premio).toFixed(0)+'</span></div>';
       html+='<div style="display:flex;justify-content:space-between"><span>Buy-in</span><span style="color:#f87171">- R$ 15,00</span></div>';
       if(finUlt.custoRebuy>0) html+='<div style="display:flex;justify-content:space-between"><span>Rebuy ('+resUlt.rebuy+'× R$ 20,00)</span><span style="color:#f87171">- R$ '+Math.abs(finUlt.custoRebuy).toFixed(2).replace('.',',')+'</span></div>';
       if(finUlt.custoAddon>0) html+='<div style="display:flex;justify-content:space-between"><span>Addon ('+resUlt.addon+'× R$ 30,00)</span><span style="color:#f87171">- R$ '+Math.abs(finUlt.custoAddon).toFixed(2).replace('.',',')+'</span></div>';
-        if(finUlt.lanche>0) html+='<div style="display:flex;justify-content:space-between"><span>Lanche</span><span style="color:#f87171">- R$ '+Math.abs(finUlt.lanche).toFixed(2).replace('.',',')+'</span></div>';
+        if(finUlt.rateio_ind>0) html+='<div style="display:flex;justify-content:space-between"><span>Rateio intervalo</span><span style="color:#f87171">- R$ '+Math.abs(finUlt.rateio_ind).toFixed(2).replace('.',',')+'</span></div>';
+    if(finUlt.inscricao>0) html+='<div style="display:flex;justify-content:space-between"><span>Inscrição torneio</span><span style="color:#f87171">- R$ '+Math.abs(finUlt.inscricao).toFixed(2).replace('.',',')+'</span></div>';
+    if(finUlt.cred_anterior>0) html+='<div style="display:flex;justify-content:space-between"><span>Crédito torneio anterior</span><span style="color:#4ade80">+ R$ '+Math.abs(finUlt.cred_anterior).toFixed(2).replace('.',',')+'</span></div>';
     if(finUlt.credito>0) html+='<div style="display:flex;justify-content:space-between"><span>Crédito</span><span style="color:#4ade80">+ R$ '+Math.abs(finUlt.credito).toFixed(2).replace('.',',')+'</span></div>';
       html+='<div style="border-top:1px solid rgba(255,255,255,.2);margin-top:6px;padding-top:6px;display:flex;justify-content:space-between;font-weight:700;font-size:14px">';
       html+='<span>Total</span><span style="color:'+(positivo?'#4ade80':'#f87171')+'">'+(positivo?'+ ':'- ')+'R$ '+Math.abs(saldo).toFixed(2).replace('.',',')+'</span></div>';
@@ -1390,18 +1392,19 @@ function calcStatsAll(){
 
 
 function calcFinanceiro(res,rodada){
-  if(!res) return{saldo:0,premio:0,custo:0,rateio:0,buyin:0,custoRebuy:0,custoAddon:0};
+  if(!res) return{saldo:0,premio:0,custo:0,rateio:0,buyin:0,custoRebuy:0,custoAddon:0,credito:0,rateio_ind:0,inscricao:0,cred_anterior:0};
   var buyin=15, rebuyVal=20, addonVal=30;
   var custoRebuy=(res.rebuy||0)*rebuyVal;
   var custoAddon=(res.addon||0)*addonVal;
   var rateio=rodada&&rodada.rateio_intervalo?parseFloat(rodada.rateio_intervalo):0;
-  // 1000 fichas = R$ 1,50 — arredondado para 2 casas
-  var premio=Math.round((res.fichas||0)/1000*1.5*100)/100;
+  var premio=Math.round((res.fichas||0)/1000*1.5);
   var credito=parseFloat(res.credito)||0;
-  var lanche=parseFloat(res.lanche)||0;
-  var custo=buyin+custoRebuy+custoAddon+rateio+lanche;
-  var saldo=premio-custo+credito;
-  return{saldo:saldo,premio:premio,custo:custo,rateio:rateio,buyin:buyin,custoRebuy:custoRebuy,custoAddon:custoAddon,credito:credito,lanche:lanche};
+  var rateio_ind=parseFloat(res.rateio_ind)||0;
+  var inscricao=parseFloat(res.inscricao)||0;
+  var cred_anterior=parseFloat(res.cred_anterior)||0;
+  var custo=buyin+custoRebuy+custoAddon+rateio+rateio_ind+inscricao;
+  var saldo=premio-custo+credito+cred_anterior;
+  return{saldo:saldo,premio:premio,custo:custo,rateio:rateio,buyin:buyin,custoRebuy:custoRebuy,custoAddon:custoAddon,credito:credito,rateio_ind:rateio_ind,inscricao:inscricao,cred_anterior:cred_anterior};
 }
 
 
@@ -2097,7 +2100,7 @@ function gerarRelatorioRodada(){
   linhas.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   linhas.push('');
   // Cabeçalho
-  linhas.push(pad('#',3)+' '+pad('Jogador',14)+' '+pad('RB',2)+' '+pad('AD',2)+' '+pad('KO',2)+' '+pad('Pts',3));
+  linhas.push(pad('#',3)+' '+pad('Jogador',14)+' '+pad('RB',2)+' '+pad('AD',2)+' '+pad('KO',2)+' '+pad('Fichas',7)+' '+pad('Pts',3));
   linhas.push('─────────────────────────────────');
   // Linhas
   res.forEach(function(r){
@@ -2109,6 +2112,7 @@ function gerarRelatorioRodada(){
       pad(r.rebuy||0,2,'r')+' '+
       pad(r.addon||0,2,'r')+' '+
       pad(r.knockout||0,2,'r')+' '+
+      pad(r.fichas||0,7,'r')+' '+
       pad(pts,3,'r')
     );
   });
@@ -2545,7 +2549,12 @@ function carregarEdicao(){
   html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:64px">Fichas</th>';
   html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:40px">KO</th>';
   html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:50px">Créd.</th>';
-  html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:50px">Lanche</th>';
+  html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:50px">Rateio</th>';
+  var isRod1=rodSel&&rodSel.numero===1;
+  if(isRod1){
+    html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:50px">Inscr.</th>';
+    html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:55px">CrédAnt.</th>';
+  }
   html+='</tr></thead><tbody>';
 
   res.forEach(function(r){
@@ -2558,7 +2567,7 @@ function carregarEdicao(){
     html+='<td style="padding:3px"><input class="ainput" id="edit-fichas-'+r.posicao+'" type="number" min="0" value="'+(r.fichas||0)+'" style="padding:6px;width:100%"></td>';
     html+='<td style="padding:3px"><input class="ainput" id="edit-ko-'+r.posicao+'" type="number" min="0" value="'+(r.knockout||0)+'" style="padding:6px;text-align:center;width:100%"></td>';
     html+='<td style="padding:3px"><input class="ainput" id="edit-cred-'+r.posicao+'" type="number" min="0" step="0.01" value="'+(r.credito||0)+'" style="padding:6px;text-align:center;width:100%"></td>';
-    html+='<td style="padding:3px"><input class="ainput" id="edit-lanche-'+r.posicao+'" type="number" min="0" step="0.01" value="'+(r.lanche||0)+'" style="padding:6px;text-align:center;width:100%"></td>';
+    html+='<td style="padding:3px"><input class="ainput" id="edit-rateio-'+r.posicao+'" type="number" min="0" step="0.01" value="'+(r.rateio_ind||0)+'" style="padding:6px;text-align:center;width:100%"></td>';
     html+='</tr>';
   });
   html+='</tbody></table></div>';
@@ -2620,7 +2629,7 @@ async function salvarEdicaoResultados(rodadaId, nj){
       fichas:parseFloat(document.getElementById('edit-fichas-'+i).value)||0,
       knockout:parseInt(document.getElementById('edit-ko-'+i).value)||0,
       credito:credEl2?parseFloat(credEl2.value)||0:0,
-      lanche:parseFloat(document.getElementById('edit-lanche-'+i)?document.getElementById('edit-lanche-'+i).value:0)||0,
+      rateio_ind:parseFloat(document.getElementById('edit-rateio-'+i)?document.getElementById('edit-rateio-'+i).value:0)||0,
     });
   }
   if(!rows.length){toast('Nenhum jogador preenchido!','err');return}
@@ -2695,6 +2704,8 @@ function gerarLinhasJogadores(){
   var nj=parseInt(document.getElementById('res-njog').value)||0;
   var el=document.getElementById('linhas-jogadores');
   if(nj<9||nj>25){el.innerHTML='<div style="color:var(--vermelho);font-size:12px">Informe entre 9 e 25 jogadores</div>';return}
+  var rodSelId=parseInt(document.getElementById('res-rodada').value)||0;
+  var rodSel=RODADAS.find(function(r){return r.id===rodSelId;})||null;
   // Datalist para autocomplete
   var datalist='<datalist id="jog-list">';
   JOGADORES.forEach(function(j){ datalist+='<option value="'+j.nome+'">'; });
@@ -2711,7 +2722,12 @@ function gerarLinhasJogadores(){
   html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:64px">Fichas</th>';
   html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:40px">KO</th>';
   html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:50px">Créd.</th>';
-  html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:50px">Lanche</th>';
+  html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:50px">Rateio</th>';
+  var isRod1=rodSel&&rodSel.numero===1;
+  if(isRod1){
+    html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:50px">Inscr.</th>';
+    html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:55px">CrédAnt.</th>';
+  }
   html+='</tr></thead><tbody>';
   for(var i=1;i<=nj;i++){
     var bg=i%2===0?'background:#f8fafc':'background:#fff';
@@ -2719,11 +2735,15 @@ function gerarLinhasJogadores(){
     html+='<td style="text-align:center;font-weight:700;font-size:13px;color:var(--verde);padding:4px">'+i+'º</td>';
     html+='<td style="padding:3px"><input class="ainput" id="jog-nome-'+i+'" list="jog-list" placeholder="Nome..." style="padding:6px;font-size:12px;width:100%;min-width:90px"></td>';
     html+='<td style="padding:3px"><input class="ainput" id="jog-rebuy-'+i+'" type="number" min="0" max="8" value="0" style="padding:6px;text-align:center;width:100%"></td>';
-    html+='<td style="padding:3px"><input class="ainput" id="jog-addon-'+i+'" type="number" min="0" max="1" value="0" style="padding:6px;text-align:center;width:100%"></td>';
+    html+='<td style="padding:3px"><input class="ainput" id="jog-addon-'+i+'" type="number" min="0" max="1" value="1" style="padding:6px;text-align:center;width:100%"></td>';
     html+='<td style="padding:3px"><input class="ainput" id="jog-fichas-'+i+'" type="number" min="0" value="0" style="padding:6px;width:100%"></td>';
     html+='<td style="padding:3px"><input class="ainput" id="jog-ko-'+i+'" type="number" min="0" value="0" style="padding:6px;text-align:center;width:100%"></td>';
     html+='<td style="padding:3px"><input class="ainput" id="jog-cred-'+i+'" type="number" min="0" value="0" step="0.01" style="padding:6px;text-align:center;width:100%"></td>';
-    html+='<td style="padding:3px"><input class="ainput" id="jog-lanche-'+i+'" type="number" min="0" value="0" step="0.01" style="padding:6px;text-align:center;width:100%"></td>';
+    html+='<td style="padding:3px"><input class="ainput" id="jog-rateio-'+i+'" type="number" min="0" value="0" step="0.01" style="padding:6px;text-align:center;width:100%"></td>';
+    if(isRod1){
+      html+='<td style="padding:3px"><input class="ainput" id="jog-inscricao-'+i+'" type="number" min="0" value="0" step="0.01" style="padding:6px;text-align:center;width:100%" placeholder="30"></td>';
+      html+='<td style="padding:3px"><input class="ainput" id="jog-credant-'+i+'" type="number" min="0" value="0" step="0.01" style="padding:6px;text-align:center;width:100%"></td>';
+    }
     html+='</tr>';
   }
   html+='</tbody></table></div>';
@@ -2750,7 +2770,9 @@ async function salvarResultados(){
       fichas:parseFloat(document.getElementById('jog-fichas-'+i).value)||0,
       knockout:parseInt(document.getElementById('jog-ko-'+i).value)||0,
       credito:parseFloat(document.getElementById('jog-cred-'+i)?document.getElementById('jog-cred-'+i).value:0)||0,
-      lanche:parseFloat(document.getElementById('jog-lanche-'+i)?document.getElementById('jog-lanche-'+i).value:0)||0,
+      rateio_ind:parseFloat(document.getElementById('jog-rateio-'+i)?document.getElementById('jog-rateio-'+i).value:0)||0,
+      inscricao:parseFloat(document.getElementById('jog-inscricao-'+i)?document.getElementById('jog-inscricao-'+i).value:0)||0,
+      cred_anterior:parseFloat(document.getElementById('jog-credant-'+i)?document.getElementById('jog-credant-'+i).value:0)||0,
     });
   }
 
