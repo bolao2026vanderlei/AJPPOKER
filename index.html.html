@@ -2325,14 +2325,29 @@ async function renderAdmin(){
   html+='</select></div>';
   html+='<div style="flex:1"><div class="ainput-label">Nº Jogadores</div><input class="ainput" id="res-njog" type="number" min="9" max="25" placeholder="9-25" onchange="gerarLinhasJogadores()"></div>';
   html+='</div>';
-  html+='<div style="background:var(--cinza2);border-radius:8px;padding:10px;margin-top:8px;border:1px solid var(--borda)">';
-  html+='<div style="font-size:11px;font-weight:700;color:var(--texto3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Valores padrão — clique para aplicar a todos</div>';
-  html+='<div style="display:flex;gap:8px;flex-wrap:wrap">';
-  html+='<div style="flex:1;min-width:120px"><div class="ainput-label">Rateio intervalo (R$)</div>';
-  html+='<div style="display:flex;gap:4px"><input class="ainput" id="res-rateio-padrao" type="number" min="0" step="0.01" value="30" style="flex:1"><button onclick="preencherRateioPadrao()" style="padding:6px 10px;border-radius:6px;border:none;background:var(--azul);color:#fff;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">✓ Todos</button></div></div>';
-  html+='<div id="div-inscricao-padrao" style="flex:1;min-width:120px;display:none"><div class="ainput-label">Inscrição (R$)</div>';
-  html+='<div style="display:flex;gap:4px"><input class="ainput" id="res-inscricao-padrao" type="number" min="0" step="0.01" value="30" style="flex:1"><button onclick="preencherInscricaoPadrao()" style="padding:6px 10px;border-radius:6px;border:none;background:var(--amarelo);color:#1a1a1a;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">✓ Todos</button></div></div>';
+  html+='<div style="background:var(--cinza2);border-radius:8px;padding:12px;margin-top:8px;border:1px solid var(--borda)">';
+  html+='<div style="font-size:11px;font-weight:700;color:var(--texto3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">⚙️ Configurar valores da rodada</div>';
+  html+='<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">';
+
+  html+='<div style="flex:1;min-width:130px">';
+  html+='<div class="ainput-label">Rateio da rodada (R$)</div>';
+  html+='<input class="ainput" id="res-rateio-padrao" type="number" min="0" step="0.01" value="30" placeholder="Ex: 30">';
+  html+='</div>';
+
+  html+='<div style="display:flex;align-items:flex-end;padding-bottom:1px">';
+  html+='<button onclick="preencherRateioPadrao()" style="padding:8px 14px;border-radius:8px;border:none;background:var(--azul);color:#fff;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">↓ Aplicar a todos</button>';
+  html+='</div>';
+
+  html+='<div id="div-inscricao-padrao" style="flex:1;min-width:130px;display:none">';
+  html+='<div class="ainput-label">Inscrição 1ª Rodada (R$)</div>';
+  html+='<div style="display:flex;gap:4px">';
+  html+='<input class="ainput" id="res-inscricao-padrao" type="number" min="0" step="0.01" value="30" style="flex:1">';
+  html+='<button onclick="preencherInscricaoPadrao()" style="padding:8px 10px;border-radius:8px;border:none;background:var(--amarelo);color:#1a1a1a;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">↓ Todos</button>';
   html+='</div></div>';
+
+  html+='</div>';
+  html+='<div style="font-size:11px;color:var(--texto3);margin-top:6px">💡 O valor do rateio preenche a coluna <b>Rateio</b> em cada linha — editável individualmente</div>';
+  html+='</div>';
   html+='<div id="linhas-jogadores" style="overflow-x:auto;margin-top:8px"></div>';
   html+='<button class="btn-sv" onclick="salvarResultados()" style="margin-top:8px">&#x1F4BE; Salvar Resultados</button>';
   html+='</div>';
