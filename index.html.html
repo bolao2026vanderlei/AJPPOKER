@@ -1993,7 +1993,8 @@ function gerarRelatorio(){
   var el=document.getElementById('relatorio-output');
   el.style.display='block';
   el.innerHTML=
-    '<textarea style="width:100%;height:340px;font-size:11px;padding:10px;border-radius:8px;border:1px solid var(--cinza3);background:var(--cinza2);color:var(--texto);resize:none;line-height:1.6;font-family:monospace" id="rel-txt">'+txt+'</textarea>'+
+    '<div style="font-size:11px;color:var(--texto3);margin-bottom:6px">Clique no texto e selecione tudo (Ctrl+A / ⌘A) para copiar</div>'+
+    '<textarea id="rel-txt" style="width:100%;height:340px;font-size:11px;padding:10px;border-radius:8px;border:1px solid var(--borda);background:#0F172A;color:#e2e8f0;resize:none;line-height:1.6;font-family:monospace;cursor:text" onclick="this.select()" readonly>'+txt+'</textarea>'+
     '<div style="display:flex;gap:8px;margin-top:8px">'+
     '<button onclick="copiarRelatorio()" class="btn-sv" style="flex:1">📋 Copiar</button>'+
     '<button onclick="abrirWhatsRel()" style="flex:1;padding:10px;border-radius:8px;border:none;background:#25D366;color:#fff;font-weight:700;cursor:pointer;font-size:13px">📲 WhatsApp</button>'+
@@ -2085,345 +2086,271 @@ function gerarRelatorioRodada(){
   var nj=res.length;
   var nl=String.fromCharCode(10);
 
-  function pad(s,n,dir){
-    s=String(s);
-    while(s.length<n) s=dir==='r'?s+' ':' '+s;
-    return s.slice(0,n);
-  }
+  function padL(s,n){ s=String(s); while(s.length<n) s=s+' '; return s.slice(0,n); }
+  function padR(s,n){ s=String(s); while(s.length<n) s=' '+s; return s.slice(-n); }
+
+  var C={ pos:3, nome:16, rb:3, ad:3, ko:3, fi:7, pts:4 };
+  var sep='─'.repeat(C.pos+1+C.nome+1+C.rb+1+C.ad+1+C.ko+1+C.fi+1+C.pts);
 
   var linhas=[];
   linhas.push('');
-  linhas.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  linhas.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   linhas.push('  🃏 AJP POKER — RESULTADO');
   linhas.push('  Rodada '+ultimaRod.numero+' · '+fmtData(ultimaRod.data));
   linhas.push('  '+nj+' jogadores');
-  linhas.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  linhas.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   linhas.push('');
-  // Cabeçalho
-  linhas.push(pad('#',3)+' '+pad('Jogador',14)+' '+pad('RB',2)+' '+pad('AD',2)+' '+pad('KO',2)+' '+pad('Fichas',7)+' '+pad('Pts',3));
-  linhas.push('─────────────────────────────────');
-  // Linhas
+  linhas.push(padR('#',C.pos)+' '+padL('Jogador',C.nome)+' '+padR('RB',C.rb)+' '+padR('AD',C.ad)+' '+padR('KO',C.ko)+' '+padR('Fichas',C.fi)+' '+padR('Pts',C.pts));
+  linhas.push(sep);
+
   res.forEach(function(r){
     var pts=getPts(nj,r.posicao);
-    var med=r.posicao===1?'🥇':r.posicao===2?'🥈':r.posicao===3?'🥉':pad(r.posicao+'°',3);
+    var pos=r.posicao===1?'1°':r.posicao===2?'2°':r.posicao===3?'3°':r.posicao+'°';
     linhas.push(
-      med+' '+
-      pad(r.nome,14)+' '+
-      pad(r.rebuy||0,2,'r')+' '+
-      pad(r.addon||0,2,'r')+' '+
-      pad(r.knockout||0,2,'r')+' '+
-      pad(r.fichas||0,7,'r')+' '+
-      pad(pts,3,'r')
+      padR(pos,C.pos)+' '+
+      padL(r.nome,C.nome)+' '+
+      padR(r.rebuy||0,C.rb)+' '+
+      padR(r.addon||0,C.ad)+' '+
+      padR(r.knockout||0,C.ko)+' '+
+      padR(r.fichas||0,C.fi)+' '+
+      padR(pts,C.pts)
     );
   });
-  linhas.push('─────────────────────────────────');
-  // Totais
+
+  linhas.push(sep);
   var totRb=res.reduce(function(s,r){return s+(r.rebuy||0);},0);
   var totKo=res.reduce(function(s,r){return s+(r.knockout||0);},0);
   var totAd=res.reduce(function(s,r){return s+(r.addon||0);},0);
   var totFi=res.reduce(function(s,r){return s+(r.fichas||0);},0);
   linhas.push('  Fichas: '+totFi+'  RB: '+totRb+'  AD: '+totAd+'  KO: '+totKo);
   linhas.push('');
-  linhas.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  linhas.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   linhas.push('🏙️ AJP Poker — Londrina PR');
 
   var txt=linhas.join(nl);
   var el=document.getElementById('relatorio-output');
   el.style.display='block';
   el.innerHTML=
-    '<textarea style="width:100%;height:340px;font-size:11px;padding:10px;border-radius:8px;border:1px solid var(--cinza3);background:var(--cinza2);color:var(--texto);resize:none;line-height:1.6;font-family:monospace" id="rel-txt">'+txt+'</textarea>'+
+    '<div style="font-size:11px;color:var(--texto3);margin-bottom:6px">Clique no texto abaixo e selecione tudo (Ctrl+A / ⌘A) para copiar</div>'+
+    '<textarea id="rel-txt" style="width:100%;height:340px;font-size:11px;padding:10px;border-radius:8px;border:1px solid var(--borda);background:#0F172A;color:#e2e8f0;resize:none;line-height:1.6;font-family:monospace;cursor:text" onclick="this.select()" readonly>'+txt+'</textarea>'+
     '<div style="display:flex;gap:8px;margin-top:8px">'+
     '<button onclick="copiarRelatorio()" class="btn-sv" style="flex:1">📋 Copiar</button>'+
     '<button onclick="abrirWhatsRel()" style="flex:1;padding:10px;border-radius:8px;border:none;background:#25D366;color:#fff;font-weight:700;cursor:pointer;font-size:13px">📲 WhatsApp</button>'+
     '</div>';
 }
 
-async function excluirMembro(uid, nome){
-  if(!confirm('Excluir o jogador '+nome+'? Esta ação não pode ser desfeita.')) return;
-  var res=await fetch('https://gpnrixcftsjzufnygisa.supabase.co/rest/v1/poker_usuarios?id=eq.'+uid,{
-    method:'DELETE',
-    headers:Object.assign({},RHDR,{'Prefer':'return=minimal'})
-  });
-  if(res.ok){
-    toast('Jogador '+nome+' excluído!','ok');
-    await carregarTudo();
-    renderParticipantes();
-  } else {
-    toast('Erro ao excluir','err');
+
+function gerarTabelaAdminRodada(){
+  var ultimaRod=null;
+  for(var ri=RODADAS.length-1;ri>=0;ri--){
+    if(RODADAS[ri].realizada){ultimaRod=RODADAS[ri];break;}
   }
-}
+  if(!ultimaRod){toast('Nenhuma rodada realizada ainda','err');return}
+  var res=(RESULTADOS[ultimaRod.id]||[]).slice().sort(function(a,b){return a.posicao-b.posicao;});
+  if(!res.length){toast('Sem resultados nesta rodada','err');return}
+  var nj=res.length;
+  var nl=String.fromCharCode(10);
+  var isRod1=ultimaRod.numero===1;
 
-function abrirEditMembro(btn){
-  var uid=btn.dataset.mid;
-  var el=document.getElementById('edit-membro-'+uid);
-  if(!el) return;
-  el.style.display=el.style.display==='none'?'block':'none';
-}
+  function padL(s,n){s=String(s);while(s.length<n)s=s+' ';return s.slice(0,n);}
+  function padR(s,n){s=String(s);while(s.length<n)s=' '+s;return s.slice(-n);}
+  function moeda(v){return 'R$'+Math.abs(parseFloat(v)||0).toFixed(2).replace('.',',');}
 
-function fecharEditMembro(uid){
-  var el=document.getElementById('edit-membro-'+uid);
-  if(el) el.style.display='none';
-}
+  var linhas=[];
+  linhas.push('');
+  linhas.push('══════════════════════════════════════════════════════');
+  linhas.push('  📊 AJP POKER — TABELA COMPLETA ADMIN');
+  linhas.push('  Rodada '+ultimaRod.numero+' · '+fmtData(ultimaRod.data)+' · '+nj+' jogadores');
+  linhas.push('══════════════════════════════════════════════════════');
+  linhas.push('');
 
-async function salvarMembro(uid){
-  var nome=document.getElementById('em-nome-'+uid).value.trim();
-  var fone=document.getElementById('em-fone-'+uid).value.trim();
-  var pix=document.getElementById('em-pix-'+uid).value.trim();
-  var senha=document.getElementById('em-senha-'+uid).value;
-  var payload={nome_completo:nome||null,whatsapp:fone||null,pix:pix||null};
-  if(senha) payload.senha=senha;
-  var res=await fetch('https://gpnrixcftsjzufnygisa.supabase.co/rest/v1/poker_usuarios?id=eq.'+uid,{
-    method:'PATCH',
-    headers:Object.assign({},RHDR,{'Prefer':'return=minimal'}),
-    body:JSON.stringify(payload)
+  // Cabeçalho
+  var cabec = padR('#',3)+' '+padL('Jogador',14)+' '+
+    padR('RB',3)+' '+padR('AD',3)+' '+padR('KO',3)+' '+
+    padR('Fichas',7)+' '+padR('Pts',4)+' '+
+    padR('Fichas$',8)+' '+padR('Buy-in',7)+' '+
+    padR('RB$',6)+' '+padR('AD$',6)+' '+
+    padR('Rateio',7)+' '+padR('Créd',7)+
+    (isRod1?' '+padR('Inscr',6)+' '+padR('CrAnt',6):'') +
+    ' '+padR('TOTAL',8);
+  linhas.push(cabec);
+  linhas.push('─'.repeat(cabec.length));
+
+  var totFi=0,totRb=0,totKo=0,totAd=0,totSaldo=0;
+
+  res.forEach(function(r){
+    var fin=calcFinanceiro(r,ultimaRod);
+    var pts=getPts(nj,r.posicao);
+    var sinal=fin.saldo>=0?'+':'-';
+    totFi+=r.fichas||0; totRb+=r.rebuy||0; totKo+=r.knockout||0; totAd+=r.addon||0; totSaldo+=fin.saldo;
+    var linha=
+      padR(r.posicao+'°',3)+' '+
+      padL(r.nome,14)+' '+
+      padR(r.rebuy||0,3)+' '+
+      padR(r.addon||0,3)+' '+
+      padR(r.knockout||0,3)+' '+
+      padR(r.fichas||0,7)+' '+
+      padR(pts,4)+' '+
+      padR(moeda(fin.premio),8)+' '+
+      padR('-R$15',7)+' '+
+      padR(fin.custoRebuy>0?'-'+moeda(fin.custoRebuy):'—',6)+' '+
+      padR(fin.custoAddon>0?'-'+moeda(fin.custoAddon):'—',6)+' '+
+      padR(fin.rateio_ind>0?'-'+moeda(fin.rateio_ind):'—',7)+' '+
+      padR(fin.credito>0?'+'+moeda(fin.credito):'—',7)+
+      (isRod1?' '+padR(fin.inscricao>0?'-'+moeda(fin.inscricao):'—',6)+' '+padR(fin.cred_anterior>0?'+'+moeda(fin.cred_anterior):'—',6):'')+
+      ' '+padR(sinal+'R$'+Math.abs(fin.saldo).toFixed(2).replace('.',','),8);
+    linhas.push(linha);
   });
-  if(res.ok){
-    toast('Dados atualizados!','ok');
-    await carregarTudo();
-    renderParticipantes();
-  } else {
-    toast('Erro ao salvar','err');
-  }
+
+  linhas.push('─'.repeat(cabec.length));
+  linhas.push(
+    padR('TOT',3)+' '+padL('',14)+' '+
+    padR(totRb,3)+' '+padR(totAd,3)+' '+padR(totKo,3)+' '+
+    padR(totFi,7)+' '+padR('',4)+' '+
+    padR('',8)+' '+padR('',7)+' '+padR('',6)+' '+padR('',6)+' '+padR('',7)+' '+padR('',7)+
+    (isRod1?' '+padR('',6)+' '+padR('',6):'')+
+    ' '+padR((totSaldo>=0?'+':'-')+'R$'+Math.abs(totSaldo).toFixed(2).replace('.',','),8)
+  );
+  linhas.push('');
+  linhas.push('══════════════════════════════════════════════════════');
+  linhas.push('🏙️ AJP Poker — Londrina PR');
+
+  var txt=linhas.join(nl);
+  var el=document.getElementById('relatorio-output');
+  el.style.display='block';
+  el.innerHTML=
+    '<div style="font-size:11px;color:var(--texto3);margin-bottom:6px">Clique no texto e Ctrl+A para selecionar tudo</div>'+
+    '<textarea id="rel-txt" style="width:100%;height:380px;font-size:10px;padding:10px;border-radius:8px;border:1px solid var(--borda);background:#0F172A;color:#e2e8f0;resize:none;line-height:1.6;font-family:monospace;cursor:text" onclick="this.select()" readonly>'+txt+'</textarea>'+
+    '<div style="display:flex;gap:8px;margin-top:8px">'+
+    '<button onclick="copiarRelatorio()" class="btn-sv" style="flex:1">📋 Copiar</button>'+
+    '<button onclick="abrirWhatsRel()" style="flex:1;padding:10px;border-radius:8px;border:none;background:#25D366;color:#fff;font-weight:700;cursor:pointer;font-size:13px">📲 WhatsApp</button>'+
+    '</div>';
 }
 
-function copiarPix(pix){
-  navigator.clipboard.writeText(pix).then(function(){
-    toast('PIX copiado: '+pix,'ok');
-  }).catch(function(){
-    toast('PIX: '+pix,'ok');
-  });
+function copiarRelatorio(){
+  var t=document.getElementById('rel-txt');
+  if(t){ t.select(); navigator.clipboard.writeText(t.value).then(function(){toast('Copiado!','ok');}); }
 }
 
-async function renderParticipantes(){
-  if(!USER||!USER.admin) return;
-  var el=document.getElementById('s-participantes');
-  el.innerHTML='<div style="text-align:center;padding:20px;color:var(--texto3)">Carregando...</div>';
-  var lista=await dbGetRest('poker_usuarios','order=nome.asc');
-  lista=lista||[];
-  var html='<h2 style="font-family:Barlow Condensed,sans-serif;font-size:24px;font-weight:900;margin-bottom:16px">&#x1F465; Participantes ('+lista.length+')</h2>';
-
-  // Cadastro admin
-  html+='<div class="admin-card" style="margin-bottom:16px">';
-  html+='<h3>➕ Cadastrar Participante</h3>';
-  html+='<div class="ainput-label">Apelido</div>';
-  html+='<input class="ainput" id="adm-apelido" placeholder="Apelido" style="margin-bottom:8px;width:100%">';
-  html+='<div class="ainput-label">Nome Completo</div>';
-  html+='<input class="ainput" id="adm-nome" placeholder="Nome completo" style="margin-bottom:8px;width:100%">';
-  html+='<div class="ainput-label">WhatsApp</div>';
-  html+='<input class="ainput" id="adm-fone" placeholder="Ex: 43999991234" style="margin-bottom:8px;width:100%">';
-  html+='<div class="ainput-label">Chave PIX</div>';
-  html+='<input class="ainput" id="adm-pix" placeholder="CPF, telefone ou email" style="margin-bottom:8px;width:100%">';
-  html+='<div class="ainput-label">Senha</div>';
-  html+='<input class="ainput" id="adm-senha" type="password" placeholder="Senha" style="margin-bottom:8px;width:100%">';
-  html+='<button class="btn-sv" onclick="cadastrarPeloAdmin()">Cadastrar</button>';
-  html+='</div>';
-
-  // Lista
-  if(lista.length===0){
-    html+='<div class="card" style="text-align:center;padding:24px;color:var(--texto3)">Nenhum participante cadastrado.</div>';
-  } else {
-    lista.forEach(function(u){
-      var uid=u.id||'';
-      html+='<div class="card" style="margin-bottom:8px">';
-      html+='<div style="display:flex;align-items:center;gap:12px">';
-      html+='<div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--verde),var(--verde-dark));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:16px;flex-shrink:0">'+u.nome[0].toUpperCase()+'</div>';
-      html+='<div style="flex:1">';
-      html+='<div style="font-size:14px;font-weight:700;color:var(--texto)">'+u.nome+(u.admin?' <span style="font-size:10px;color:var(--verde);background:var(--verde-light);padding:1px 6px;border-radius:8px">admin</span>':'')+'</div>';
-      if(u.nome_completo) html+='<div style="font-size:12px;color:var(--texto2)">'+u.nome_completo+'</div>';
-      if(u.whatsapp) html+='<div style="font-size:11px;color:var(--texto3)">&#x1F4F1; '+u.whatsapp+'</div>';
-      if(u.pix){
-        html+='<div style="display:flex;align-items:center;gap:6px;margin-top:2px">';
-        html+='<div style="font-size:11px;color:var(--verde);font-weight:600">PIX: '+u.pix+'</div>';
-        html+='<button data-pix="'+u.pix+'" onclick="copiarPix(this.dataset.pix)" style="font-size:10px;padding:2px 8px;border-radius:6px;border:1px solid var(--verde);background:var(--verde-light);color:var(--verde-dark);cursor:pointer;font-weight:700">Copiar</button>';
-        html+='</div>';
-      }
-      html+='</div>';
-      html+='<button data-mid="'+uid+'" data-mnome="'+u.nome+'" data-mnomec="'+(u.nome_completo||'')+'" data-mfone="'+(u.whatsapp||'')+'" data-mpix="'+(u.pix||'')+'" onclick="abrirEditMembro(this)" style="font-size:11px;padding:6px 12px;border-radius:8px;border:1px solid var(--azul);background:var(--azul-light);color:var(--azul);cursor:pointer;font-weight:700;flex-shrink:0">&#x270F;&#xFE0F; Editar</button>';
-      html+='</div>';
-      html+='<div id="edit-membro-'+uid+'" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--cinza3)">';
-      html+='<div class="ainput-label">Nome completo</div>';
-      html+='<input class="ainput" id="em-nome-'+uid+'" value="'+(u.nome_completo||'')+'" style="width:100%;margin-bottom:8px">';
-      html+='<div class="ainput-label">WhatsApp</div>';
-      html+='<input class="ainput" id="em-fone-'+uid+'" value="'+(u.whatsapp||'')+'" style="width:100%;margin-bottom:8px">';
-      html+='<div class="ainput-label">Chave PIX</div>';
-      html+='<input class="ainput" id="em-pix-'+uid+'" value="'+(u.pix||'')+'" style="width:100%;margin-bottom:8px">';
-      html+='<div class="ainput-label">Nova Senha (deixe vazio para manter)</div>';
-      html+='<input class="ainput" id="em-senha-'+uid+'" type="password" placeholder="Nova senha..." style="width:100%;margin-bottom:10px">';
-      html+='<div style="display:flex;gap:8px">';
-      html+='<button data-uid="'+uid+'" onclick="salvarMembro(this.dataset.uid)" class="btn-sv" style="flex:1">Salvar</button>';
-      html+='<button data-uid="'+uid+'" onclick="fecharEditMembro(this.dataset.uid)" style="flex:1;padding:10px;border-radius:8px;border:1px solid var(--cinza3);background:var(--cinza2);cursor:pointer;font-weight:700">Cancelar</button>';
-      html+='<button data-uid="'+uid+'" data-unome="'+u.nome+'" onclick="excluirMembro(this.dataset.uid,this.dataset.unome)" style="padding:10px 14px;border-radius:8px;border:1px solid var(--vermelho);background:var(--vermelho-light);color:var(--vermelho);cursor:pointer;font-weight:700">Excluir</button>';
-      html+='</div>';
-      html+='</div>';
-      html+='</div>';
-    });
-  }
-  el.innerHTML=html;
+function abrirWhatsRel(){
+  var t=document.getElementById('rel-txt');
+  if(t) window.open('https://wa.me/?text='+encodeURIComponent(t.value),'_blank');
 }
 
-async function cadastrarPeloAdmin(){
-  var apelido=document.getElementById('adm-apelido').value.trim();
-  var nome=document.getElementById('adm-nome').value.trim();
-  var fone=document.getElementById('adm-fone').value.trim();
-  var senha=document.getElementById('adm-senha').value;
-  if(!apelido||!senha){toast('Preencha apelido e senha!','err');return}
-  var ck=await dbGetRest('poker_usuarios','nome=eq.'+encodeURIComponent(apelido));
-  if(ck&&ck.length>0){toast('Apelido ja em uso!','err');return}
-  var pixAdm=document.getElementById('adm-pix')?document.getElementById('adm-pix').value.trim():'';
-  var payload={nome:apelido,senha:senha,admin:false};
-  if(nome) payload.nome_completo=nome;
-  if(fone) payload.whatsapp=fone;
-  if(pixAdm) payload.pix=pixAdm;
-  var r=await dbInsertRest('poker_usuarios',payload);
-  if(r.error){toast('Erro: '+r.error.message,'err');return}
-  toast('Participante cadastrado!','ok');
-  await carregarTudo();
-  renderParticipantes();
-}
-
-async function renderAdmin(){
-  if(!USER||!USER.admin) return;
-  // Recarrega jogadores frescos do banco
-  var jogFresh=await dbGetRest('poker_usuarios','select=id,nome,senha,admin,nome_completo,whatsapp,pix,inscrito,status_inscricao&nome=neq.admin&order=nome.asc');
-  if(jogFresh&&jogFresh.length>0) JOGADORES=jogFresh;
+function renderAdmin(){
   var el=document.getElementById('s-admin');
-  var html='<h2 style="font-family:Barlow Condensed,sans-serif;font-size:24px;font-weight:900;margin-bottom:16px">⚙️ Painel Admin</h2>';
+  if(!el) return;
+  var html='';
 
-  // GERENCIAR PRESENÇAS
-  var proxRodAdmin=RODADAS.find(function(r){return !r.realizada});
-  if(proxRodAdmin){
-    var presRodAdmin=PRESENCAS[proxRodAdmin.id]||[];
-    if(presRodAdmin.length>0){
-      html+='<div class="admin-card">';
-      html+='<h3>&#x1F91A; Presenças — Rodada '+proxRodAdmin.numero+'</h3>';
-      presRodAdmin.forEach(function(p){
-        var corP=p.status==='in'?'var(--verde)':'var(--vermelho)';
-        var icoP=p.status==='in'?'&#x1F44D;':'&#x1F44E;';
-        html+='<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--cinza3)">';
-        html+='<div style="display:flex;align-items:center;gap:8px">';
-        html+='<span style="font-size:18px">'+icoP+'</span>';
-        html+='<span style="font-size:14px;font-weight:600">'+p.nome+'</span>';
-        html+='<span style="font-size:11px;color:'+corP+';font-weight:700">'+p.status.toUpperCase()+'</span>';
-        html+='</div>';
-        html+='<button data-rid="'+proxRodAdmin.id+'" data-rnome="'+p.nome+'" onclick="cancelarPresenca(this.dataset.rid,this.dataset.rnome)" style="font-size:11px;padding:4px 10px;border-radius:8px;border:1px solid var(--vermelho);background:var(--vermelho-light);color:var(--vermelho);cursor:pointer;font-weight:700">Cancelar</button>';
+  // ── PRESENÇAS
+  var proxRod=RODADAS.find(function(r){return !r.realizada;})||null;
+  if(proxRod){
+    var pres=PRESENCAS[proxRod.id]||[];
+    var ins=pres.filter(function(p){return p.status==='in';});
+    var fold=pres.filter(function(p){return p.status==='fold';});
+    html+='<div class="admin-card">';
+    html+='<h3>🤚 Presenças — Rodada '+proxRod.numero+'</h3>';
+    if(!pres.length){html+='<div style="font-size:13px;color:var(--texto3)">Nenhuma confirmação ainda.</div>';}
+    else{
+      html+='<div style="font-size:13px;font-weight:700;margin-bottom:8px">✅ '+ins.length+' IN  ❌ '+fold.length+' FOLD</div>';
+      pres.slice().sort(function(a,b){return a.nome.localeCompare(b.nome);}).forEach(function(p){
+        html+='<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--borda)">';
+        html+='<span style="font-size:13px">'+(p.status==='in'?'✅':'❌')+' '+p.nome+'</span>';
+        html+='<button data-id="'+p.id+'" onclick="cancelarPresenca(this.dataset.id)" style="font-size:10px;padding:3px 8px;border-radius:6px;border:1px solid var(--vermelho);background:var(--vermelho-light);color:var(--vermelho);cursor:pointer">Cancelar</button>';
         html+='</div>';
       });
-      html+='</div>';
     }
+    html+='</div>';
   }
 
-  // INSERIR RESULTADO
-  var rodAdmSelId=0; // será atualizado pelo onchange
-  var isRod1Adm=false; // detectado no onchange
-  html+='<div class="admin-card">';
-  html+='<h3>🎯 Inserir Resultado da Rodada</h3>';
-  html+='<div class="aform-row">';
-  html+='<div style="flex:1"><div class="ainput-label">Rodada</div>';
-  html+='<select class="ainput" id="res-rodada" onchange="onChangeRodadaAdmin()">';
-  html+='<option value="">Selecione...</option>';
-  RODADAS.forEach(function(r){ html+='<option value="'+r.id+'">Rodada '+r.numero+' ('+fmtData(r.data)+')</option>'; });
-  html+='</select></div>';
-  html+='<div style="flex:1"><div class="ainput-label">Nº Jogadores</div><input class="ainput" id="res-njog" type="number" min="9" max="25" placeholder="9-25" onchange="gerarLinhasJogadores()"></div>';
-  html+='</div>';
-  html+='<div style="background:var(--cinza2);border-radius:8px;padding:12px;margin-top:8px;border:1px solid var(--borda)">';
-  html+='<div style="font-size:11px;font-weight:700;color:var(--texto3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">⚙️ Configurar valores da rodada</div>';
-  html+='<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">';
+  // ── INSERIR RESULTADO
+  var rodsAbertas=RODADAS.filter(function(r){return !r.realizada;});
+  if(rodsAbertas.length>0){
+    html+='<div class="admin-card">';
+    html+='<h3>🎯 Inserir Resultado da Rodada</h3>';
+    html+='<div class="aform-row">';
+    html+='<div style="flex:1"><div class="ainput-label">Rodada</div>';
+    html+='<select class="ainput" id="res-rodada" onchange="onChangeRodadaAdmin()">';
+    html+='<option value="">Selecione...</option>';
+    rodsAbertas.forEach(function(r){ html+='<option value="'+r.id+'">Rodada '+r.numero+' ('+fmtData(r.data)+')</option>'; });
+    html+='</select></div>';
+    html+='<div style="flex:1"><div class="ainput-label">Nº Jogadores</div>';
+    html+='<input class="ainput" id="res-njog" type="number" min="9" max="25" placeholder="9-25" onchange="gerarLinhasJogadores()"></div>';
+    html+='</div>';
+    html+='<div style="background:var(--cinza2);border-radius:8px;padding:12px;margin-top:8px;border:1px solid var(--borda)">';
+    html+='<div style="font-size:11px;font-weight:700;color:var(--texto3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">⚙️ Configurar valores da rodada</div>';
+    html+='<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">';
+    html+='<div style="flex:1;min-width:130px"><div class="ainput-label">Rateio da rodada (R$)</div>';
+    html+='<input class="ainput" id="res-rateio-padrao" type="number" min="0" step="0.01" value="30" placeholder="Ex: 30"></div>';
+    html+='<div style="display:flex;align-items:flex-end;padding-bottom:1px">';
+    html+='<button onclick="preencherRateioPadrao()" style="padding:8px 14px;border-radius:8px;border:none;background:var(--azul);color:#fff;font-size:12px;font-weight:700;cursor:pointer">↓ Aplicar a todos</button></div>';
+    html+='<div id="div-inscricao-padrao" style="flex:1;min-width:130px;display:none"><div class="ainput-label">Inscrição 1ª Rodada (R$)</div>';
+    html+='<div style="display:flex;gap:4px"><input class="ainput" id="res-inscricao-padrao" type="number" min="0" step="0.01" value="30" style="flex:1">';
+    html+='<button onclick="preencherInscricaoPadrao()" style="padding:8px 10px;border-radius:8px;border:none;background:var(--amarelo);color:#1a1a1a;font-size:11px;font-weight:700;cursor:pointer">↓ Todos</button></div></div>';
+    html+='</div>';
+    html+='<div style="font-size:11px;color:var(--texto3);margin-top:6px">💡 Rateio preenche a coluna em cada linha — editável individualmente</div>';
+    html+='</div>';
+    html+='<div id="linhas-jogadores" style="overflow-x:auto;margin-top:8px"></div>';
+    html+='<button onclick="salvarResultados()" class="btn-sv" style="width:100%;margin-top:10px">💾 Salvar Resultado</button>';
+    html+='</div>';
+  }
 
-  html+='<div style="flex:1;min-width:130px">';
-  html+='<div class="ainput-label">Rateio da rodada (R$)</div>';
-  html+='<input class="ainput" id="res-rateio-padrao" type="number" min="0" step="0.01" value="30" placeholder="Ex: 30">';
-  html+='</div>';
-
-  html+='<div style="display:flex;align-items:flex-end;padding-bottom:1px">';
-  html+='<button onclick="preencherRateioPadrao()" style="padding:8px 14px;border-radius:8px;border:none;background:var(--azul);color:#fff;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">↓ Aplicar a todos</button>';
-  html+='</div>';
-
-  html+='<div id="div-inscricao-padrao" style="flex:1;min-width:130px;display:none">';
-  html+='<div class="ainput-label">Inscrição 1ª Rodada (R$)</div>';
-  html+='<div style="display:flex;gap:4px">';
-  html+='<input class="ainput" id="res-inscricao-padrao" type="number" min="0" step="0.01" value="30" style="flex:1">';
-  html+='<button onclick="preencherInscricaoPadrao()" style="padding:8px 10px;border-radius:8px;border:none;background:var(--amarelo);color:#1a1a1a;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">↓ Todos</button>';
-  html+='</div></div>';
-
-  html+='</div>';
-  html+='<div style="font-size:11px;color:var(--texto3);margin-top:6px">💡 O valor do rateio preenche a coluna <b>Rateio</b> em cada linha — editável individualmente</div>';
-  html+='</div>';
-  html+='<div id="linhas-jogadores" style="overflow-x:auto;margin-top:8px"></div>';
-  html+='<button class="btn-sv" onclick="salvarResultados()" style="margin-top:8px">&#x1F4BE; Salvar Resultados</button>';
-  html+='</div>';
-
-  // RESULTADOS SALVOS COM OPÇÃO DE EDITAR
-  var rodsComRes=RODADAS.filter(function(r){return r.realizada&&RESULTADOS[r.id]&&RESULTADOS[r.id].length>0;});
+  // ── EDITAR RESULTADOS SALVOS
+  var rodsComRes=RODADAS.filter(function(r){return r.realizada&&RESULTADOS[r.id]&&RESULTADOS[r.id].length;});
   if(rodsComRes.length>0){
     html+='<div class="admin-card">';
-    html+='<h3>&#x270F;&#xFE0F; Editar Resultados Salvos</h3>';
+    html+='<h3>✏️ Editar Resultados Salvos</h3>';
     html+='<select class="ainput" id="edit-rodada" onchange="carregarEdicao()" style="width:100%;margin-bottom:10px">';
     html+='<option value="">Selecione a rodada...</option>';
     rodsComRes.forEach(function(r){ html+='<option value="'+r.id+'">Rodada '+r.numero+' ('+fmtData(r.data)+')</option>'; });
     html+='</select>';
     html+='<div id="linhas-edicao"></div>';
     html+='<div id="acoes-edicao" style="display:none;margin-top:10px">';
-    html+='<button onclick="cancelarResultados()" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--vermelho);background:var(--vermelho-light);color:var(--vermelho);font-weight:700;cursor:pointer;font-size:13px">&#x1F6AB; Cancelar resultados e reabrir rodada</button>';
+    html+='<button onclick="cancelarResultados()" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--vermelho);background:var(--vermelho-light);color:var(--vermelho);font-weight:700;cursor:pointer;font-size:13px">🚫 Cancelar resultados e reabrir rodada</button>';
     html+='</div>';
     html+='</div>';
   }
 
-    // RODADAS SALVAS — EDITAR
-  if(RODADAS.length>0){
-    html+='<div class="admin-card">';
-    html+='<h3>&#x270F;&#xFE0F; Editar Rodadas Cadastradas</h3>';
-    RODADAS.forEach(function(r){
-      html+='<div style="border:1px solid var(--cinza3);border-radius:10px;padding:12px;margin-bottom:10px">';
-      html+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">';
-      html+='<div>';
-      html+='<div style="font-size:14px;font-weight:700">Rodada '+r.numero+'</div>';
-      html+='<div style="font-size:12px;color:var(--texto3)">'+fmtData(r.data)+(r.horario?' às '+r.horario:'')+'</div>';
-      if(r.local) html+='<div style="font-size:11px;color:var(--texto3)">'+r.local+'</div>';
-      html+='</div>';
-      html+='<button data-rodid="'+r.id+'" onclick="toggleEditRodada(this.dataset.rodid)" style="font-size:11px;padding:6px 12px;border-radius:8px;border:1px solid var(--azul);background:var(--azul-light);color:var(--azul);cursor:pointer;font-weight:700">Editar</button>';
-      html+='</div>';
-      html+='<div id="edit-rod-'+r.id+'" style="display:none">';
-      html+='<div class="aform-row">';
-      html+='<div style="flex:1"><div class="ainput-label">Nº Rodada</div>';
-      html+='<input class="ainput" id="er-num-'+r.id+'" type="number" value="'+r.numero+'"></div>';
-      html+='<div style="flex:2"><div class="ainput-label">Data</div>';
-      html+='<input class="ainput" id="er-data-'+r.id+'" type="date" value="'+(r.data||'')+'"></div>';
-      html+='</div>';
-      html+='<div class="aform-row">';
-      html+='<div style="flex:1"><div class="ainput-label">Horário</div>';
-      html+='<input class="ainput" id="er-hora-'+r.id+'" type="time" value="'+(r.horario||'13:45')+'"></div>';
-      html+='<div style="flex:2"><div class="ainput-label">Local</div>';
-      html+='<input class="ainput" id="er-local-'+r.id+'" value="'+(r.local||'')+'"></div>';
-      html+='</div>';
-      html+='<div style="display:flex;gap:8px">';
-      html+='<button data-rid="'+r.id+'" onclick="salvarEdicaoRodada(this.dataset.rid)" class="btn-sv" style="flex:1">Salvar</button>';
-      html+='<button data-rid="'+r.id+'" onclick="toggleEditRodada(this.dataset.rid)" style="flex:1;padding:10px;border-radius:8px;border:1px solid var(--cinza3);background:var(--cinza2);cursor:pointer;font-weight:700">Cancelar</button>';
-      html+='</div>';
-      html+='</div>';
-      html+='</div>';
-    });
-    html+='</div>';
-  }
-
-  // RODADAS
+  // ── EDITAR RODADAS SALVAS
   html+='<div class="admin-card">';
-  html+='<h3>📅 Gerenciar Rodadas</h3>';
-  html+='<div class="aform-row">';
-  html+='<div style="flex:1"><div class="ainput-label">Nº Rodada</div><input class="ainput" id="rod-num" type="number" min="1" max="8" placeholder="1-8"></div>';
-  html+='<div style="flex:2"><div class="ainput-label">Data</div><input class="ainput" id="rod-data" type="date"></div>';
-  html+='</div>';
-  html+='<div class="aform-row">';
-  html+='<div style="flex:1"><div class="ainput-label">Horário</div><input class="ainput" id="rod-hora" type="time" value="13:45"></div>';
-  html+='<div style="flex:2"><div class="ainput-label">Local</div><input class="ainput" id="rod-local" placeholder="Ex: Casa do Juliano"></div>';
-  html+='</div>';
-  html+='<button class="btn-sv" onclick="salvarRodada()">Salvar Rodada</button>';
+  html+='<h3>✏️ Editar Rodadas Salvas</h3>';
+  RODADAS.forEach(function(r){
+    html+='<div style="border:1px solid var(--borda);border-radius:8px;padding:10px;margin-bottom:8px">';
+    html+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">';
+    html+='<div style="font-weight:700">Rodada '+r.numero+' — '+fmtData(r.data)+'</div>';
+    html+='<button onclick="toggleEditRodada('+r.id+')" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid var(--borda);background:var(--cinza2);cursor:pointer">Editar</button>';
+    html+='</div>';
+    html+='<div id="edit-rod-'+r.id+'" style="display:none">';
+    html+='<div class="aform-row">';
+    html+='<div style="flex:1"><div class="ainput-label">Data</div><input class="ainput" id="erod-data-'+r.id+'" type="date" value="'+r.data+'"></div>';
+    html+='<div style="flex:1"><div class="ainput-label">Horário</div><input class="ainput" id="erod-hora-'+r.id+'" value="'+(r.horario||'')+'"></div>';
+    html+='</div>';
+    html+='<div class="ainput-label" style="margin-top:6px">Local</div>';
+    html+='<input class="ainput" id="erod-local-'+r.id+'" value="'+(r.local||'')+'" style="width:100%;margin-bottom:8px">';
+    html+='<button onclick="salvarRodada('+r.id+')" class="btn-sv" style="width:100%">💾 Salvar</button>';
+    html+='</div></div>';
+  });
   html+='</div>';
 
-  // PAINEL DE ACERTOS
+  // ── NOVA RODADA
+  html+='<div class="admin-card">';
+  html+='<h3>📅 Nova Rodada</h3>';
+  html+='<div class="aform-row">';
+  html+='<div style="flex:1"><div class="ainput-label">Número</div><input class="ainput" id="nr-num" type="number" placeholder="Ex: 9"></div>';
+  html+='<div style="flex:1"><div class="ainput-label">Data</div><input class="ainput" id="nr-data" type="date"></div>';
+  html+='</div>';
+  html+='<div class="aform-row">';
+  html+='<div style="flex:1"><div class="ainput-label">Horário</div><input class="ainput" id="nr-hora" placeholder="Ex: 13:45"></div>';
+  html+='<div style="flex:1"><div class="ainput-label">Local</div><input class="ainput" id="nr-local" placeholder="Local"></div>';
+  html+='</div>';
+  html+='<button onclick="criarRodada()" class="btn-sv" style="width:100%;margin-top:8px">➕ Criar Rodada</button>';
+  html+='</div>';
+
+  // ── CONTROLE DE ACERTOS
   var rodsRealizadasAdm=RODADAS.filter(function(r){return r.realizada;});
   if(rodsRealizadasAdm.length>0){
     html+='<div class="admin-card">';
-    html+='<h3>&#x1F4B0; Controle de Acertos</h3>';
+    html+='<h3>💰 Controle de Acertos</h3>';
     html+='<select class="ainput" id="acerto-rod-sel" onchange="renderAcertoAdmin()" style="width:100%;margin-bottom:12px">';
     html+='<option value="">Selecione a rodada...</option>';
     rodsRealizadasAdm.forEach(function(r){ html+='<option value="'+r.id+'">Rodada '+r.numero+' — '+fmtData(r.data)+'</option>'; });
@@ -2432,301 +2359,153 @@ async function renderAdmin(){
     html+='</div>';
   }
 
-  // RELATÓRIO WHATSAPP
+  // ── RELATÓRIO WHATSAPP
   html+='<div class="admin-card">';
-  html+='<h3>&#x1F4E4; Relatório para WhatsApp</h3>';
-  html+='<div style="font-size:12px;color:var(--texto3);margin-bottom:10px">Gera as 4 tabelas de classificação atualizadas para enviar pelo WhatsApp</div>';
-  html+='<button onclick="gerarRelatorio()" class="btn-sv" style="width:100%;margin-bottom:8px">&#x1F4CA; Gerar Ranking (4 tabelas)</button>';
-  html+='<button onclick="gerarRelatorioRodada()" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--azul);background:var(--azul-light);color:var(--azul);font-weight:700;cursor:pointer;font-size:13px">&#x1F4CB; Relatório da Última Rodada</button>';
+  html+='<h3>📤 Relatório para WhatsApp</h3>';
+  html+='<div style="font-size:12px;color:var(--texto3);margin-bottom:10px">Gera as 4 tabelas de classificação atualizadas</div>';
+  html+='<button onclick="gerarRelatorio()" class="btn-sv" style="width:100%;margin-bottom:8px">📊 Gerar Ranking (4 tabelas)</button>';
+  html+='<button onclick="gerarRelatorioRodada()" style="width:100%;margin-bottom:8px;padding:10px;border-radius:8px;border:1px solid var(--azul);background:var(--azul-light);color:var(--azul);font-weight:700;cursor:pointer;font-size:13px">📋 Relatório da Última Rodada (WhatsApp)</button>';
+  html+='<button onclick="gerarTabelaAdminRodada()" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--roxo);background:rgba(124,58,237,.1);color:var(--roxo);font-weight:700;cursor:pointer;font-size:13px">📊 Tabela Completa Admin</button>';
   html+='<div id="relatorio-output" style="display:none;margin-top:12px"></div>';
   html+='</div>';
 
-  // INSCRITOS NO TORNEIO
+  // ── INSCRITOS NO TORNEIO
   html+='<div class="admin-card">';
-  html+='<h3>&#x1F3C6; Inscritos no Torneio</h3>';
-  html+='<div style="font-size:12px;color:var(--texto3);margin-bottom:12px">Apenas inscritos aparecem nas classificações. Avulsos podem jogar mas nao pontuar.</div>';
-  var jogTodos=await dbGetRest('poker_usuarios','select=id,nome,inscrito&nome=neq.admin&order=nome.asc');
-  jogTodos=jogTodos||[];
-  jogTodos.forEach(function(j){
-    var checked=j.inscrito?'checked':'';
-    html+='<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--cinza3)">';
-    html+='<span style="font-size:14px;font-weight:600;color:'+(j.inscrito?'var(--verde)':'var(--texto3)')+'">'+j.nome+'</span>';
-    html+='<label style="display:flex;align-items:center;gap:8px;cursor:pointer">';
-    html+='<span style="font-size:11px;color:'+(j.inscrito?'var(--verde)':'var(--texto3)')+';font-weight:700">'+(j.inscrito?'INSCRITO':'AVULSO')+'</span>';
-    html+='<div data-jid="'+j.id+'" data-jinscrito="'+(j.inscrito?'1':'0')+'" onclick="toggleInscrito(this)" style="width:42px;height:24px;border-radius:12px;background:'+(j.inscrito?'var(--verde)':'var(--cinza3)')+';position:relative;cursor:pointer;transition:.2s">';
-    html+='<div style="width:20px;height:20px;border-radius:50%;background:#fff;position:absolute;top:2px;'+(j.inscrito?'right:2px':'left:2px')+';transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.3)"></div>';
-    html+='</div></label></div>';
+  html+='<h3>🏆 Inscritos no Torneio</h3>';
+  JOGADORES.forEach(function(j){
+    var ins=j.inscrito;
+    html+='<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--borda)">';
+    html+='<span style="font-size:13px;font-weight:600">'+j.nome+'</span>';
+    html+='<button data-nome="'+j.nome+'" data-ins="'+(ins?'1':'0')+'" onclick="toggleInscrito(this.dataset.nome,this.dataset.ins)" style="font-size:11px;padding:4px 10px;border-radius:6px;border:none;background:'+(ins?'var(--verde)':'var(--cinza3)')+';color:'+(ins?'#fff':'var(--texto2)')+';cursor:pointer;font-weight:700">'+(ins?'✅ Inscrito':'🎲 Avulso')+'</button>';
+    html+='</div>';
   });
   html+='</div>';
 
   el.innerHTML=html;
 }
-function renderAcertoAdmin(){
-  var rodId=document.getElementById('acerto-rod-sel').value;
-  var el=document.getElementById('painel-acerto');
-  if(!rodId||!el){return}
-  var res=RESULTADOS[parseInt(rodId)]||[];
-  var rod=RODADAS.find(function(r){return r.id===parseInt(rodId);});
-  if(!res.length){el.innerHTML='<div style="color:var(--texto3);font-size:13px">Nenhum resultado nesta rodada.</div>';return}
-  var html='';
-  res.sort(function(a,b){return a.posicao-b.posicao;});
-  res.forEach(function(r){
-    var fin=calcFinanceiro(r,rod);
-    var saldo=fin.saldo;
-    var acerto=ACERTOS[parseInt(rodId)]&&ACERTOS[parseInt(rodId)][r.nome];
-    var pagoJ=acerto&&acerto.pago_jogador;
-    var pagoA=acerto&&acerto.confirmado_admin;
-    var cor=saldo>=0?'var(--verde)':'var(--vermelho)';
-    var jogObj=JOGADORES.find(function(j){return j.nome===r.nome;});
-    var pixJog=jogObj&&jogObj.pix?jogObj.pix:null;
-    html+='<div style="padding:10px 0;border-bottom:1px solid var(--cinza3)">';
-    html+='<div style="display:flex;align-items:center;gap:8px">';
-    html+='<div style="flex:1">';
-    html+='<div style="font-size:13px;font-weight:700">'+r.posicao+'º '+r.nome+'</div>';
-    html+='<div style="font-size:14px;font-weight:900;color:'+cor+'">'+(saldo>=0?'+ ':'- ')+'R$ '+Math.abs(saldo).toFixed(2).replace('.',',')+'</div>';
-    if(pagoJ||pagoA) html+='<div style="font-size:11px;color:var(--verde);margin-top:2px">&#x2705; Pago</div>';
+
+function renderMembros(){
+  var el=document.getElementById('s-participantes');
+  if(!el) return;
+  var html='<h2 style="font-family:Barlow Condensed,sans-serif;font-size:24px;font-weight:900;margin-bottom:16px">👥 Membros</h2>';
+  JOGADORES.forEach(function(j){
+    html+='<div class="card" style="margin-bottom:8px;padding:12px">';
+    html+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">';
+    html+='<div style="font-size:14px;font-weight:700">'+j.nome+'</div>';
+    html+='<div style="display:flex;gap:6px">';
+    html+='<button onclick="editarMembro(\''+j.nome+'\')" style="font-size:11px;padding:4px 8px;border-radius:6px;border:1px solid var(--azul);background:var(--azul-light);color:var(--azul);cursor:pointer">Editar</button>';
+    html+='<button data-nome="'+j.nome+'" onclick="excluirMembro(this.dataset.nome)" style="font-size:11px;padding:4px 8px;border-radius:6px;border:1px solid var(--vermelho);background:var(--vermelho-light);color:var(--vermelho);cursor:pointer">Excluir</button>';
+    html+='</div></div>';
+    html+='<div style="font-size:12px;color:var(--texto3)">'+j.nome_completo+'</div>';
+    html+='<div style="font-size:12px;color:var(--texto3)">📱 '+( j.whatsapp||'—')+'</div>';
+    html+='<div style="display:flex;align-items:center;gap:6px;margin-top:4px">';
+    html+='<div style="font-size:12px;color:var(--texto3)">PIX: '+(j.pix||'—')+'</div>';
+    if(j.pix) html+='<button data-pix="'+j.pix+'" onclick="copiarPix(this.dataset.pix)" style="font-size:10px;padding:2px 6px;border-radius:4px;border:1px solid var(--verde);background:var(--verde-light);color:var(--verde-dark);cursor:pointer">Copiar</button>';
     html+='</div>';
-    // Lado direito
-    html+='<div style="text-align:right;flex-shrink:0">';
-    if(saldo>=0){
-      // A receber — mostra PIX do jogador
-      if(pixJog){
-        html+='<div style="font-size:9px;color:var(--texto3)">PIX do jogador:</div>';
-        html+='<div style="font-size:11px;font-weight:700;color:var(--verde);max-width:120px;word-break:break-all">'+pixJog+'</div>';
-        html+='<button data-pix="'+pixJog+'" onclick="copiarPix(this.dataset.pix)" style="font-size:10px;padding:3px 8px;border-radius:6px;border:1px solid var(--verde);background:var(--verde-light);color:var(--verde-dark);cursor:pointer;margin-top:4px;font-weight:700">&#x1F4CB; Copiar PIX</button>';
-      } else {
-        html+='<div style="font-size:10px;color:var(--texto3)">PIX não cadastrado</div>';
-      }
-    } else if(!(pagoJ||pagoA)){
-      // A pagar — aguardando jogador
-      html+='<div style="font-size:10px;color:var(--texto3);margin-bottom:4px">PIX Juliano:</div>';
-      html+='<div style="font-size:11px;font-weight:700;color:#FCD34D">02446807950</div>';
-      html+='<button data-pix="02446807950" onclick="copiarPix(this.dataset.pix)" style="font-size:10px;padding:3px 8px;border-radius:6px;border:1px solid var(--amarelo);background:rgba(252,211,77,.1);color:#FCD34D;cursor:pointer;margin-top:4px;font-weight:700">&#x1F4CB; Copiar</button>';
-    } else {
-      html+='<span style="font-size:18px">&#x2705;</span>';
-    }
-    html+='</div></div></div>';
+    html+='<div id="edit-membro-'+j.nome.replace(/\s/g,'_')+'" style="display:none;margin-top:10px;border-top:1px solid var(--borda);padding-top:10px">';
+    html+='<div class="aform-row">';
+    html+='<div style="flex:1"><div class="ainput-label">Nome Completo</div><input class="ainput" id="em-nome-'+j.nome.replace(/\s/g,'_')+'" value="'+(j.nome_completo||'')+'"></div>';
+    html+='<div style="flex:1"><div class="ainput-label">WhatsApp</div><input class="ainput" id="em-wpp-'+j.nome.replace(/\s/g,'_')+'" value="'+(j.whatsapp||'')+'"></div>';
     html+='</div>';
+    html+='<div class="aform-row">';
+    html+='<div style="flex:1"><div class="ainput-label">PIX</div><input class="ainput" id="em-pix-'+j.nome.replace(/\s/g,'_')+'" value="'+(j.pix||'')+'"></div>';
+    html+='<div style="flex:1"><div class="ainput-label">Nova senha</div><input class="ainput" id="em-senha-'+j.nome.replace(/\s/g,'_')+'" placeholder="deixar vazio = não altera"></div>';
+    html+='</div>';
+    html+='<button onclick="salvarMembro(\''+j.nome+'\')" class="btn-sv" style="width:100%;margin-top:6px">💾 Salvar</button>';
+    html+='</div></div>';
   });
   el.innerHTML=html;
 }
 
-async function adminConfirmarPgto(rodId, nome, saldo){
-  var obs=prompt('Observação (opcional):','');
-  if(obs===null) return;
-  await confirmarPagamentoAdmin(rodId, nome, parseFloat(saldo), obs);
-  renderAcertoAdmin();
-}
-
-async function toggleInscrito(el){
-  var jid=el.dataset.jid;
-  var atual=el.dataset.jinscrito==='1';
-  var novo=!atual;
-  var res=await fetch('https://gpnrixcftsjzufnygisa.supabase.co/rest/v1/poker_usuarios?id=eq.'+jid,{
-    method:'PATCH',
-    headers:Object.assign({},RHDR,{'Prefer':'return=minimal'}),
-    body:JSON.stringify({inscrito:novo})
-  });
-  if(res.ok){
-    toast((novo?'Inscrito no torneio!':'Removido do torneio'),'ok');
-    await carregarTudo();
-    renderAdmin();
-  } else {
-    toast('Erro ao atualizar','err');
-  }
-}
-
-async function cancelarPresenca(rodadaId, nome){
-  if(!confirm('Cancelar presença de '+nome+'?')) return;
-  var res=await fetch('https://gpnrixcftsjzufnygisa.supabase.co/rest/v1/poker_presencas?rodada_id=eq.'+rodadaId+'&nome=eq.'+encodeURIComponent(nome),{
-    method:'DELETE',
-    headers:Object.assign({},RHDR,{'Prefer':'return=minimal'})
-  });
-  if(res.ok){
-    if(PRESENCAS[rodadaId]) PRESENCAS[rodadaId]=PRESENCAS[rodadaId].filter(function(p){return p.nome!==nome;});
-    toast('Presença de '+nome+' cancelada!','ok');
-    renderAdmin();
-  } else {
-    toast('Erro ao cancelar presença','err');
-  }
-}
-
-function carregarEdicao(){
-  var rodadaId=parseInt(document.getElementById('edit-rodada').value);
-  var el=document.getElementById('linhas-edicao');
-  if(!rodadaId||!el){el.innerHTML='';return}
-  var rodSel=RODADAS.find(function(r){return r.id===rodadaId;})||null;
-  var res=(RESULTADOS[rodadaId]||[]).slice().sort(function(a,b){return a.posicao-b.posicao;});
-  if(!res.length){el.innerHTML='<div style="color:var(--texto3);font-size:13px;padding:8px">Nenhum resultado salvo.</div>';return}
-
-  var datalist='<datalist id="edit-jog-list">';
-  JOGADORES.forEach(function(j){ datalist+='<option value="'+j.nome+'">'; });
-  datalist+='</datalist>';
-
-  var html=datalist;
-  html+='<div style="overflow-x:auto">';
-  html+='<table style="width:100%;border-collapse:collapse;min-width:300px">';
-  html+='<thead><tr style="background:#0F172A">';
-  html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:28px">#</th>';
-  html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:left">Jogador</th>';
-  html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:40px">RB</th>';
-  html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:40px">AD</th>';
-  html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:64px">Fichas</th>';
-  html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:40px">KO</th>';
-  html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:50px">Créd.</th>';
-  html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:50px">Rateio</th>';
-  var isRod1=rodSel&&rodSel.numero===1;
-  if(isRod1){
-    html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:50px">Inscr.</th>';
-    html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:55px">CrédAnt.</th>';
-  }
-  html+='</tr></thead><tbody>';
-
-  res.forEach(function(r){
-    var bg=r.posicao%2===0?'background:#f8fafc':'background:#fff';
-    html+='<tr style="'+bg+'">';
-    html+='<td style="text-align:center;font-weight:700;font-size:13px;color:var(--verde);padding:4px">'+r.posicao+'º</td>';
-    html+='<td style="padding:3px"><input class="ainput" id="edit-nome-'+r.posicao+'" list="edit-jog-list" value="'+r.nome+'" style="padding:6px;font-size:12px;width:100%;min-width:90px"></td>';
-    html+='<td style="padding:3px"><input class="ainput" id="edit-rebuy-'+r.posicao+'" type="number" min="0" max="8" value="'+(r.rebuy||0)+'" style="padding:6px;text-align:center;width:100%"></td>';
-    html+='<td style="padding:3px"><input class="ainput" id="edit-addon-'+r.posicao+'" type="number" min="0" max="1" value="'+(r.addon||0)+'" style="padding:6px;text-align:center;width:100%"></td>';
-    html+='<td style="padding:3px"><input class="ainput" id="edit-fichas-'+r.posicao+'" type="number" min="0" value="'+(r.fichas||0)+'" style="padding:6px;width:100%"></td>';
-    html+='<td style="padding:3px"><input class="ainput" id="edit-ko-'+r.posicao+'" type="number" min="0" value="'+(r.knockout||0)+'" style="padding:6px;text-align:center;width:100%"></td>';
-    html+='<td style="padding:3px"><input class="ainput" id="edit-cred-'+r.posicao+'" type="number" min="0" step="0.01" value="'+(r.credito||0)+'" style="padding:6px;text-align:center;width:100%"></td>';
-    html+='<td style="padding:3px"><input class="ainput" id="edit-rateio-'+r.posicao+'" type="number" min="0" step="0.01" value="'+(r.rateio_ind||0)+'" style="padding:6px;text-align:center;width:100%"></td>';
-    html+='</tr>';
-  });
-  html+='</tbody></table></div>';
-
-  html+='<button class="btn-amarelo btn-sv" onclick="salvarEdicaoResultados('+rodadaId+','+res.length+')" style="margin-top:10px;width:100%">&#x1F4BE; Salvar Alterações</button>';
-
-  // Mostra botão de cancelar
-  var acoes=document.getElementById('acoes-edicao');
-  if(acoes) acoes.style.display='block';
-  el.innerHTML=html;
-}
-
-async function cancelarResultados(){
-  var rodadaId=document.getElementById('edit-rodada').value;
-  if(!rodadaId){toast('Selecione uma rodada','err');return}
-  var rod=RODADAS.find(function(r){return r.id===parseInt(rodadaId);});
-  var num=rod?rod.numero:'?';
-  if(!confirm('Cancelar todos os resultados da Rodada '+num+' e reabrir para nova inserção?')) return;
-
-  // Deleta resultados
-  await fetch('https://gpnrixcftsjzufnygisa.supabase.co/rest/v1/poker_resultados?rodada_id=eq.'+rodadaId,{
-    method:'DELETE', headers:Object.assign({},RHDR,{'Prefer':'return=minimal'})
-  });
-  // Marca rodada como não realizada
-  await fetch('https://gpnrixcftsjzufnygisa.supabase.co/rest/v1/poker_rodadas?id=eq.'+rodadaId,{
-    method:'PATCH', headers:Object.assign({},RHDR,{'Prefer':'return=minimal'}),
-    body:JSON.stringify({realizada:false})
-  });
-  // Deleta acertos desta rodada
-  await fetch('https://gpnrixcftsjzufnygisa.supabase.co/rest/v1/poker_acertos?rodada_id=eq.'+rodadaId,{
-    method:'DELETE', headers:Object.assign({},RHDR,{'Prefer':'return=minimal'})
-  });
-
-  toast('Rodada '+num+' reaberta!','ok');
-  await carregarTudo();
-  renderAdmin();
-}
-
-async function salvarEdicaoResultados(rodadaId, nj){
-  var rateio=0; // rateio individual por jogador
-  var rows=[];
-  for(var i=1;i<=nj;i++){
-    var nomeEl=document.getElementById('edit-nome-'+i);
-    if(!nomeEl) continue;
-    var nome=nomeEl.value.trim();
-    if(!nome) continue;
-    var credEl2=document.getElementById('edit-cred-'+i);
-    rows.push({
-      rodada_id:rodadaId,
-      nome:nome,
-      posicao:i,
-      rebuy:parseInt(document.getElementById('edit-rebuy-'+i).value)||0,
-      addon:parseInt(document.getElementById('edit-addon-'+i).value)||0,
-      fichas:parseFloat(document.getElementById('edit-fichas-'+i).value)||0,
-      knockout:parseInt(document.getElementById('edit-ko-'+i).value)||0,
-      credito:credEl2?parseFloat(credEl2.value)||0:0,
-      rateio_ind:parseFloat(document.getElementById('edit-rateio-'+i)?document.getElementById('edit-rateio-'+i).value:0)||0,
-    });
-  }
-  if(!rows.length){toast('Nenhum jogador preenchido!','err');return}
-  await fetch('https://gpnrixcftsjzufnygisa.supabase.co/rest/v1/poker_resultados?rodada_id=eq.'+rodadaId,{
-    method:'DELETE', headers:Object.assign({},RHDR,{'Prefer':'return=minimal'})
-  });
-  var ins=await dbInsertRest('poker_resultados',rows);
-  if(ins&&ins.error){toast('Erro: '+ins.error.message,'err');return}
-  await fetch('https://gpnrixcftsjzufnygisa.supabase.co/rest/v1/poker_rodadas?id=eq.'+rodadaId,{
-    method:'PATCH', headers:Object.assign({},RHDR,{'Prefer':'return=minimal'}),
-    body:JSON.stringify({rateio_intervalo:rateio})
-  });
-  toast('Resultados atualizados!','ok');
-  await carregarTudo();
-  renderAdmin();
-}
-
-function toggleEditRodada(rid){
-  var el=document.getElementById('edit-rod-'+rid);
+function editarMembro(nome){
+  var id='edit-membro-'+nome.replace(/\s/g,'_');
+  var el=document.getElementById(id);
   if(el) el.style.display=el.style.display==='none'?'block':'none';
 }
 
-async function salvarEdicaoRodada(rid){
-  var num=parseInt(document.getElementById('er-num-'+rid).value);
-  var data=document.getElementById('er-data-'+rid).value;
-  var hora=document.getElementById('er-hora-'+rid).value;
-  var local=document.getElementById('er-local-'+rid).value.trim();
-  if(!num||!data){toast('Preencha numero e data!','err');return}
-  var res=await fetch('https://gpnrixcftsjzufnygisa.supabase.co/rest/v1/poker_rodadas?id=eq.'+rid,{
-    method:'PATCH',
-    headers:Object.assign({},RHDR,{'Prefer':'return=minimal'}),
-    body:JSON.stringify({numero:num,data:data,horario:hora,local:local})
+async function salvarMembro(nome){
+  var k=nome.replace(/\s/g,'_');
+  var nomeC=document.getElementById('em-nome-'+k).value.trim();
+  var wpp=document.getElementById('em-wpp-'+k).value.trim();
+  var pix=document.getElementById('em-pix-'+k).value.trim();
+  var senha=document.getElementById('em-senha-'+k).value;
+  var body={nome_completo:nomeC,whatsapp:wpp,pix:pix};
+  if(senha) body.senha=senha;
+  await fetch('https://gpnrixcftsjzufnygisa.supabase.co/rest/v1/poker_usuarios?nome=eq.'+encodeURIComponent(nome),{
+    method:'PATCH',headers:Object.assign({},RHDR,{'Prefer':'return=minimal'}),
+    body:JSON.stringify(body)
   });
-  if(res.ok){
-    toast('Rodada atualizada!','ok');
-    await carregarTudo();
-    renderAdmin();
-  } else {
-    toast('Erro ao salvar','err');
-  }
+  toast('Salvo!','ok');
+  await carregarTudo();
+  renderMembros();
 }
 
-async function salvarRodada(){
-  var num=parseInt(document.getElementById('rod-num').value);
-  var data=document.getElementById('rod-data').value;
-  var hora=document.getElementById('rod-hora').value;
-  var local=document.getElementById('rod-local').value.trim();
-  if(!num||!data){toast('Preencha numero e data!','err');return}
-  try{
-    // Tenta insert direto — se duplicado faz update
-    var insR=await dbInsertRest('poker_rodadas',{numero:num,data:data,horario:hora,local:local,realizada:false,rateio_intervalo:0});
-    if(insR.error){
-      // Se erro é duplicate, tenta update
-      var updR=await fetch('https://gpnrixcftsjzufnygisa.supabase.co/rest/v1/poker_rodadas?numero=eq.'+num,{
-        method:'PATCH',
-        headers:{'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdwbnJpeGNmdHNqenVmbnlnaXNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ3NzQ3MjAsImV4cCI6MjEwMDM1MDcyMH0.dX8n0fkL9RYzEAvWiYeM7LbbxKQyjhCQJ3aVBgA2RXE',
-          'Authorization':'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdwbnJpeGNmdHNqenVmbnlnaXNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ3NzQ3MjAsImV4cCI6MjEwMDM1MDcyMH0.dX8n0fkL9RYzEAvWiYeM7LbbxKQyjhCQJ3aVBgA2RXE',
-          'Content-Type':'application/json','Prefer':'return=minimal'},
-        body:JSON.stringify({data:data,horario:hora,local:local})
-      });
-      if(!updR.ok){var t=await updR.text();toast('Erro: '+t,'err');return;}
-    }
-    toast('Rodada '+num+' salva!','ok');
-    await carregarTudo();
-    renderAdmin();
-  }catch(e){
-    toast('Erro: '+e.message,'err');
-  }
+async function excluirMembro(nome){
+  if(!confirm('Excluir '+nome+'?')) return;
+  await fetch('https://gpnrixcftsjzufnygisa.supabase.co/rest/v1/poker_usuarios?nome=eq.'+encodeURIComponent(nome),{
+    method:'DELETE',headers:Object.assign({},RHDR,{'Prefer':'return=minimal'})
+  });
+  toast('Excluído!','ok');
+  await carregarTudo();
+  renderMembros();
+}
+
+async function toggleInscrito(nome,insStr){
+  var ins=insStr==='1';
+  await fetch('https://gpnrixcftsjzufnygisa.supabase.co/rest/v1/poker_usuarios?nome=eq.'+encodeURIComponent(nome),{
+    method:'PATCH',headers:Object.assign({},RHDR,{'Prefer':'return=minimal'}),
+    body:JSON.stringify({inscrito:!ins,status_inscricao:!ins?'inscrito':'avulso'})
+  });
+  toast('Atualizado!','ok');
+  await carregarTudo();
+  renderAdmin();
+}
+
+async function cancelarPresenca(id){
+  await fetch('https://gpnrixcftsjzufnygisa.supabase.co/rest/v1/poker_presencas?id=eq.'+id,{
+    method:'DELETE',headers:Object.assign({},RHDR,{'Prefer':'return=minimal'})
+  });
+  toast('Presença cancelada!','ok');
+  await carregarTudo();
+  renderAdmin();
+}
+
+function toggleEditRodada(id){
+  var el=document.getElementById('edit-rod-'+id);
+  if(el) el.style.display=el.style.display==='none'?'block':'none';
+}
+
+async function salvarRodada(id){
+  var data=document.getElementById('erod-data-'+id).value;
+  var hora=document.getElementById('erod-hora-'+id).value;
+  var local=document.getElementById('erod-local-'+id).value;
+  await fetch('https://gpnrixcftsjzufnygisa.supabase.co/rest/v1/poker_rodadas?id=eq.'+id,{
+    method:'PATCH',headers:Object.assign({},RHDR,{'Prefer':'return=minimal'}),
+    body:JSON.stringify({data:data,horario:hora,local:local||null})
+  });
+  toast('Rodada atualizada!','ok');
+  await carregarTudo();
+  renderAdmin();
+}
+
+async function criarRodada(){
+  var num=parseInt(document.getElementById('nr-num').value);
+  var data=document.getElementById('nr-data').value;
+  var hora=document.getElementById('nr-hora').value;
+  var local=document.getElementById('nr-local').value;
+  if(!num||!data){toast('Preencha número e data','err');return}
+  await dbInsertRest('poker_rodadas',[{numero:num,data:data,horario:hora||null,local:local||null,realizada:false}]);
+  toast('Rodada '+num+' criada!','ok');
+  await carregarTudo();
+  renderAdmin();
 }
 
 function onChangeRodadaAdmin(){
   var rodSelId=parseInt(document.getElementById('res-rodada').value)||0;
   var rodSel2=RODADAS.find(function(r){return r.id===rodSelId;})||null;
   var is1=rodSel2&&rodSel2.numero===1;
-  // Mostra/oculta campo inscrição padrão
   var divInscr=document.getElementById('div-inscricao-padrao');
-  if(divInscr) divInscr.style.display=is1?'':'none';
+  if(divInscr) divInscr.style.display=is1?'flex':'none';
   gerarLinhasJogadores();
 }
 
@@ -2751,15 +2530,17 @@ function preencherInscricaoPadrao(){
 function gerarLinhasJogadores(){
   var nj=parseInt(document.getElementById('res-njog').value)||0;
   var el=document.getElementById('linhas-jogadores');
+  if(!el) return;
   if(nj<9||nj>25){el.innerHTML='<div style="color:var(--vermelho);font-size:12px">Informe entre 9 e 25 jogadores</div>';return}
   var rodSelId=parseInt(document.getElementById('res-rodada').value)||0;
   var rodSel=RODADAS.find(function(r){return r.id===rodSelId;})||null;
-  // Datalist para autocomplete
+  var isRod1=rodSel&&rodSel.numero===1;
+  var rateioPad=parseFloat(document.getElementById('res-rateio-padrao')?document.getElementById('res-rateio-padrao').value:0)||0;
+  var inscrPad=parseFloat(document.getElementById('res-inscricao-padrao')?document.getElementById('res-inscricao-padrao').value:30)||30;
   var datalist='<datalist id="jog-list">';
   JOGADORES.forEach(function(j){ datalist+='<option value="'+j.nome+'">'; });
   datalist+='</datalist>';
   var html=datalist;
-  // Tabela fixa com scroll
   html+='<div style="overflow-x:auto;-webkit-overflow-scrolling:touch">';
   html+='<table style="width:100%;border-collapse:collapse;min-width:320px">';
   html+='<thead><tr style="background:#0F172A">';
@@ -2769,12 +2550,11 @@ function gerarLinhasJogadores(){
   html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:40px">AD</th>';
   html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:64px">Fichas</th>';
   html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:40px">KO</th>';
-  html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:50px">Créd.</th>';
+  html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:45px">Créd.Rateio</th>';
   html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:50px">Rateio</th>';
-  var isRod1=rodSel&&rodSel.numero===1;
   if(isRod1){
-    html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:50px">Inscr.</th>';
-    html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:55px">CrédAnt.</th>';
+    html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:45px">Inscr.</th>';
+    html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:50px">CrédAnt.</th>';
   }
   html+='</tr></thead><tbody>';
   for(var i=1;i<=nj;i++){
@@ -2787,8 +2567,6 @@ function gerarLinhasJogadores(){
     html+='<td style="padding:3px"><input class="ainput" id="jog-fichas-'+i+'" type="number" min="0" value="0" style="padding:6px;width:100%"></td>';
     html+='<td style="padding:3px"><input class="ainput" id="jog-ko-'+i+'" type="number" min="0" value="0" style="padding:6px;text-align:center;width:100%"></td>';
     html+='<td style="padding:3px"><input class="ainput" id="jog-cred-'+i+'" type="number" min="0" value="0" step="0.01" style="padding:6px;text-align:center;width:100%"></td>';
-    var rateioPad=parseFloat(document.getElementById('res-rateio-padrao')?document.getElementById('res-rateio-padrao').value:0)||0;
-    var inscrPad=parseFloat(document.getElementById('res-inscricao-padrao')?document.getElementById('res-inscricao-padrao').value:30)||30;
     html+='<td style="padding:3px"><input class="ainput" id="jog-rateio-'+i+'" type="number" min="0" value="'+rateioPad+'" step="0.01" style="padding:6px;text-align:center;width:100%"></td>';
     if(isRod1){
       html+='<td style="padding:3px"><input class="ainput" id="jog-inscricao-'+i+'" type="number" min="0" value="'+inscrPad+'" step="0.01" style="padding:6px;text-align:center;width:100%"></td>';
@@ -2797,94 +2575,198 @@ function gerarLinhasJogadores(){
     html+='</tr>';
   }
   html+='</tbody></table></div>';
+  html+='<div style="font-size:10px;color:var(--texto3);margin-top:4px">*Fichas finais na mesa</div>';
   el.innerHTML=html;
 }
 
 async function salvarResultados(){
   var rodadaId=document.getElementById('res-rodada').value;
+  if(!rodadaId){toast('Selecione uma rodada','err');return}
   var nj=parseInt(document.getElementById('res-njog').value)||0;
-  var rateio=0; // Rateio agora é individual por jogador (campo lanche)
-  if(!rodadaId||nj<9){toast('Selecione a rodada e informe nº de jogadores (mín 9)!','err');return}
-
+  var rodSel=RODADAS.find(function(r){return r.id===parseInt(rodadaId);})||null;
+  var isRod1=rodSel&&rodSel.numero===1;
   var rows=[];
   for(var i=1;i<=nj;i++){
     var nomeEl=document.getElementById('jog-nome-'+i);
-    var nome=nomeEl?nomeEl.value.trim():'';
+    if(!nomeEl) continue;
+    var nome=nomeEl.value.trim();
     if(!nome) continue;
     rows.push({
       rodada_id:parseInt(rodadaId),
-      nome:nome,
-      posicao:i,
+      nome:nome,posicao:i,
       rebuy:parseInt(document.getElementById('jog-rebuy-'+i).value)||0,
       addon:parseInt(document.getElementById('jog-addon-'+i).value)||0,
       fichas:parseFloat(document.getElementById('jog-fichas-'+i).value)||0,
       knockout:parseInt(document.getElementById('jog-ko-'+i).value)||0,
       credito:parseFloat(document.getElementById('jog-cred-'+i)?document.getElementById('jog-cred-'+i).value:0)||0,
       rateio_ind:parseFloat(document.getElementById('jog-rateio-'+i)?document.getElementById('jog-rateio-'+i).value:0)||0,
-      inscricao:parseFloat(document.getElementById('jog-inscricao-'+i)?document.getElementById('jog-inscricao-'+i).value:0)||0,
-      cred_anterior:parseFloat(document.getElementById('jog-credant-'+i)?document.getElementById('jog-credant-'+i).value:0)||0,
+      inscricao:isRod1?parseFloat(document.getElementById('jog-inscricao-'+i)?document.getElementById('jog-inscricao-'+i).value:0)||0:0,
+      cred_anterior:isRod1?parseFloat(document.getElementById('jog-credant-'+i)?document.getElementById('jog-credant-'+i).value:0)||0:0,
     });
   }
+  if(!rows.length){toast('Preencha pelo menos um jogador','err');return}
+  try{
+    var ins=await dbInsertRest('poker_resultados',rows);
+    if(ins&&ins.error){toast('Erro: '+ins.error.message,'err');return}
+    await fetch('https://gpnrixcftsjzufnygisa.supabase.co/rest/v1/poker_rodadas?id=eq.'+rodadaId,{
+      method:'PATCH',headers:Object.assign({},RHDR,{'Prefer':'return=minimal'}),
+      body:JSON.stringify({realizada:true})
+    });
+    toast('Rodada '+rodSel.numero+' salva!','ok');
+    await carregarTudo();
+    renderAdmin();
+  }catch(e){toast('Erro: '+e.message,'err');}
+}
 
-  if(rows.length===0){toast('Adicione ao menos um jogador!','err');return}
-
-  // Salva resultados
-  // Deleta resultados anteriores
-  var delRes=await fetch('https://gpnrixcftsjzufnygisa.supabase.co/rest/v1/poker_resultados?rodada_id=eq.'+rodadaId,{
-    method:'DELETE',
-    headers:{'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdwbnJpeGNmdHNqenVmbnlnaXNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ3NzQ3MjAsImV4cCI6MjEwMDM1MDcyMH0.dX8n0fkL9RYzEAvWiYeM7LbbxKQyjhCQJ3aVBgA2RXE','Authorization':'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdwbnJpeGNmdHNqenVmbnlnaXNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ3NzQ3MjAsImV4cCI6MjEwMDM1MDcyMH0.dX8n0fkL9RYzEAvWiYeM7LbbxKQyjhCQJ3aVBgA2RXE'}
+function carregarEdicao(){
+  var rodadaId=parseInt(document.getElementById('edit-rodada').value);
+  var el=document.getElementById('linhas-edicao');
+  if(!rodadaId||!el){if(el)el.innerHTML='';return}
+  var rodSel=RODADAS.find(function(r){return r.id===rodadaId;})||null;
+  var isRod1E=rodSel&&rodSel.numero===1;
+  var res=(RESULTADOS[rodadaId]||[]).slice().sort(function(a,b){return a.posicao-b.posicao;});
+  if(!res.length){el.innerHTML='<div style="color:var(--texto3);font-size:13px;padding:8px">Nenhum resultado salvo.</div>';return}
+  var datalist='<datalist id="edit-jog-list">';
+  JOGADORES.forEach(function(j){ datalist+='<option value="'+j.nome+'">'; });
+  datalist+='</datalist>';
+  var html=datalist;
+  html+='<div style="overflow-x:auto">';
+  html+='<table style="width:100%;border-collapse:collapse;min-width:300px">';
+  html+='<thead><tr style="background:#0F172A">';
+  html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:28px">#</th>';
+  html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:left">Jogador</th>';
+  html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:40px">RB</th>';
+  html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:40px">AD</th>';
+  html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:64px">Fichas</th>';
+  html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:40px">KO</th>';
+  html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:45px">Créd.Rateio</th>';
+  html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:50px">Rateio</th>';
+  if(isRod1E){
+    html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:45px">Inscr.</th>';
+    html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:50px">CrédAnt.</th>';
+  }
+  html+='</tr></thead><tbody>';
+  res.forEach(function(r){
+    var bg=r.posicao%2===0?'background:#f8fafc':'background:#fff';
+    html+='<tr style="'+bg+'">';
+    html+='<td style="text-align:center;font-weight:700;font-size:13px;color:var(--verde);padding:4px">'+r.posicao+'º</td>';
+    html+='<td style="padding:3px"><input class="ainput" id="edit-nome-'+r.posicao+'" list="edit-jog-list" value="'+r.nome+'" style="padding:6px;font-size:12px;width:100%;min-width:90px"></td>';
+    html+='<td style="padding:3px"><input class="ainput" id="edit-rebuy-'+r.posicao+'" type="number" min="0" max="8" value="'+(r.rebuy||0)+'" style="padding:6px;text-align:center;width:100%"></td>';
+    html+='<td style="padding:3px"><input class="ainput" id="edit-addon-'+r.posicao+'" type="number" min="0" max="1" value="'+(r.addon||0)+'" style="padding:6px;text-align:center;width:100%"></td>';
+    html+='<td style="padding:3px"><input class="ainput" id="edit-fichas-'+r.posicao+'" type="number" min="0" value="'+(r.fichas||0)+'" style="padding:6px;width:100%"></td>';
+    html+='<td style="padding:3px"><input class="ainput" id="edit-ko-'+r.posicao+'" type="number" min="0" value="'+(r.knockout||0)+'" style="padding:6px;text-align:center;width:100%"></td>';
+    html+='<td style="padding:3px"><input class="ainput" id="edit-cred-'+r.posicao+'" type="number" min="0" step="0.01" value="'+(r.credito||0)+'" style="padding:6px;text-align:center;width:100%"></td>';
+    html+='<td style="padding:3px"><input class="ainput" id="edit-rateio-'+r.posicao+'" type="number" min="0" step="0.01" value="'+(r.rateio_ind||0)+'" style="padding:6px;text-align:center;width:100%"></td>';
+    if(isRod1E){
+      html+='<td style="padding:3px"><input class="ainput" id="edit-inscricao-'+r.posicao+'" type="number" min="0" step="0.01" value="'+(r.inscricao||0)+'" style="padding:6px;text-align:center;width:100%"></td>';
+      html+='<td style="padding:3px"><input class="ainput" id="edit-credant-'+r.posicao+'" type="number" min="0" step="0.01" value="'+(r.cred_anterior||0)+'" style="padding:6px;text-align:center;width:100%"></td>';
+    }
+    html+='</tr>';
   });
-  var ins2=await dbInsertRest('poker_resultados',rows);
-  if(ins2.error){toast('Erro ao inserir: '+ins2.error.message,'err');return}
+  html+='</tbody></table></div>';
+  html+='<button class="btn-amarelo btn-sv" onclick="salvarEdicaoResultados('+rodadaId+','+res.length+','+( isRod1E?1:0)+')" style="margin-top:10px;width:100%">💾 Salvar Alterações</button>';
+  var acoes=document.getElementById('acoes-edicao');
+  if(acoes) acoes.style.display='block';
+  el.innerHTML=html;
+}
 
-  // Atualiza rateio e marca como realizada via REST
-  var updRod=await fetch('https://gpnrixcftsjzufnygisa.supabase.co/rest/v1/poker_rodadas?id=eq.'+rodadaId,{
-    method:'PATCH',
-    headers:Object.assign({},RHDR,{'Prefer':'return=minimal'}),
-    body:JSON.stringify({realizada:true,rateio_intervalo:rateio})
+async function salvarEdicaoResultados(rodadaId, nj, rod1){
+  var rows=[];
+  for(var i=1;i<=nj;i++){
+    var nomeEl=document.getElementById('edit-nome-'+i);
+    if(!nomeEl) continue;
+    var nome=nomeEl.value.trim();
+    if(!nome) continue;
+    var rateioEl=document.getElementById('edit-rateio-'+i);
+    rows.push({
+      rodada_id:rodadaId,nome:nome,posicao:i,
+      rebuy:parseInt(document.getElementById('edit-rebuy-'+i).value)||0,
+      addon:parseInt(document.getElementById('edit-addon-'+i).value)||0,
+      fichas:parseFloat(document.getElementById('edit-fichas-'+i).value)||0,
+      knockout:parseInt(document.getElementById('edit-ko-'+i).value)||0,
+      credito:parseFloat(document.getElementById('edit-cred-'+i)?document.getElementById('edit-cred-'+i).value:0)||0,
+      rateio_ind:rateioEl?parseFloat(rateioEl.value)||0:0,
+      inscricao:rod1?parseFloat(document.getElementById('edit-inscricao-'+i)?document.getElementById('edit-inscricao-'+i).value:0)||0:0,
+      cred_anterior:rod1?parseFloat(document.getElementById('edit-credant-'+i)?document.getElementById('edit-credant-'+i).value:0)||0:0,
+    });
+  }
+  if(!rows.length){toast('Sem dados','err');return}
+  await fetch('https://gpnrixcftsjzufnygisa.supabase.co/rest/v1/poker_resultados?rodada_id=eq.'+rodadaId,{
+    method:'DELETE',headers:Object.assign({},RHDR,{'Prefer':'return=minimal'})
   });
-  if(!updRod.ok){toast('Erro ao atualizar rodada','err');return}
-
-  toast('Resultados salvos!','ok');
+  var ins=await dbInsertRest('poker_resultados',rows);
+  if(ins&&ins.error){toast('Erro: '+ins.error.message,'err');return}
+  toast('Resultados atualizados!','ok');
   await carregarTudo();
   renderAdmin();
 }
 
+async function cancelarResultados(){
+  var rodadaId=document.getElementById('edit-rodada').value;
+  if(!rodadaId){toast('Selecione uma rodada','err');return}
+  var rod=RODADAS.find(function(r){return r.id===parseInt(rodadaId);});
+  if(!confirm('Cancelar todos os resultados da Rodada '+(rod?rod.numero:'?')+' e reabrir?')) return;
+  await fetch('https://gpnrixcftsjzufnygisa.supabase.co/rest/v1/poker_resultados?rodada_id=eq.'+rodadaId,{method:'DELETE',headers:Object.assign({},RHDR,{'Prefer':'return=minimal'})});
+  await fetch('https://gpnrixcftsjzufnygisa.supabase.co/rest/v1/poker_rodadas?id=eq.'+rodadaId,{method:'PATCH',headers:Object.assign({},RHDR,{'Prefer':'return=minimal'}),body:JSON.stringify({realizada:false})});
+  await fetch('https://gpnrixcftsjzufnygisa.supabase.co/rest/v1/poker_acertos?rodada_id=eq.'+rodadaId,{method:'DELETE',headers:Object.assign({},RHDR,{'Prefer':'return=minimal'})});
+  toast('Rodada reaberta!','ok');
+  await carregarTudo();
+  renderAdmin();
+}
 
-document.addEventListener('DOMContentLoaded', async function(){
-  // Versão
-  var savedVer=localStorage.getItem('poker_app_version');
-  if(savedVer!==APP_VERSION){
-    localStorage.removeItem('poker_user');
-    localStorage.setItem('poker_app_version',APP_VERSION);
-  }
-
-  // Tecla Enter no login
-  document.getElementById('e-senha').addEventListener('keydown',function(e){if(e.key==='Enter')entrar();});
-  document.getElementById('e-nome').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('e-senha').focus();});
-
-  // Auto-login
-  var sessao=localStorage.getItem('poker_user');
-  if(sessao){
-    try{
-      var u=JSON.parse(sessao);
-      if(u&&u.nome){
-        USER=u;
-        loading('Entrando automaticamente...');
-        if(u.admin){
-          // admin usa senha local — sem verificação de session
-        } else {
-          var ckA=await dbGetRest('poker_usuarios','nome=eq.'+encodeURIComponent(u.nome));
-          if(!ckA||ckA.length===0){ noloading(); document.getElementById('tela-login').style.display='flex'; return; }
-        }
-        await abrirApp();
-        return;
+function renderAcertoAdmin(){
+  var rodId=document.getElementById('acerto-rod-sel').value;
+  var el=document.getElementById('painel-acerto');
+  if(!rodId||!el){return}
+  var res=RESULTADOS[parseInt(rodId)]||[];
+  var rod=RODADAS.find(function(r){return r.id===parseInt(rodId);});
+  if(!res.length){el.innerHTML='<div style="color:var(--texto3);font-size:13px">Nenhum resultado nesta rodada.</div>';return}
+  var html='';
+  res.slice().sort(function(a,b){return a.posicao-b.posicao;}).forEach(function(r){
+    var fin=calcFinanceiro(r,rod);
+    var saldo=fin.saldo;
+    var acerto=ACERTOS[parseInt(rodId)]&&ACERTOS[parseInt(rodId)][r.nome];
+    var pagoJ=acerto&&acerto.pago_jogador;
+    var pagoA=acerto&&acerto.confirmado_admin;
+    var positivo=saldo>=0;
+    var cor=positivo?'var(--verde)':'var(--vermelho)';
+    var jogObj=JOGADORES.find(function(j){return j.nome===r.nome;});
+    var pixJog=jogObj&&jogObj.pix?jogObj.pix:null;
+    html+='<div style="padding:10px 0;border-bottom:1px solid var(--borda)">';
+    html+='<div style="display:flex;align-items:center;gap:8px">';
+    html+='<div style="flex:1">';
+    html+='<div style="font-size:13px;font-weight:700">'+r.posicao+'º '+r.nome+'</div>';
+    html+='<div style="font-size:14px;font-weight:900;color:'+cor+'">'+(positivo?'+ ':'- ')+'R$ '+Math.abs(saldo).toFixed(2).replace('.',',')+'</div>';
+    if(pagoJ||pagoA) html+='<div style="font-size:11px;color:var(--verde);margin-top:2px">✅ Pago</div>';
+    html+='</div>';
+    html+='<div style="text-align:right;flex-shrink:0">';
+    if(pagoA){
+      html+='<span style="font-size:18px">✅</span>';
+    } else if(saldo>=0){
+      if(pixJog){
+        html+='<div style="font-size:9px;color:var(--texto3)">PIX do jogador:</div>';
+        html+='<div style="font-size:11px;font-weight:700;color:var(--verde);max-width:120px;word-break:break-all">'+pixJog+'</div>';
+        html+='<button data-pix="'+pixJog+'" onclick="copiarPix(this.dataset.pix)" style="font-size:10px;padding:3px 8px;border-radius:6px;border:1px solid var(--verde);background:var(--verde-light);color:var(--verde-dark);cursor:pointer;margin-top:4px;font-weight:700">📋 Copiar PIX</button>';
+      } else {
+        html+='<div style="font-size:10px;color:var(--texto3)">PIX não cadastrado</div>';
       }
-    }catch(e){}
-  }
-  noloading();
-  document.getElementById('tela-login').style.display='flex';
-});
+    } else if(!pagoJ){
+      html+='<div style="font-size:10px;color:var(--texto3);margin-bottom:4px">PIX Juliano:</div>';
+      html+='<div style="font-size:11px;font-weight:700;color:#FCD34D">02446807950</div>';
+      html+='<button data-pix="02446807950" onclick="copiarPix(this.dataset.pix)" style="font-size:10px;padding:3px 8px;border-radius:6px;border:1px solid var(--amarelo);background:rgba(252,211,77,.1);color:#FCD34D;cursor:pointer;margin-top:4px;font-weight:700">📋 Copiar</button>';
+    } else {
+      html+='<span style="font-size:18px">✅</span>';
+    }
+    html+='</div></div></div>';
+  });
+  el.innerHTML=html;
+}
+
+async function adminConfirmarPgto(rodId, nome, saldo){
+  await confirmarPagamentoAdmin(rodId, nome, parseFloat(saldo), '');
+  renderAcertoAdmin();
+}
+
 </script>
 </body>
 </html>
