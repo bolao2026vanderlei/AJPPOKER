@@ -2767,6 +2767,27 @@ async function adminConfirmarPgto(rodId, nome, saldo){
   renderAcertoAdmin();
 }
 
+document.addEventListener('DOMContentLoaded', async function(){
+  // Auto-login via localStorage
+  try{
+    var saved=localStorage.getItem('poker_user');
+    if(saved){
+      var u=JSON.parse(saved);
+      if(u&&u.nome){
+        USER={nome:u.nome,admin:u.admin||false};
+        loading();
+        await carregarTudo();
+        noloading();
+        await abrirApp();
+        return;
+      }
+    }
+  }catch(e){}
+  // Mostra tela de login
+  document.getElementById('tela-login').style.display='flex';
+  document.getElementById('app').style.display='none';
+});
+
 </script>
 </body>
 </html>
