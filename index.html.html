@@ -502,9 +502,10 @@ var RESULTADOS = {}; // {rodada_id: [{nome, posicao, rebuy, addon, fichas, knock
 
 // Tabela de pontuação [nJogadores][posicao] = pts
 var PTS_TABLE = {
-  9:  [40,30,25,21,18,15,12,11,10],
-  10: [41,31,26,22,19,17,15,12,11,10],
-  11: [42,32,27,23,20,18,16,14,12,11,10],
+  8:  [40,30,25,21,18,15,12,10],
+  9:  [41,31,26,22,19,16,13,11,10],
+  10: [42,32,27,23,20,17,14,12,11,10],
+  11: [43,33,28,24,21,18,15,13,12,11,10],
   12: [44,34,29,25,22,20,18,16,14,12,11,10],
   13: [45,35,30,26,23,21,19,17,15,13,12,11,10],
   14: [46,36,31,27,24,22,20,18,16,14,13,12,11,10],
@@ -522,7 +523,7 @@ var PTS_TABLE = {
 };
 
 function getPts(nJogadores, posicao) {
-  var n = Math.min(25, Math.max(9, nJogadores));
+  var n = Math.min(25, Math.max(8, nJogadores));
   var arr = PTS_TABLE[n] || PTS_TABLE[9];
   return arr[posicao-1] || 0;
 }
@@ -855,7 +856,7 @@ function ir(s){
   if(s==='ranking') renderRanking('pontos');
   if(s==='campeoes') renderCampeoes();
   if(s==='regras') renderRegras();
-  if(s==='participantes') renderParticipantes();
+  if(s==='participantes') renderMembros();
   if(s==='admin') renderAdmin();
   window.scrollTo(0,0);
   // Carta de fundo por aba
@@ -1518,11 +1519,11 @@ function renderRodadas(){
       html+='<thead><tr style="background:#0F172A">';
       html+='<th style="color:#FFD700;padding:5px 4px;text-align:center">#</th>';
       html+='<th style="color:#FFD700;padding:5px 4px;text-align:left">Jogador</th>';
+      html+='<th style="color:#FFD700;padding:5px 4px;text-align:center">Fichas</th>';
+      html+='<th style="color:#FFD700;padding:5px 4px;text-align:center">Pts</th>';
       html+='<th style="color:#FFD700;padding:5px 4px;text-align:center">RB</th>';
       html+='<th style="color:#FFD700;padding:5px 4px;text-align:center">AD</th>';
-      html+='<th style="color:#FFD700;padding:5px 4px;text-align:center">Fichas</th>';
       html+='<th style="color:#FFD700;padding:5px 4px;text-align:center">KO</th>';
-      html+='<th style="color:#FFD700;padding:5px 4px;text-align:center">Pts</th>';
       html+='</tr></thead><tbody>';
       todosResT.forEach(function(resT,riT){
         var ptsT=getPts(njtT,resT.posicao);
@@ -1944,90 +1945,68 @@ function renderRegras(){
 function gerarRelatorio(){
   var stats=calcStatsAll();
   var rodsReal=RODADAS.filter(function(r){return r.realizada;}).length;
-  var now=new Date();
-  var dataHoje=now.toLocaleDateString('pt-BR')+' '+now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-  var linhas=[];
+  var el=document.getElementById('relatorio-output');
+  el.style.display='block';
 
-  // Cabeçalho
-  linhas.push('');
-  linhas.push('=========================');
-  linhas.push('[P]  *AJP POKER -- LONDRINA*');
-  linhas.push('=========================');
-  linhas.push('');
+  var thS='border:1px solid #334155;padding:6px 8px;font-size:11px;font-weight:700;color:#FFD700;background:#0F172A;white-space:nowrap;text-align:';
+
+  function tabelaRanking(titulo, sorted, colNome, colVal, colSub){
+    var html='<div style="margin-bottom:16px">';
+    html+='<div style="font-size:13px;font-weight:700;color:var(--texto);margin-bottom:6px">'+titulo+'</div>';
+    html+='<div style="overflow-x:auto"><table style="border-collapse:collapse;width:100%;background:#fff">';
+    html+='<thead><tr>';
+    html+='<th style="'+thS+'center;width:36px">#</th>';
+    html+='<th style="'+thS+'left">Jogador</th>';
+    html+='<th style="'+thS+'center">'+colNome+'</th>';
+    if(colSub) html+='<th style="'+thS+'center">'+colSub+'</th>';
+    html+='</tr></thead><tbody>';
+    sorted.forEach(function(s,i){
+      var bg=i%2===0?'#fff':'#f8fafc';
+      var cor=i===0?'#2563EB':i===1?'#64748b':i===2?'#92400E':'var(--texto)';
+      var med=i===0?'1o':i===1?'2o':i===2?'3o':(i+1)+'o';
+      html+='<tr style="background:'+bg+'">';
+      html+='<td style="border:1px solid #e5e7eb;padding:5px 8px;text-align:center;font-weight:700;font-size:12px;color:'+cor+'">'+med+'</td>';
+      html+='<td style="border:1px solid #e5e7eb;padding:5px 8px;font-size:12px">'+s.nome+'</td>';
+      html+='<td style="border:1px solid #e5e7eb;padding:5px 8px;text-align:center;font-weight:700;font-size:12px;color:#1D4ED8">'+colVal(s)+'</td>';
+      if(colSub) html+='<td style="border:1px solid #e5e7eb;padding:5px 8px;text-align:center;font-size:11px;color:#6b7280">'+colSub(s)+'</td>';
+      html+='</tr>';
+    });
+    html+='</tbody></table></div></div>';
+    return html;
+  }
+
+  var html='';
 
   // 1. Sem descarte
-  linhas.push('[C] *CLASSIFICAÇÃO SEM DESCARTE*');
-  linhas.push('-------------------------');
   var rankP=stats.slice().sort(function(a,b){return b.total-a.total||b.totalSem-a.totalSem;});
-  var posP=0,antP=-1;
-  rankP.forEach(function(s,i){
-    if(s.total!==antP){posP=i+1;} antP=s.total;
-    var med=posP===1?'1º':posP===2?'2º':posP===3?'3º':posP+'°';
-    var linha=med+' '+s.nome;
-    var espacos=' '.repeat(Math.max(1,20-s.nome.length));
-    linhas.push(linha+espacos+s.total+' pts');
-  });
-  linhas.push('');
+  html+=tabelaRanking('Classificacao Sem Descarte', rankP,
+    'Pontos', function(s){return s.total+' pts';}, null);
 
   // 2. Com descarte
   if(rodsReal>=2){
-    linhas.push('[D]  *CLASSIFICAÇÃO C/ DESCARTE*');
-    linhas.push('-------------------------');
     var rankD=stats.slice().sort(function(a,b){return b.totalSem-a.totalSem||b.total-a.total;});
-    var posD=0,antD=-1;
-    rankD.forEach(function(s,i){
-      if(s.totalSem!==antD){posD=i+1;} antD=s.totalSem;
-      var med=posD===1?'1º':posD===2?'2º':posD===3?'3º':posD+'°';
-      var linha=med+' '+s.nome;
-      var espacos=' '.repeat(Math.max(1,20-s.nome.length));
-      linhas.push(linha+espacos+s.totalSem+' pts'+(s.piorPts>0?' (-'+s.piorPts+')':''));
-    });
-    linhas.push('');
+    html+=tabelaRanking('Classificacao C/ Descarte', rankD,
+      'Pontos', function(s){return s.totalSem+' pts';},
+      function(s){return s.piorPts>0?'(-'+s.piorPts+' desc)':'';});
   }
 
   // 3. King of Rebuy
-  linhas.push('Rey *KING OF REBUY*');
-  linhas.push('-------------------------');
   var rankR=stats.slice().sort(function(a,b){return b.rebuys-a.rebuys;});
-  var posR=0,antR=-1;
-  rankR.forEach(function(s,i){
-    if(s.rebuys!==antR){posR=i+1;} antR=s.rebuys;
-    var med=posR===1?'Rey':posR===2?'2º':posR===3?'3º':posR+'°';
-    var linha=med+' '+s.nome;
-    var espacos=' '.repeat(Math.max(1,20-s.nome.length));
-    linhas.push(linha+espacos+s.rebuys+' rebuys');
-  });
-  linhas.push('');
+  html+=tabelaRanking('King of Rebuy', rankR,
+    'Rebuys', function(s){return s.rebuys;}, null);
 
   // 4. Knockout
-  linhas.push('[KO] *KNOCKOUT*');
-  linhas.push('-------------------------');
   var rankK=stats.slice().sort(function(a,b){return b.knockouts-a.knockouts;});
-  var posK=0,antK=-1;
-  rankK.forEach(function(s,i){
-    if(s.knockouts!==antK){posK=i+1;} antK=s.knockouts;
-    var med=posK===1?'1º':posK===2?'2º':posK===3?'3º':posK+'°';
-    var linha=med+' '+s.nome;
-    var espacos=' '.repeat(Math.max(1,20-s.nome.length));
-    linhas.push(linha+espacos+s.knockouts+' KOs');
-  });
+  html+=tabelaRanking('Knockout', rankK,
+    'KOs', function(s){return s.knockouts;}, null);
 
-  linhas.push('');
-  linhas.push('=========================');
-  linhas.push('[D] '+dataHoje);
-  linhas.push('[LDA] AJP Poker -- Londrina PR');
-
-  var txt=linhas.join(String.fromCharCode(10));
-  var el=document.getElementById('relatorio-output');
-  el.style.display='block';
-  el.innerHTML=
-    '<div style="font-size:11px;color:var(--texto3);margin-bottom:6px">Clique no texto e selecione tudo (Ctrl+A /  A) para copiar</div>'+
-    '<textarea id="rel-txt" style="width:100%;height:340px;font-size:11px;padding:10px;border-radius:8px;border:1px solid var(--borda);background:#0F172A;color:#e2e8f0;resize:none;line-height:1.6;font-family:monospace;cursor:text" onclick="this.select()" readonly>'+txt+'</textarea>'+
-    '<div style="display:flex;gap:8px;margin-top:8px">'+
-    '<button onclick="copiarRelatorio()" class="btn-sv" style="flex:1">[C] Copiar</button>'+
-    '<button onclick="abrirWhatsRel()" style="flex:1;padding:10px;border-radius:8px;border:none;background:#25D366;color:#fff;font-weight:700;cursor:pointer;font-size:13px">[W] WhatsApp</button>'+
-    '</div>';
+  html+='<div style="display:flex;gap:8px;margin-top:4px">';
+  html+='<button onclick="copiarRelatorio()" class="btn-sv" style="flex:1">Copiar texto</button>';
+  html+='<button onclick="abrirWhatsRel()" style="flex:1;padding:10px;border-radius:8px;border:none;background:#25D366;color:#fff;font-weight:700;cursor:pointer;font-size:13px">WhatsApp</button>';
+  html+='</div>';
+  el.innerHTML=html;
 }
+
 function _gerarRelatorioOLD(){
   var stats=calcStatsAll();
   var rodsReal=RODADAS.filter(function(r){return r.realizada;}).length;
@@ -2108,728 +2087,94 @@ function gerarRelatorioRodada(){
   for(var ri=RODADAS.length-1;ri>=0;ri--){
     if(RODADAS[ri].realizada){ultimaRod=RODADAS[ri];break;}
   }
-  if(!ultimaRod){toast('Nenhuma rodada realizada ainda','err');return}
+  if(!ultimaRod){toast('Nenhuma rodada realizada','err');return}
   var res=(RESULTADOS[ultimaRod.id]||[]).slice().sort(function(a,b){return a.posicao-b.posicao;});
-  if(!res.length){toast('Sem resultados nesta rodada','err');return}
+  if(!res.length){toast('Sem resultados','err');return}
   var nj=res.length;
-  var nl=String.fromCharCode(10);
-
-  function padL(s,n){ s=String(s); while(s.length<n) s=s+' '; return s.slice(0,n); }
-  function padR(s,n){ s=String(s); while(s.length<n) s=' '+s; return s.slice(-n); }
-
-  var C={ pos:3, nome:16, rb:3, ad:3, ko:3, fi:7, pts:4 };
-  var sep='-'.repeat(C.pos+1+C.nome+1+C.rb+1+C.ad+1+C.ko+1+C.fi+1+C.pts);
-
-  var linhas=[];
-  linhas.push('');
-  linhas.push('===================================');
-  linhas.push('  [P] AJP POKER -- RESULTADO');
-  linhas.push('  Rodada '+ultimaRod.numero+' · '+fmtData(ultimaRod.data));
-  linhas.push('  '+nj+' jogadores');
-  linhas.push('===================================');
-  linhas.push('');
-  linhas.push(padR('#',C.pos)+' '+padL('Jogador',C.nome)+' '+padR('RB',C.rb)+' '+padR('AD',C.ad)+' '+padR('KO',C.ko)+' '+padR('Fichas',C.fi)+' '+padR('Pts',C.pts));
-  linhas.push(sep);
-
-  res.forEach(function(r){
-    var pts=getPts(nj,r.posicao);
-    var pos=r.posicao===1?'1°':r.posicao===2?'2°':r.posicao===3?'3°':r.posicao+'°';
-    linhas.push(
-      padR(pos,C.pos)+' '+
-      padL(r.nome,C.nome)+' '+
-      padR(r.rebuy||0,C.rb)+' '+
-      padR(r.addon||0,C.ad)+' '+
-      padR(r.knockout||0,C.ko)+' '+
-      padR(r.fichas||0,C.fi)+' '+
-      padR(pts,C.pts)
-    );
-  });
-
-  linhas.push(sep);
-  var totRb=res.reduce(function(s,r){return s+(r.rebuy||0);},0);
-  var totKo=res.reduce(function(s,r){return s+(r.knockout||0);},0);
-  var totAd=res.reduce(function(s,r){return s+(r.addon||0);},0);
-  var totFi=res.reduce(function(s,r){return s+(r.fichas||0);},0);
-  linhas.push('  Fichas: '+totFi+'  RB: '+totRb+'  AD: '+totAd+'  KO: '+totKo);
-  linhas.push('');
-  linhas.push('===================================');
-  linhas.push('[LDA] AJP Poker -- Londrina PR');
-
-  var txt=linhas.join(nl);
-  var el=document.getElementById('relatorio-output');
-  el.style.display='block';
-  el.innerHTML=
-    '<div style="font-size:11px;color:var(--texto3);margin-bottom:6px">Clique no texto abaixo e selecione tudo (Ctrl+A /  A) para copiar</div>'+
-    '<textarea id="rel-txt" style="width:100%;height:340px;font-size:11px;padding:10px;border-radius:8px;border:1px solid var(--borda);background:#0F172A;color:#e2e8f0;resize:none;line-height:1.6;font-family:monospace;cursor:text" onclick="this.select()" readonly>'+txt+'</textarea>'+
-    '<div style="display:flex;gap:8px;margin-top:8px">'+
-    '<button onclick="copiarRelatorio()" class="btn-sv" style="flex:1">[C] Copiar</button>'+
-    '<button onclick="abrirWhatsRel()" style="flex:1;padding:10px;border-radius:8px;border:none;background:#25D366;color:#fff;font-weight:700;cursor:pointer;font-size:13px">[W] WhatsApp</button>'+
-    '</div>';
-}
-
-
-function gerarTabelaAdminRodada(){
-  var ultimaRod=null;
-  for(var ri=RODADAS.length-1;ri>=0;ri--){
-    if(RODADAS[ri].realizada){ultimaRod=RODADAS[ri];break;}
-  }
-  if(!ultimaRod){toast('Nenhuma rodada realizada ainda','err');return}
-  var res=(RESULTADOS[ultimaRod.id]||[]).slice().sort(function(a,b){return a.posicao-b.posicao;});
-  if(!res.length){toast('Sem resultados nesta rodada','err');return}
-  var nj=res.length;
-  var isRod1=ultimaRod.numero===1;
   var el=document.getElementById('relatorio-output');
   el.style.display='block';
 
-  var thC='border:1px solid #334155;padding:6px 8px;font-size:11px;font-weight:700;color:#FFD700;background:#0F172A;white-space:nowrap;text-align:center';
-  var thR='border:1px solid #334155;padding:6px 8px;font-size:11px;font-weight:700;color:#FFD700;background:#0F172A;white-space:nowrap;text-align:right';
-  var thL='border:1px solid #334155;padding:6px 8px;font-size:11px;font-weight:700;color:#FFD700;background:#0F172A;white-space:nowrap;text-align:left';
+  var thS='border:1px solid #334155;padding:6px 8px;font-size:11px;font-weight:700;color:#FFD700;background:#0F172A;white-space:nowrap;text-align:';
 
-  function td(v,al,cor){
-    var s='border:1px solid #e5e7eb;padding:5px 8px;font-size:11px;white-space:nowrap;text-align:'+(al||'center');
-    if(cor) s+=';color:'+cor+';font-weight:700';
-    return '<td style="'+s+'">'+v+'</td>';
-  }
-  function pos(v){return v>0?'- R$ '+v.toFixed(2).replace('.',','):'--';}
-  function cred(v){return v>0?'+ R$ '+v.toFixed(2).replace('.',','):'--';}
-
-  var html='<div style="font-size:13px;font-weight:700;margin-bottom:8px">[R] Rodada '+ultimaRod.numero+' -- '+fmtData(ultimaRod.data)+' -- '+nj+' jogadores</div>';
-  html+='<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:8px">';
-  html+='<table style="border-collapse:collapse;min-width:500px;background:#fff">';
+  var html='<div style="font-size:13px;font-weight:700;margin-bottom:8px">Rodada '+ultimaRod.numero+' - '+fmtData(ultimaRod.data)+' - '+nj+' jogadores</div>';
+  html+='<div style="overflow-x:auto;margin-bottom:10px">';
+  html+='<table style="border-collapse:collapse;width:100%;background:#fff">';
   html+='<thead><tr>';
-  html+='<th style="'+thC+'">#</th>';
-  html+='<th style="'+thL+'">Jogador</th>';
-  html+='<th style="'+thC+'">RB</th>';
-  html+='<th style="'+thC+'">AD</th>';
-  html+='<th style="'+thC+'">KO</th>';
-  html+='<th style="'+thC+'">Fichas</th>';
-  html+='<th style="'+thC+'">Pts</th>';
-  html+='<th style="'+thR+'">Fichas R$</th>';
-  html+='<th style="'+thR+'">Buy-in</th>';
-  html+='<th style="'+thR+'">Rebuy R$</th>';
-  html+='<th style="'+thR+'">Addon R$</th>';
-  html+='<th style="'+thR+'">Rateio</th>';
-  html+='<th style="'+thR+'">Créd.Rateio</th>';
-  if(isRod1){
-    html+='<th style="'+thR+'">Inscr.</th>';
-    html+='<th style="'+thR+'">Créd.Ant.</th>';
-  }
-  html+='<th style="border:1px solid #334155;padding:6px 8px;font-size:11px;font-weight:700;color:#FFD700;background:#1e3a5f;white-space:nowrap;text-align:right">TOTAL</th>';
+  html+='<th style="'+thS+'center;width:36px">#</th>';
+  html+='<th style="'+thS+'left">Jogador</th>';
+  html+='<th style="'+thS+'center">Fichas</th>';
+  html+='<th style="'+thS+'center">Pts</th>';
+  html+='<th style="'+thS+'center">RB</th>';
+  html+='<th style="'+thS+'center">AD</th>';
+  html+='<th style="'+thS+'center">KO</th>';
   html+='</tr></thead><tbody>';
 
-  var totFi=0,totRb=0,totKo=0,totAd=0,totSaldo=0;
+  var totRb=0,totKo=0,totAd=0,totFi=0;
   res.forEach(function(r,ri){
-    var fin=calcFinanceiro(r,ultimaRod);
     var pts=getPts(nj,r.posicao);
     var bg=ri%2===0?'#fff':'#f8fafc';
-    var saldoCor=fin.saldo>=0?'#16A34A':'#DC2626';
-    totFi+=r.fichas||0;totRb+=r.rebuy||0;totKo+=r.knockout||0;totAd+=r.addon||0;totSaldo+=fin.saldo;
+    var cor=ri===0?'#1D4ED8':ri===1?'#475569':ri===2?'#92400E':'var(--texto)';
+    var med=ri===0?'1o':ri===1?'2o':ri===2?'3o':r.posicao+'o';
+    totRb+=r.rebuy||0;totKo+=r.knockout||0;totAd+=r.addon||0;totFi+=r.fichas||0;
     html+='<tr style="background:'+bg+'">';
-    html+=td(r.posicao+'°','center');
-    html+=td(r.nome,'left');
-    html+=td(r.rebuy||0,'center');
-    html+=td(r.addon||0,'center');
-    html+=td(r.knockout||0,'center');
-    html+=td((r.fichas||0).toLocaleString('pt-BR'),'center');
-    html+=td(pts,'center','#1D4ED8');
-    html+=td('+ R$ '+fin.premio.toFixed(2).replace('.',','),'right','#16A34A');
-    html+=td('- R$ 15,00','right','#DC2626');
-    html+=td(pos(fin.custoRebuy),'right',fin.custoRebuy>0?'#DC2626':'#9ca3af');
-    html+=td(pos(fin.custoAddon),'right',fin.custoAddon>0?'#DC2626':'#9ca3af');
-    html+=td(pos(fin.rateio_ind),'right',fin.rateio_ind>0?'#DC2626':'#9ca3af');
-    html+=td(cred(fin.credito),'right',fin.credito>0?'#16A34A':'#9ca3af');
-    if(isRod1){
-      html+=td(pos(fin.inscricao),'right',fin.inscricao>0?'#DC2626':'#9ca3af');
-      html+=td(cred(fin.cred_anterior),'right',fin.cred_anterior>0?'#16A34A':'#9ca3af');
-    }
-    html+=td((fin.saldo>=0?'+ ':'- ')+'R$ '+Math.abs(fin.saldo).toFixed(2).replace('.',','),'right',saldoCor);
+    html+='<td style="border:1px solid #e5e7eb;padding:5px 8px;text-align:center;font-weight:700;font-size:12px;color:'+cor+'">'+med+'</td>';
+    html+='<td style="border:1px solid #e5e7eb;padding:5px 8px;font-size:12px">'+r.nome+'</td>';
+    html+='<td style="border:1px solid #e5e7eb;padding:5px 8px;text-align:center;font-size:12px">'+(r.fichas||0).toLocaleString('pt-BR')+'</td>';
+    html+='<td style="border:1px solid #e5e7eb;padding:5px 8px;text-align:center;font-weight:700;font-size:12px;color:#1D4ED8">'+pts+'</td>';
+    html+='<td style="border:1px solid #e5e7eb;padding:5px 8px;text-align:center;font-size:12px">'+(r.rebuy||0)+'</td>';
+    html+='<td style="border:1px solid #e5e7eb;padding:5px 8px;text-align:center;font-size:12px">'+(r.addon||0)+'</td>';
+    html+='<td style="border:1px solid #e5e7eb;padding:5px 8px;text-align:center;font-size:12px">'+(r.knockout||0)+'</td>';
     html+='</tr>';
   });
 
-  var totCor=totSaldo>=0?'#16A34A':'#DC2626';
-  var nExtra=isRod1?2:0;
   html+='<tr style="background:#0F172A">';
-  html+='<td colspan="5" style="border:1px solid #334155;padding:6px 8px;font-size:11px;font-weight:700;color:#FFD700">TOTAIS</td>';
-  html+='<td style="border:1px solid #334155;padding:6px 8px;font-size:11px;font-weight:700;color:#e2e8f0;text-align:center">'+totFi.toLocaleString('pt-BR')+'</td>';
-  html+='<td colspan="'+(7+nExtra)+'" style="border:1px solid #334155;padding:6px 8px"></td>';
-  html+='<td style="border:1px solid #334155;padding:6px 8px;font-size:12px;font-weight:900;color:'+totCor+';text-align:right">'+(totSaldo>=0?'+ ':'- ')+'R$ '+Math.abs(totSaldo).toFixed(2).replace('.',',')+'</td>';
+  html+='<td colspan="2" style="border:1px solid #334155;padding:5px 8px;font-size:11px;font-weight:700;color:#FFD700">Totais</td>';
+  html+='<td style="border:1px solid #334155;padding:5px 8px;text-align:center;font-size:11px;font-weight:700;color:#e2e8f0">'+totRb+'</td>';
+  html+='<td style="border:1px solid #334155;padding:5px 8px;text-align:center;font-size:11px;font-weight:700;color:#e2e8f0">'+totAd+'</td>';
+  html+='<td style="border:1px solid #334155;padding:5px 8px;text-align:center;font-size:11px;font-weight:700;color:#e2e8f0">'+totKo+'</td>';
+  html+='<td style="border:1px solid #334155;padding:5px 8px;text-align:center;font-size:11px;font-weight:700;color:#e2e8f0">'+totFi.toLocaleString('pt-BR')+'</td>';
+  html+='<td style="border:1px solid #334155;padding:5px 8px"></td>';
   html+='</tr>';
   html+='</tbody></table></div>';
-  html+='<button onclick="copiarTabelaAdmin()" style="width:100%;padding:10px;border-radius:8px;border:none;background:var(--azul);color:#fff;font-weight:700;cursor:pointer;font-size:13px;margin-top:4px">[C] Copiar texto</button>';
-
+  html+='<div style="display:flex;gap:8px">';
+  html+='<button onclick="copiarRelatorio()" class="btn-sv" style="flex:1">Copiar</button>';
+  html+='<button onclick="abrirWhatsRel()" style="flex:1;padding:10px;border-radius:8px;border:none;background:#25D366;color:#fff;font-weight:700;cursor:pointer;font-size:13px">WhatsApp</button>';
+  html+='</div>';
   el.innerHTML=html;
+}
+
+function copiarRelatorio(){
+  var el=document.getElementById('relatorio-output');
+  if(el) navigator.clipboard.writeText(el.innerText||el.textContent).then(function(){toast('Copiado!','ok');});
+}
+
+function abrirWhatsRel(){
+  var el=document.getElementById('relatorio-output');
+  if(el) window.open('https://wa.me/?text='+encodeURIComponent(el.innerText||el.textContent),'_blank');
 }
 
 function copiarTabelaAdmin(){
   var el=document.getElementById('relatorio-output');
-  if(el) navigator.clipboard.writeText(el.innerText).then(function(){toast('Copiado!','ok');});
-}
-
-
-function copiarRelatorio(){
-  var t=document.getElementById('rel-txt');
-  if(t){ t.select(); navigator.clipboard.writeText(t.value).then(function(){toast('Copiado!','ok');}); }
-}
-
-function abrirWhatsRel(){
-  var t=document.getElementById('rel-txt');
-  if(t) window.open('https://wa.me/?text='+encodeURIComponent(t.value),'_blank');
-}
-
-function renderAdmin(){
-  var el=document.getElementById('s-admin');
-  if(!el) return;
-  var html='';
-
-  // -- PRESENÇAS
-  var proxRod=RODADAS.find(function(r){return !r.realizada;})||null;
-  if(proxRod){
-    var pres=PRESENCAS[proxRod.id]||[];
-    var ins=pres.filter(function(p){return p.status==='in';});
-    var fold=pres.filter(function(p){return p.status==='fold';});
-    html+='<div class="admin-card">';
-    html+='<h3>[!] Presenças -- Rodada '+proxRod.numero+'</h3>';
-    if(!pres.length){html+='<div style="font-size:13px;color:var(--texto3)">Nenhuma confirmação ainda.</div>';}
-    else{
-      html+='<div style="font-size:13px;font-weight:700;margin-bottom:8px">\u2705 '+ins.length+' IN  \u274C '+fold.length+' FOLD</div>';
-      pres.slice().sort(function(a,b){return a.nome.localeCompare(b.nome);}).forEach(function(p){
-        html+='<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--borda)">';
-        html+='<span style="font-size:13px">'+(p.status==='in'?'\u2705':'\u274C')+' '+p.nome+'</span>';
-        html+='<button data-id="'+p.id+'" onclick="cancelarPresenca(this.dataset.id)" style="font-size:10px;padding:3px 8px;border-radius:6px;border:1px solid var(--vermelho);background:var(--vermelho-light);color:var(--vermelho);cursor:pointer">Cancelar</button>';
-        html+='</div>';
-      });
-    }
-    html+='</div>';
-  }
-
-  // -- INSERIR RESULTADO
-  var rodsAbertas=RODADAS.filter(function(r){return !r.realizada;});
-  if(rodsAbertas.length>0){
-    html+='<div class="admin-card">';
-    html+='<h3>[*] Inserir Resultado da Rodada</h3>';
-    html+='<div class="aform-row">';
-    html+='<div style="flex:1"><div class="ainput-label">Rodada</div>';
-    html+='<select class="ainput" id="res-rodada" onchange="onChangeRodadaAdmin()">';
-    html+='<option value="">Selecione...</option>';
-    rodsAbertas.forEach(function(r){ html+='<option value="'+r.id+'">Rodada '+r.numero+' ('+fmtData(r.data)+')</option>'; });
-    html+='</select></div>';
-    html+='<div style="flex:1"><div class="ainput-label">Nº Jogadores</div>';
-    html+='<input class="ainput" id="res-njog" type="number" min="9" max="25" placeholder="9-25" onchange="gerarLinhasJogadores()"></div>';
-    html+='</div>';
-    html+='<div style="background:var(--cinza2);border-radius:8px;padding:12px;margin-top:8px;border:1px solid var(--borda)">';
-    html+='<div style="font-size:11px;font-weight:700;color:var(--texto3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">[cfg] Configurar valores da rodada</div>';
-    html+='<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">';
-    html+='<div style="flex:1;min-width:130px"><div class="ainput-label">Rateio da rodada (R$)</div>';
-    html+='<input class="ainput" id="res-rateio-padrao" type="number" min="0" step="0.01" value="30" placeholder="Ex: 30"></div>';
-    html+='<div style="display:flex;align-items:flex-end;padding-bottom:1px">';
-    html+='<button onclick="preencherRateioPadrao()" style="padding:8px 14px;border-radius:8px;border:none;background:var(--azul);color:#fff;font-size:12px;font-weight:700;cursor:pointer">v Aplicar a todos</button></div>';
-    html+='<div id="div-inscricao-padrao" style="flex:1;min-width:130px;display:none"><div class="ainput-label">Inscrição 1ª Rodada (R$)</div>';
-    html+='<div style="display:flex;gap:4px"><input class="ainput" id="res-inscricao-padrao" type="number" min="0" step="0.01" value="30" style="flex:1">';
-    html+='<button onclick="preencherInscricaoPadrao()" style="padding:8px 10px;border-radius:8px;border:none;background:var(--amarelo);color:#1a1a1a;font-size:11px;font-weight:700;cursor:pointer">v Todos</button></div></div>';
-    html+='</div>';
-    html+='<div style="font-size:11px;color:var(--texto3);margin-top:6px">  Rateio preenche a coluna em cada linha -- editável individualmente</div>';
-    html+='</div>';
-    html+='<div id="linhas-jogadores" style="overflow-x:auto;margin-top:8px"></div>';
-    html+='<button onclick="salvarResultados()" class="btn-sv" style="width:100%;margin-top:10px">[S] Salvar Resultado</button>';
-    html+='</div>';
-  }
-
-  // -- EDITAR RESULTADOS SALVOS
-  var rodsComRes=RODADAS.filter(function(r){return r.realizada&&RESULTADOS[r.id]&&RESULTADOS[r.id].length;});
-  if(rodsComRes.length>0){
-    html+='<div class="admin-card">';
-    html+='<h3>[E] Editar Resultados Salvos</h3>';
-    html+='<select class="ainput" id="edit-rodada" onchange="carregarEdicao()" style="width:100%;margin-bottom:10px">';
-    html+='<option value="">Selecione a rodada...</option>';
-    rodsComRes.forEach(function(r){ html+='<option value="'+r.id+'">Rodada '+r.numero+' ('+fmtData(r.data)+')</option>'; });
-    html+='</select>';
-    html+='<div id="linhas-edicao"></div>';
-    html+='<div id="acoes-edicao" style="display:none;margin-top:10px">';
-    html+='<button onclick="cancelarResultados()" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--vermelho);background:var(--vermelho-light);color:var(--vermelho);font-weight:700;cursor:pointer;font-size:13px">[X] Cancelar resultados e reabrir rodada</button>';
-    html+='</div>';
-    html+='</div>';
-  }
-
-  // -- EDITAR RODADAS SALVAS
-  html+='<div class="admin-card">';
-  html+='<h3>[E] Editar Rodadas Salvas</h3>';
-  RODADAS.forEach(function(r){
-    html+='<div style="border:1px solid var(--borda);border-radius:8px;padding:10px;margin-bottom:8px">';
-    html+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">';
-    html+='<div style="font-weight:700">Rodada '+r.numero+' -- '+fmtData(r.data)+'</div>';
-    html+='<button onclick="toggleEditRodada('+r.id+')" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid var(--borda);background:var(--cinza2);cursor:pointer">Editar</button>';
-    html+='</div>';
-    html+='<div id="edit-rod-'+r.id+'" style="display:none">';
-    html+='<div class="aform-row">';
-    html+='<div style="flex:1"><div class="ainput-label">Data</div><input class="ainput" id="erod-data-'+r.id+'" type="date" value="'+r.data+'"></div>';
-    html+='<div style="flex:1"><div class="ainput-label">Horário</div><input class="ainput" id="erod-hora-'+r.id+'" value="'+(r.horario||'')+'"></div>';
-    html+='</div>';
-    html+='<div class="ainput-label" style="margin-top:6px">Local</div>';
-    html+='<input class="ainput" id="erod-local-'+r.id+'" value="'+(r.local||'')+'" style="width:100%;margin-bottom:8px">';
-    html+='<button onclick="salvarRodada('+r.id+')" class="btn-sv" style="width:100%">[S] Salvar</button>';
-    html+='</div></div>';
-  });
-  html+='</div>';
-
-  // -- NOVA RODADA
-  html+='<div class="admin-card">';
-  html+='<h3>[D] Nova Rodada</h3>';
-  html+='<div class="aform-row">';
-  html+='<div style="flex:1"><div class="ainput-label">Número</div><input class="ainput" id="nr-num" type="number" placeholder="Ex: 9"></div>';
-  html+='<div style="flex:1"><div class="ainput-label">Data</div><input class="ainput" id="nr-data" type="date"></div>';
-  html+='</div>';
-  html+='<div class="aform-row">';
-  html+='<div style="flex:1"><div class="ainput-label">Horário</div><input class="ainput" id="nr-hora" placeholder="Ex: 13:45"></div>';
-  html+='<div style="flex:1"><div class="ainput-label">Local</div><input class="ainput" id="nr-local" placeholder="Local"></div>';
-  html+='</div>';
-  html+='<button onclick="criarRodada()" class="btn-sv" style="width:100%;margin-top:8px">[+] Criar Rodada</button>';
-  html+='</div>';
-
-  // -- CONTROLE DE ACERTOS
-  var rodsRealizadasAdm=RODADAS.filter(function(r){return r.realizada;});
-  if(rodsRealizadasAdm.length>0){
-    html+='<div class="admin-card">';
-    html+='<h3>[R$] Controle de Acertos</h3>';
-    html+='<select class="ainput" id="acerto-rod-sel" onchange="renderAcertoAdmin()" style="width:100%;margin-bottom:12px">';
-    html+='<option value="">Selecione a rodada...</option>';
-    rodsRealizadasAdm.forEach(function(r){ html+='<option value="'+r.id+'">Rodada '+r.numero+' -- '+fmtData(r.data)+'</option>'; });
-    html+='</select>';
-    html+='<div id="painel-acerto"></div>';
-    html+='</div>';
-  }
-
-  // -- RELATÓRIO WHATSAPP
-  html+='<div class="admin-card">';
-  html+='<h3>[>] Relatório para WhatsApp</h3>';
-  html+='<div style="font-size:12px;color:var(--texto3);margin-bottom:10px">Gera as 4 tabelas de classificação atualizadas</div>';
-  html+='<button onclick="gerarRelatorio()" class="btn-sv" style="width:100%;margin-bottom:8px">[R] Gerar Ranking (4 tabelas)</button>';
-  html+='<button onclick="gerarRelatorioRodada()" style="width:100%;margin-bottom:8px;padding:10px;border-radius:8px;border:1px solid var(--azul);background:var(--azul-light);color:var(--azul);font-weight:700;cursor:pointer;font-size:13px">[C] Relatório da Última Rodada (WhatsApp)</button>';
-  html+='<button onclick="gerarTabelaAdminRodada()" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--roxo);background:rgba(124,58,237,.1);color:var(--roxo);font-weight:700;cursor:pointer;font-size:13px">[R] Tabela Completa Admin</button>';
-  html+='<div id="relatorio-output" style="display:none;margin-top:12px"></div>';
-  html+='</div>';
-
-  // -- INSCRITOS NO TORNEIO
-  html+='<div class="admin-card">';
-  html+='<h3>[T] Inscritos no Torneio</h3>';
-  JOGADORES.forEach(function(j){
-    var ins=j.inscrito;
-    html+='<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--borda)">';
-    html+='<span style="font-size:13px;font-weight:600">'+j.nome+'</span>';
-    html+='<button data-nome="'+j.nome+'" data-ins="'+(ins?'1':'0')+'" onclick="toggleInscrito(this.dataset.nome,this.dataset.ins)" style="font-size:11px;padding:4px 10px;border-radius:6px;border:none;background:'+(ins?'var(--verde)':'var(--cinza3)')+';color:'+(ins?'#fff':'var(--texto2)')+';cursor:pointer;font-weight:700">'+(ins?'\u2705 Inscrito':'[A] Avulso')+'</button>';
-    html+='</div>';
-  });
-  html+='</div>';
-
-  el.innerHTML=html;
-}
-
-function renderMembros(){
-  var el=document.getElementById('s-participantes');
-  if(!el) return;
-  var html='<h2 style="font-family:Barlow Condensed,sans-serif;font-size:24px;font-weight:900;margin-bottom:16px">[M] Membros</h2>';
-  JOGADORES.forEach(function(j){
-    html+='<div class="card" style="margin-bottom:8px;padding:12px">';
-    html+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">';
-    html+='<div style="font-size:14px;font-weight:700">'+j.nome+'</div>';
-    html+='<div style="display:flex;gap:6px">';
-    html+='<button onclick="editarMembro(\''+j.nome+'\')" style="font-size:11px;padding:4px 8px;border-radius:6px;border:1px solid var(--azul);background:var(--azul-light);color:var(--azul);cursor:pointer">Editar</button>';
-    html+='<button data-nome="'+j.nome+'" onclick="excluirMembro(this.dataset.nome)" style="font-size:11px;padding:4px 8px;border-radius:6px;border:1px solid var(--vermelho);background:var(--vermelho-light);color:var(--vermelho);cursor:pointer">Excluir</button>';
-    html+='</div></div>';
-    html+='<div style="font-size:12px;color:var(--texto3)">'+j.nome_completo+'</div>';
-    html+='<div style="font-size:12px;color:var(--texto3)">[cel] '+( j.whatsapp||'--')+'</div>';
-    html+='<div style="display:flex;align-items:center;gap:6px;margin-top:4px">';
-    html+='<div style="font-size:12px;color:var(--texto3)">PIX: '+(j.pix||'--')+'</div>';
-    if(j.pix) html+='<button data-pix="'+j.pix+'" onclick="copiarPix(this.dataset.pix)" style="font-size:10px;padding:2px 6px;border-radius:4px;border:1px solid var(--verde);background:var(--verde-light);color:var(--verde-dark);cursor:pointer">Copiar</button>';
-    html+='</div>';
-    html+='<div id="edit-membro-'+j.nome.replace(/\s/g,'_')+'" style="display:none;margin-top:10px;border-top:1px solid var(--borda);padding-top:10px">';
-    html+='<div class="aform-row">';
-    html+='<div style="flex:1"><div class="ainput-label">Nome Completo</div><input class="ainput" id="em-nome-'+j.nome.replace(/\s/g,'_')+'" value="'+(j.nome_completo||'')+'"></div>';
-    html+='<div style="flex:1"><div class="ainput-label">WhatsApp</div><input class="ainput" id="em-wpp-'+j.nome.replace(/\s/g,'_')+'" value="'+(j.whatsapp||'')+'"></div>';
-    html+='</div>';
-    html+='<div class="aform-row">';
-    html+='<div style="flex:1"><div class="ainput-label">PIX</div><input class="ainput" id="em-pix-'+j.nome.replace(/\s/g,'_')+'" value="'+(j.pix||'')+'"></div>';
-    html+='<div style="flex:1"><div class="ainput-label">Nova senha</div><input class="ainput" id="em-senha-'+j.nome.replace(/\s/g,'_')+'" placeholder="deixar vazio = não altera"></div>';
-    html+='</div>';
-    html+='<button onclick="salvarMembro(\''+j.nome+'\')" class="btn-sv" style="width:100%;margin-top:6px">[S] Salvar</button>';
-    html+='</div></div>';
-  });
-  el.innerHTML=html;
-}
-
-function editarMembro(nome){
-  var id='edit-membro-'+nome.replace(/\s/g,'_');
-  var el=document.getElementById(id);
-  if(el) el.style.display=el.style.display==='none'?'block':'none';
-}
-
-async function salvarMembro(nome){
-  var k=nome.replace(/\s/g,'_');
-  var nomeC=document.getElementById('em-nome-'+k).value.trim();
-  var wpp=document.getElementById('em-wpp-'+k).value.trim();
-  var pix=document.getElementById('em-pix-'+k).value.trim();
-  var senha=document.getElementById('em-senha-'+k).value;
-  var body={nome_completo:nomeC,whatsapp:wpp,pix:pix};
-  if(senha) body.senha=senha;
-  await fetch('https://gpnrixcftsjzufnygisa.supabase.co/rest/v1/poker_usuarios?nome=eq.'+encodeURIComponent(nome),{
-    method:'PATCH',headers:Object.assign({},RHDR,{'Prefer':'return=minimal'}),
-    body:JSON.stringify(body)
-  });
-  toast('Salvo!','ok');
-  await carregarTudo();
-  renderMembros();
-}
-
-async function excluirMembro(nome){
-  if(!confirm('Excluir '+nome+'?')) return;
-  await fetch('https://gpnrixcftsjzufnygisa.supabase.co/rest/v1/poker_usuarios?nome=eq.'+encodeURIComponent(nome),{
-    method:'DELETE',headers:Object.assign({},RHDR,{'Prefer':'return=minimal'})
-  });
-  toast('Excluído!','ok');
-  await carregarTudo();
-  renderMembros();
-}
-
-async function toggleInscrito(nome,insStr){
-  var ins=insStr==='1';
-  await fetch('https://gpnrixcftsjzufnygisa.supabase.co/rest/v1/poker_usuarios?nome=eq.'+encodeURIComponent(nome),{
-    method:'PATCH',headers:Object.assign({},RHDR,{'Prefer':'return=minimal'}),
-    body:JSON.stringify({inscrito:!ins,status_inscricao:!ins?'inscrito':'avulso'})
-  });
-  toast('Atualizado!','ok');
-  await carregarTudo();
-  renderAdmin();
-}
-
-async function cancelarPresenca(id){
-  await fetch('https://gpnrixcftsjzufnygisa.supabase.co/rest/v1/poker_presencas?id=eq.'+id,{
-    method:'DELETE',headers:Object.assign({},RHDR,{'Prefer':'return=minimal'})
-  });
-  toast('Presença cancelada!','ok');
-  await carregarTudo();
-  renderAdmin();
-}
-
-function toggleEditRodada(id){
-  var el=document.getElementById('edit-rod-'+id);
-  if(el) el.style.display=el.style.display==='none'?'block':'none';
-}
-
-async function salvarRodada(id){
-  var data=document.getElementById('erod-data-'+id).value;
-  var hora=document.getElementById('erod-hora-'+id).value;
-  var local=document.getElementById('erod-local-'+id).value;
-  await fetch('https://gpnrixcftsjzufnygisa.supabase.co/rest/v1/poker_rodadas?id=eq.'+id,{
-    method:'PATCH',headers:Object.assign({},RHDR,{'Prefer':'return=minimal'}),
-    body:JSON.stringify({data:data,horario:hora,local:local||null})
-  });
-  toast('Rodada atualizada!','ok');
-  await carregarTudo();
-  renderAdmin();
-}
-
-async function criarRodada(){
-  var num=parseInt(document.getElementById('nr-num').value);
-  var data=document.getElementById('nr-data').value;
-  var hora=document.getElementById('nr-hora').value;
-  var local=document.getElementById('nr-local').value;
-  if(!num||!data){toast('Preencha número e data','err');return}
-  await dbInsertRest('poker_rodadas',[{numero:num,data:data,horario:hora||null,local:local||null,realizada:false}]);
-  toast('Rodada '+num+' criada!','ok');
-  await carregarTudo();
-  renderAdmin();
-}
-
-function onChangeRodadaAdmin(){
-  var rodSelId=parseInt(document.getElementById('res-rodada').value)||0;
-  var rodSel2=RODADAS.find(function(r){return r.id===rodSelId;})||null;
-  var is1=rodSel2&&rodSel2.numero===1;
-  var divInscr=document.getElementById('div-inscricao-padrao');
-  if(divInscr) divInscr.style.display=is1?'flex':'none';
-  gerarLinhasJogadores();
-}
-
-function preencherRateioPadrao(){
-  var val=parseFloat(document.getElementById('res-rateio-padrao').value)||0;
-  var nj=parseInt(document.getElementById('res-njog').value)||0;
-  for(var i=1;i<=nj;i++){
-    var el=document.getElementById('jog-rateio-'+i);
-    if(el) el.value=val;
-  }
-}
-
-function preencherInscricaoPadrao(){
-  var val=parseFloat(document.getElementById('res-inscricao-padrao').value)||0;
-  var nj=parseInt(document.getElementById('res-njog').value)||0;
-  for(var i=1;i<=nj;i++){
-    var el=document.getElementById('jog-inscricao-'+i);
-    if(el) el.value=val;
-  }
-}
-
-function gerarLinhasJogadores(){
-  var nj=parseInt(document.getElementById('res-njog').value)||0;
-  var el=document.getElementById('linhas-jogadores');
-  if(!el) return;
-  if(nj<9||nj>25){el.innerHTML='<div style="color:var(--vermelho);font-size:12px">Informe entre 9 e 25 jogadores</div>';return}
-  var rodSelId=parseInt(document.getElementById('res-rodada').value)||0;
-  var rodSel=RODADAS.find(function(r){return r.id===rodSelId;})||null;
-  var isRod1=rodSel&&rodSel.numero===1;
-  var rateioPad=parseFloat(document.getElementById('res-rateio-padrao')?document.getElementById('res-rateio-padrao').value:0)||0;
-  var inscrPad=parseFloat(document.getElementById('res-inscricao-padrao')?document.getElementById('res-inscricao-padrao').value:30)||30;
-  var datalist='<datalist id="jog-list">';
-  JOGADORES.forEach(function(j){ datalist+='<option value="'+j.nome+'">'; });
-  datalist+='</datalist>';
-  var html=datalist;
-  html+='<div style="overflow-x:auto;-webkit-overflow-scrolling:touch">';
-  html+='<table style="width:100%;border-collapse:collapse;min-width:320px">';
-  html+='<thead><tr style="background:#0F172A">';
-  html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:28px">#</th>';
-  html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:left">Jogador</th>';
-  html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:40px">RB</th>';
-  html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:40px">AD</th>';
-  html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:64px">Fichas</th>';
-  html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:40px">KO</th>';
-  html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:45px">Créd.Rateio</th>';
-  html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:50px">Rateio</th>';
-  if(isRod1){
-    html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:45px">Inscr.</th>';
-    html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:50px">CrédAnt.</th>';
-  }
-  html+='</tr></thead><tbody>';
-  for(var i=1;i<=nj;i++){
-    var bg=i%2===0?'background:#f8fafc':'background:#fff';
-    html+='<tr style="'+bg+'">';
-    html+='<td style="text-align:center;font-weight:700;font-size:13px;color:var(--verde);padding:4px">'+i+'º</td>';
-    html+='<td style="padding:3px"><input class="ainput" id="jog-nome-'+i+'" list="jog-list" placeholder="Nome..." style="padding:6px;font-size:12px;width:100%;min-width:90px"></td>';
-    html+='<td style="padding:3px"><input class="ainput" id="jog-rebuy-'+i+'" type="number" min="0" max="8" value="0" style="padding:6px;text-align:center;width:100%"></td>';
-    html+='<td style="padding:3px"><input class="ainput" id="jog-addon-'+i+'" type="number" min="0" max="1" value="1" style="padding:6px;text-align:center;width:100%"></td>';
-    html+='<td style="padding:3px"><input class="ainput" id="jog-fichas-'+i+'" type="number" min="0" value="0" style="padding:6px;width:100%"></td>';
-    html+='<td style="padding:3px"><input class="ainput" id="jog-ko-'+i+'" type="number" min="0" value="0" style="padding:6px;text-align:center;width:100%"></td>';
-    html+='<td style="padding:3px"><input class="ainput" id="jog-cred-'+i+'" type="number" min="0" value="0" step="0.01" style="padding:6px;text-align:center;width:100%"></td>';
-    html+='<td style="padding:3px"><input class="ainput" id="jog-rateio-'+i+'" type="number" min="0" value="'+rateioPad+'" step="0.01" style="padding:6px;text-align:center;width:100%"></td>';
-    if(isRod1){
-      html+='<td style="padding:3px"><input class="ainput" id="jog-inscricao-'+i+'" type="number" min="0" value="'+inscrPad+'" step="0.01" style="padding:6px;text-align:center;width:100%"></td>';
-      html+='<td style="padding:3px"><input class="ainput" id="jog-credant-'+i+'" type="number" min="0" value="0" step="0.01" style="padding:6px;text-align:center;width:100%"></td>';
-    }
-    html+='</tr>';
-  }
-  html+='</tbody></table></div>';
-  html+='<div style="font-size:10px;color:var(--texto3);margin-top:4px">*Fichas finais na mesa</div>';
-  el.innerHTML=html;
-}
-
-async function salvarResultados(){
-  var rodadaId=document.getElementById('res-rodada').value;
-  if(!rodadaId){toast('Selecione uma rodada','err');return}
-  var nj=parseInt(document.getElementById('res-njog').value)||0;
-  var rodSel=RODADAS.find(function(r){return r.id===parseInt(rodadaId);})||null;
-  var isRod1=rodSel&&rodSel.numero===1;
-  var rows=[];
-  for(var i=1;i<=nj;i++){
-    var nomeEl=document.getElementById('jog-nome-'+i);
-    if(!nomeEl) continue;
-    var nome=nomeEl.value.trim();
-    if(!nome) continue;
-    rows.push({
-      rodada_id:parseInt(rodadaId),
-      nome:nome,posicao:i,
-      rebuy:parseInt(document.getElementById('jog-rebuy-'+i).value)||0,
-      addon:parseInt(document.getElementById('jog-addon-'+i).value)||0,
-      fichas:parseFloat(document.getElementById('jog-fichas-'+i).value)||0,
-      knockout:parseInt(document.getElementById('jog-ko-'+i).value)||0,
-      credito:parseFloat(document.getElementById('jog-cred-'+i)?document.getElementById('jog-cred-'+i).value:0)||0,
-      rateio_ind:parseFloat(document.getElementById('jog-rateio-'+i)?document.getElementById('jog-rateio-'+i).value:0)||0,
-      inscricao:isRod1?parseFloat(document.getElementById('jog-inscricao-'+i)?document.getElementById('jog-inscricao-'+i).value:0)||0:0,
-      cred_anterior:isRod1?parseFloat(document.getElementById('jog-credant-'+i)?document.getElementById('jog-credant-'+i).value:0)||0:0,
-    });
-  }
-  if(!rows.length){toast('Preencha pelo menos um jogador','err');return}
-  try{
-    var ins=await dbInsertRest('poker_resultados',rows);
-    if(ins&&ins.error){toast('Erro: '+ins.error.message,'err');return}
-    await fetch('https://gpnrixcftsjzufnygisa.supabase.co/rest/v1/poker_rodadas?id=eq.'+rodadaId,{
-      method:'PATCH',headers:Object.assign({},RHDR,{'Prefer':'return=minimal'}),
-      body:JSON.stringify({realizada:true})
-    });
-    toast('Rodada '+rodSel.numero+' salva!','ok');
-    await carregarTudo();
-    renderAdmin();
-  }catch(e){toast('Erro: '+e.message,'err');}
-}
-
-function carregarEdicao(){
-  var rodadaId=parseInt(document.getElementById('edit-rodada').value);
-  var el=document.getElementById('linhas-edicao');
-  if(!rodadaId||!el){if(el)el.innerHTML='';return}
-  var rodSel=RODADAS.find(function(r){return r.id===rodadaId;})||null;
-  var isRod1E=rodSel&&rodSel.numero===1;
-  var res=(RESULTADOS[rodadaId]||[]).slice().sort(function(a,b){return a.posicao-b.posicao;});
-  if(!res.length){el.innerHTML='<div style="color:var(--texto3);font-size:13px;padding:8px">Nenhum resultado salvo.</div>';return}
-  var datalist='<datalist id="edit-jog-list">';
-  JOGADORES.forEach(function(j){ datalist+='<option value="'+j.nome+'">'; });
-  datalist+='</datalist>';
-  var html=datalist;
-  html+='<div style="overflow-x:auto">';
-  html+='<table style="width:100%;border-collapse:collapse;min-width:300px">';
-  html+='<thead><tr style="background:#0F172A">';
-  html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:28px">#</th>';
-  html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:left">Jogador</th>';
-  html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:40px">RB</th>';
-  html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:40px">AD</th>';
-  html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:64px">Fichas</th>';
-  html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:40px">KO</th>';
-  html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:45px">Créd.Rateio</th>';
-  html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:50px">Rateio</th>';
-  if(isRod1E){
-    html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:45px">Inscr.</th>';
-    html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:50px">CrédAnt.</th>';
-  }
-  html+='</tr></thead><tbody>';
-  res.forEach(function(r){
-    var bg=r.posicao%2===0?'background:#f8fafc':'background:#fff';
-    html+='<tr style="'+bg+'">';
-    html+='<td style="text-align:center;font-weight:700;font-size:13px;color:var(--verde);padding:4px">'+r.posicao+'º</td>';
-    html+='<td style="padding:3px"><input class="ainput" id="edit-nome-'+r.posicao+'" list="edit-jog-list" value="'+r.nome+'" style="padding:6px;font-size:12px;width:100%;min-width:90px"></td>';
-    html+='<td style="padding:3px"><input class="ainput" id="edit-rebuy-'+r.posicao+'" type="number" min="0" max="8" value="'+(r.rebuy||0)+'" style="padding:6px;text-align:center;width:100%"></td>';
-    html+='<td style="padding:3px"><input class="ainput" id="edit-addon-'+r.posicao+'" type="number" min="0" max="1" value="'+(r.addon||0)+'" style="padding:6px;text-align:center;width:100%"></td>';
-    html+='<td style="padding:3px"><input class="ainput" id="edit-fichas-'+r.posicao+'" type="number" min="0" value="'+(r.fichas||0)+'" style="padding:6px;width:100%"></td>';
-    html+='<td style="padding:3px"><input class="ainput" id="edit-ko-'+r.posicao+'" type="number" min="0" value="'+(r.knockout||0)+'" style="padding:6px;text-align:center;width:100%"></td>';
-    html+='<td style="padding:3px"><input class="ainput" id="edit-cred-'+r.posicao+'" type="number" min="0" step="0.01" value="'+(r.credito||0)+'" style="padding:6px;text-align:center;width:100%"></td>';
-    html+='<td style="padding:3px"><input class="ainput" id="edit-rateio-'+r.posicao+'" type="number" min="0" step="0.01" value="'+(r.rateio_ind||0)+'" style="padding:6px;text-align:center;width:100%"></td>';
-    if(isRod1E){
-      html+='<td style="padding:3px"><input class="ainput" id="edit-inscricao-'+r.posicao+'" type="number" min="0" step="0.01" value="'+(r.inscricao||0)+'" style="padding:6px;text-align:center;width:100%"></td>';
-      html+='<td style="padding:3px"><input class="ainput" id="edit-credant-'+r.posicao+'" type="number" min="0" step="0.01" value="'+(r.cred_anterior||0)+'" style="padding:6px;text-align:center;width:100%"></td>';
-    }
-    html+='</tr>';
-  });
-  html+='</tbody></table></div>';
-  html+='<button class="btn-amarelo btn-sv" onclick="salvarEdicaoResultados('+rodadaId+','+res.length+','+( isRod1E?1:0)+')" style="margin-top:10px;width:100%">[S] Salvar Alterações</button>';
-  var acoes=document.getElementById('acoes-edicao');
-  if(acoes) acoes.style.display='block';
-  el.innerHTML=html;
-}
-
-async function salvarEdicaoResultados(rodadaId, nj, rod1){
-  var rows=[];
-  for(var i=1;i<=nj;i++){
-    var nomeEl=document.getElementById('edit-nome-'+i);
-    if(!nomeEl) continue;
-    var nome=nomeEl.value.trim();
-    if(!nome) continue;
-    var rateioEl=document.getElementById('edit-rateio-'+i);
-    rows.push({
-      rodada_id:rodadaId,nome:nome,posicao:i,
-      rebuy:parseInt(document.getElementById('edit-rebuy-'+i).value)||0,
-      addon:parseInt(document.getElementById('edit-addon-'+i).value)||0,
-      fichas:parseFloat(document.getElementById('edit-fichas-'+i).value)||0,
-      knockout:parseInt(document.getElementById('edit-ko-'+i).value)||0,
-      credito:parseFloat(document.getElementById('edit-cred-'+i)?document.getElementById('edit-cred-'+i).value:0)||0,
-      rateio_ind:rateioEl?parseFloat(rateioEl.value)||0:0,
-      inscricao:rod1?parseFloat(document.getElementById('edit-inscricao-'+i)?document.getElementById('edit-inscricao-'+i).value:0)||0:0,
-      cred_anterior:rod1?parseFloat(document.getElementById('edit-credant-'+i)?document.getElementById('edit-credant-'+i).value:0)||0:0,
-    });
-  }
-  if(!rows.length){toast('Sem dados','err');return}
-  await fetch('https://gpnrixcftsjzufnygisa.supabase.co/rest/v1/poker_resultados?rodada_id=eq.'+rodadaId,{
-    method:'DELETE',headers:Object.assign({},RHDR,{'Prefer':'return=minimal'})
-  });
-  var ins=await dbInsertRest('poker_resultados',rows);
-  if(ins&&ins.error){toast('Erro: '+ins.error.message,'err');return}
-  toast('Resultados atualizados!','ok');
-  await carregarTudo();
-  renderAdmin();
-}
-
-async function cancelarResultados(){
-  var rodadaId=document.getElementById('edit-rodada').value;
-  if(!rodadaId){toast('Selecione uma rodada','err');return}
-  var rod=RODADAS.find(function(r){return r.id===parseInt(rodadaId);});
-  if(!confirm('Cancelar todos os resultados da Rodada '+(rod?rod.numero:'?')+' e reabrir?')) return;
-  await fetch('https://gpnrixcftsjzufnygisa.supabase.co/rest/v1/poker_resultados?rodada_id=eq.'+rodadaId,{method:'DELETE',headers:Object.assign({},RHDR,{'Prefer':'return=minimal'})});
-  await fetch('https://gpnrixcftsjzufnygisa.supabase.co/rest/v1/poker_rodadas?id=eq.'+rodadaId,{method:'PATCH',headers:Object.assign({},RHDR,{'Prefer':'return=minimal'}),body:JSON.stringify({realizada:false})});
-  await fetch('https://gpnrixcftsjzufnygisa.supabase.co/rest/v1/poker_acertos?rodada_id=eq.'+rodadaId,{method:'DELETE',headers:Object.assign({},RHDR,{'Prefer':'return=minimal'})});
-  toast('Rodada reaberta!','ok');
-  await carregarTudo();
-  renderAdmin();
-}
-
-function renderAcertoAdmin(){
-  var rodId=document.getElementById('acerto-rod-sel').value;
-  var el=document.getElementById('painel-acerto');
-  if(!rodId||!el){return}
-  var res=RESULTADOS[parseInt(rodId)]||[];
-  var rod=RODADAS.find(function(r){return r.id===parseInt(rodId);});
-  if(!res.length){el.innerHTML='<div style="color:var(--texto3);font-size:13px">Nenhum resultado nesta rodada.</div>';return}
-  var html='';
-  res.slice().sort(function(a,b){return a.posicao-b.posicao;}).forEach(function(r){
-    var fin=calcFinanceiro(r,rod);
-    var saldo=fin.saldo;
-    var acerto=ACERTOS[parseInt(rodId)]&&ACERTOS[parseInt(rodId)][r.nome];
-    var pagoJ=acerto&&acerto.pago_jogador;
-    var pagoA=acerto&&acerto.confirmado_admin;
-    var positivo=saldo>=0;
-    var cor=positivo?'var(--verde)':'var(--vermelho)';
-    var jogObj=JOGADORES.find(function(j){return j.nome===r.nome;});
-    var pixJog=jogObj&&jogObj.pix?jogObj.pix:null;
-    html+='<div style="padding:10px 0;border-bottom:1px solid var(--borda)">';
-    html+='<div style="display:flex;align-items:center;gap:8px">';
-    html+='<div style="flex:1">';
-    html+='<div style="font-size:13px;font-weight:700">'+r.posicao+'º '+r.nome+'</div>';
-    html+='<div style="font-size:14px;font-weight:900;color:'+cor+'">'+(positivo?'+ ':'- ')+'R$ '+Math.abs(saldo).toFixed(2).replace('.',',')+'</div>';
-    if(pagoJ||pagoA) html+='<div style="font-size:11px;color:var(--verde);margin-top:2px">\u2705 Pago</div>';
-    html+='</div>';
-    html+='<div style="text-align:right;flex-shrink:0">';
-    if(pagoA){
-      html+='<span style="font-size:18px">\u2705</span>';
-    } else if(saldo>=0){
-      if(pixJog){
-        html+='<div style="font-size:9px;color:var(--texto3)">PIX do jogador:</div>';
-        html+='<div style="font-size:11px;font-weight:700;color:var(--verde);max-width:120px;word-break:break-all">'+pixJog+'</div>';
-        html+='<button data-pix="'+pixJog+'" onclick="copiarPix(this.dataset.pix)" style="font-size:10px;padding:3px 8px;border-radius:6px;border:1px solid var(--verde);background:var(--verde-light);color:var(--verde-dark);cursor:pointer;margin-top:4px;font-weight:700">[C] Copiar PIX</button>';
-      } else {
-        html+='<div style="font-size:10px;color:var(--texto3)">PIX não cadastrado</div>';
-      }
-    } else if(!pagoJ){
-      html+='<div style="font-size:10px;color:var(--texto3);margin-bottom:4px">PIX Juliano:</div>';
-      html+='<div style="font-size:11px;font-weight:700;color:#FCD34D">02446807950</div>';
-      html+='<button data-pix="02446807950" onclick="copiarPix(this.dataset.pix)" style="font-size:10px;padding:3px 8px;border-radius:6px;border:1px solid var(--amarelo);background:rgba(252,211,77,.1);color:#FCD34D;cursor:pointer;margin-top:4px;font-weight:700">[C] Copiar</button>';
-    } else {
-      html+='<span style="font-size:18px">\u2705</span>';
-    }
-    html+='</div></div></div>';
-  });
-  el.innerHTML=html;
-}
-
-async function adminConfirmarPgto(rodId, nome, saldo){
-  await confirmarPagamentoAdmin(rodId, nome, parseFloat(saldo), '');
-  renderAcertoAdmin();
+  if(el) navigator.clipboard.writeText(el.innerText||el.textContent).then(function(){toast('Copiado!','ok');});
 }
 
 document.addEventListener('DOMContentLoaded', function(){
-  // Mostra tela de login por padrão
   document.getElementById('tela-login').style.display='flex';
   document.getElementById('app').style.display='none';
   document.getElementById('loading').style.display='none';
-
-  // Verifica auto-login
   try{
     var saved=localStorage.getItem('poker_user');
     if(saved){
       var u=JSON.parse(saved);
       if(u&&u.nome){
         USER={nome:u.nome,admin:u.admin||false};
-        // Esconde login e abre app
         document.getElementById('tela-login').style.display='none';
         abrirApp();
         return;
       }
     }
-  }catch(e){
-    console.error('Auto-login erro:',e);
-  }
+  }catch(e){}
 });
-
 </script>
 </body>
 </html>
