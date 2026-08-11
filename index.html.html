@@ -2698,6 +2698,97 @@ async function adminConfirmarPgto(rodId, nome, saldo){
   renderAcertoAdmin();
 }
 
+function gerarTabelaAdminRodada(){
+  var ultimaRod=null;
+  for(var ri=RODADAS.length-1;ri>=0;ri--){
+    if(RODADAS[ri].realizada){ultimaRod=RODADAS[ri];break;}
+  }
+  if(!ultimaRod){toast('Nenhuma rodada realizada','err');return}
+  var res=(RESULTADOS[ultimaRod.id]||[]).slice().sort(function(a,b){return a.posicao-b.posicao;});
+  if(!res.length){toast('Sem resultados','err');return}
+  var nj=res.length;
+  var isRod1=ultimaRod.numero===1;
+  var el=document.getElementById('relatorio-output');
+  el.style.display='block';
+
+  var thC='border:1px solid #334155;padding:6px 8px;font-size:11px;font-weight:700;color:#FFD700;background:#0F172A;white-space:nowrap;text-align:center';
+  var thR='border:1px solid #334155;padding:6px 8px;font-size:11px;font-weight:700;color:#FFD700;background:#0F172A;white-space:nowrap;text-align:right';
+  var thL='border:1px solid #334155;padding:6px 8px;font-size:11px;font-weight:700;color:#FFD700;background:#0F172A;white-space:nowrap;text-align:left';
+
+  function td(v,al,cor){
+    var s='border:1px solid #e5e7eb;padding:5px 8px;font-size:11px;white-space:nowrap;text-align:'+(al||'center');
+    if(cor) s+=';color:'+cor+';font-weight:700';
+    return '<td style="'+s+'">'+v+'</td>';
+  }
+  function neg(v){return v>0?'- R$ '+v.toFixed(2).replace('.',','):'--';}
+  function pos(v){return v>0?'+ R$ '+v.toFixed(2).replace('.',','):'--';}
+
+  var html='<div style="font-size:13px;font-weight:700;margin-bottom:8px">Rodada '+ultimaRod.numero+' - '+fmtData(ultimaRod.data)+' - '+nj+' jogadores</div>';
+  html+='<div style="overflow-x:auto;margin-bottom:10px">';
+  html+='<table style="border-collapse:collapse;background:#fff">';
+  html+='<thead><tr>';
+  html+='<th style="'+thC+'">#</th>';
+  html+='<th style="'+thL+'">Jogador</th>';
+  html+='<th style="'+thC+'">RB</th>';
+  html+='<th style="'+thC+'">AD</th>';
+  html+='<th style="'+thC+'">KO</th>';
+  html+='<th style="'+thC+'">Fichas</th>';
+  html+='<th style="'+thC+'">Pts</th>';
+  html+='<th style="'+thR+'">Fichas R$</th>';
+  html+='<th style="'+thR+'">Buy-in</th>';
+  html+='<th style="'+thR+'">Rebuy R$</th>';
+  html+='<th style="'+thR+'">Addon R$</th>';
+  html+='<th style="'+thR+'">Rateio</th>';
+  html+='<th style="'+thR+'">Cred.Rateio</th>';
+  if(isRod1){
+    html+='<th style="'+thR+'">Inscr.</th>';
+    html+='<th style="'+thR+'">CredAnt.</th>';
+  }
+  html+='<th style="border:1px solid #334155;padding:6px 8px;font-size:11px;font-weight:700;color:#FFD700;background:#1e3a5f;white-space:nowrap;text-align:right">TOTAL</th>';
+  html+='</tr></thead><tbody>';
+
+  var totFi=0,totRb=0,totKo=0,totAd=0,totSaldo=0;
+  res.forEach(function(r,ri){
+    var fin=calcFinanceiro(r,ultimaRod);
+    var pts=getPts(nj,r.posicao);
+    var bg=ri%2===0?'#fff':'#f8fafc';
+    var saldoCor=fin.saldo>=0?'#16A34A':'#DC2626';
+    totFi+=r.fichas||0;totRb+=r.rebuy||0;totKo+=r.knockout||0;totAd+=r.addon||0;totSaldo+=fin.saldo;
+    html+='<tr style="background:'+bg+'">';
+    html+=td(r.posicao+'°','center');
+    html+=td(r.nome,'left');
+    html+=td(r.rebuy||0,'center');
+    html+=td(r.addon||0,'center');
+    html+=td(r.knockout||0,'center');
+    html+=td((r.fichas||0).toLocaleString('pt-BR'),'center');
+    html+=td(pts,'center','#1D4ED8');
+    html+=td(pos(fin.premio),'right','#16A34A');
+    html+=td('- R$ 15,00','right','#DC2626');
+    html+=td(neg(fin.custoRebuy),'right',fin.custoRebuy>0?'#DC2626':'#9ca3af');
+    html+=td(neg(fin.custoAddon),'right',fin.custoAddon>0?'#DC2626':'#9ca3af');
+    html+=td(neg(fin.rateio_ind),'right',fin.rateio_ind>0?'#DC2626':'#9ca3af');
+    html+=td(pos(fin.credito),'right',fin.credito>0?'#16A34A':'#9ca3af');
+    if(isRod1){
+      html+=td(neg(fin.inscricao),'right',fin.inscricao>0?'#DC2626':'#9ca3af');
+      html+=td(pos(fin.cred_anterior),'right',fin.cred_anterior>0?'#16A34A':'#9ca3af');
+    }
+    html+=td((fin.saldo>=0?'+ ':'- ')+'R$ '+Math.abs(fin.saldo).toFixed(2).replace('.',','),'right',saldoCor);
+    html+='</tr>';
+  });
+
+  var totCor=totSaldo>=0?'#16A34A':'#DC2626';
+  var nExtra=isRod1?2:0;
+  html+='<tr style="background:#0F172A">';
+  html+='<td colspan="5" style="border:1px solid #334155;padding:6px 8px;font-size:11px;font-weight:700;color:#FFD700">TOTAIS</td>';
+  html+='<td style="border:1px solid #334155;padding:6px 8px;font-size:11px;font-weight:700;color:#e2e8f0;text-align:center">'+totFi.toLocaleString('pt-BR')+'</td>';
+  html+='<td colspan="'+(7+nExtra)+'" style="border:1px solid #334155;padding:6px 8px"></td>';
+  html+='<td style="border:1px solid #334155;padding:6px 8px;font-size:12px;font-weight:900;color:'+totCor+';text-align:right">'+(totSaldo>=0?'+ ':'- ')+'R$ '+Math.abs(totSaldo).toFixed(2).replace('.',',')+'</td>';
+  html+='</tr>';
+  html+='</tbody></table></div>';
+  html+='<button onclick="copiarTabelaAdmin()" style="width:100%;padding:10px;border-radius:8px;border:none;background:var(--azul);color:#fff;font-weight:700;cursor:pointer;font-size:13px">Copiar texto</button>';
+  el.innerHTML=html;
+}
+
 </script>
 </body>
 </html>
