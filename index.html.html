@@ -292,6 +292,17 @@ body{font-family:'Inter',sans-serif;background:var(--fundo);color:var(--texto);m
   .hero-valor{font-size:26px}
   .presenca-btns{flex-direction:column}
 }
+
+@keyframes pulse-gold{
+  0%,100%{box-shadow:0 0 0 0 rgba(234,179,8,0)}
+  50%{box-shadow:0 0 0 8px rgba(234,179,8,0.3)}
+}
+@keyframes podium-glow {
+  0%   { box-shadow: 0 0 0 0 rgba(255,215,0,0); }
+  40%  { box-shadow: 0 0 14px 4px rgba(255,215,0,0.4); }
+  100% { box-shadow: 0 0 0 0 rgba(255,215,0,0); }
+}
+
 </style>
 </head>
 <body>
@@ -984,7 +995,7 @@ async function renderInicio(){
   if(!USER.admin && rodsRealizadasN===0){
     if(!jaDefiniu){
       html+='<div style="background:linear-gradient(135deg,#78350F,#451A03);border-radius:var(--radius);padding:16px;margin-bottom:14px;border:1px solid #D97706">';
-      html+='<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#FCD34D;margin-bottom:6px">[T] Novo Semestre -- Inscrição</div>';
+      html+='<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#FCD34D;margin-bottom:6px">🏆 Novo Semestre -- Inscrição</div>';
       html+='<div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:3px">Confirme sua participação</div>';
       html+='<div style="font-size:12px;color:rgba(255,255,255,.6);margin-bottom:14px">Deseja pontuar na classificação deste semestre?</div>';
       html+='<div style="display:flex;gap:8px">';
@@ -1008,9 +1019,9 @@ async function renderInicio(){
   if(proxRodada){
     html+='<div class="prox-card">';
     html+='<div class="prox-num">Rodada '+proxRodada.numero+'</div>';
-    html+='<div style="font-size:28px;font-weight:900;color:#fff;font-family:Barlow Condensed,sans-serif;letter-spacing:1px;margin-bottom:2px">[D] '+fmtData(proxRodada.data)+'</div>';
-    if(proxRodada.horario) html+='<div style="font-size:16px;color:#94A3B8;margin-bottom:12px">[H] das '+proxRodada.horario+' às 18h15</div>';
-    if(proxRodada.local) html+='<div class="prox-local">[L] '+proxRodada.local+'</div>';
+    html+='<div style="font-size:28px;font-weight:900;color:#fff;font-family:Barlow Condensed,sans-serif;letter-spacing:1px;margin-bottom:2px">📅 '+fmtData(proxRodada.data)+'</div>';
+    if(proxRodada.horario) html+='<div style="font-size:16px;color:#94A3B8;margin-bottom:12px">🕑 das '+proxRodada.horario+' às 18h15</div>';
+    if(proxRodada.local) html+='<div class="prox-local">📍 '+proxRodada.local+'</div>';
 
     // Status de presença
     if(!USER.admin){
@@ -1068,11 +1079,21 @@ async function renderInicio(){
       var minhaP=pres.find(function(p){return p.nome===USER.nome});
       var meuRes=RESULTADOS[r.id]?RESULTADOS[r.id].find(function(x){return x.nome===USER.nome}):null;
       var isProx=!r.realizada&&RODADAS.findIndex(function(x){return !x.realizada})===RODADAS.indexOf(r);
-      var bgRow=isProx?'background:var(--verde-light);':'';
+      var bgRow=isProx?'background:var(--verde-light);border-bottom:1px solid var(--cinza3);':'border-bottom:1px solid var(--cinza3);';
       var isPiorRod=r.realizada&&meuRes&&stats.piorPts>0&&getPts((RESULTADOS[r.id]||[]).length,meuRes.posicao)===stats.piorPts&&stats.rodadasJogadas>1;
       var bordaRod=isPiorRod?'border-left:3px solid #DC2626;padding-left:8px;':'';
-      html+='<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--cinza3);'+bgRow+bordaRod+'">';
+      var isTop3Row=r.realizada&&meuRes&&meuRes.posicao<=3;
+      if(isTop3Row){
+        if(meuRes.posicao===1) bgRow='background:#FEFCE8;border:2px solid #EAB308;border-radius:10px;animation:pulse-gold 2s ease-in-out infinite;padding:10px;margin-bottom:4px;';
+        else if(meuRes.posicao===2) bgRow='background:#F1F5F9;border:2px solid #94A3B8;border-radius:10px;padding:10px;margin-bottom:4px;';
+        else bgRow='background:#FFF7ED;border:2px solid #D97706;border-radius:10px;padding:10px;margin-bottom:4px;';
+      } else if(isPiorRod) bgRow+='border-left:3px solid #DC2626;padding-left:8px;';
+      html+='<div style="display:flex;align-items:center;gap:12px;'+bgRow+'">';
       html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:24px;font-weight:900;color:'+(r.realizada?'var(--verde)':isProx?'var(--azul)':'var(--texto3)')+';min-width:32px;text-align:center">'+r.numero+'</div>';
+      if(isTop3Row){
+        var medPos=meuRes.posicao===1?'&#x1F947;':meuRes.posicao===2?'&#x1F948;':'&#x1F949;';
+        html+='<div style="font-size:22px;line-height:1;text-align:center">'+medPos+'</div>';
+      }
       html+='<div style="flex:1">';
       html+='<div style="font-size:14px;font-weight:700;color:var(--texto)">'+(r.data?fmtData(r.data):'A definir')+'</div>';
       if(r.local) html+='<div style="font-size:12px;color:var(--texto3);margin-top:2px">&#x1F4CD; '+r.local+'</div>';
@@ -1082,17 +1103,24 @@ async function renderInicio(){
         var pts=getPts(nj,meuRes.posicao);
         var fin=calcFinanceiro(meuRes,r);
         var isPior=stats.piorPts>0&&pts===stats.piorPts&&stats.rodadasJogadas>1;
+        var isTop3Rd=(meuRes.posicao<=3);
+        var podMedal=meuRes.posicao===1?'&#x1F947;':meuRes.posicao===2?'&#x1F948;':meuRes.posicao===3?'&#x1F949;':'';
         html+='<div style="text-align:right">';
         html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:26px;font-weight:900;color:'+(isPior?'#DC2626':'var(--verde)')+'">'+pts+'pts'+(isPior?' &#x2715;':'')+'</div>';
         html+='<div style="font-size:13px;font-weight:700;color:var(--texto2)">'+meuRes.posicao+'° lugar</div>';
-        if(meuRes.rebuy>0) html+='<div style="font-size:11px;color:var(--roxo)">&#x1F504; '+meuRes.rebuy+'× rebuy</div>';
+        if(isTop3Rd){
+          var badgeBg=meuRes.posicao===1?'background:#FEF08A;color:#713F12':meuRes.posicao===2?'background:#E2E8F0;color:#1E293B':'background:#FED7AA;color:#7C2D12';
+          html+='<div style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;display:inline-block;margin-bottom:3px;"+badgeBg+">"+podMedal+" "+meuRes.posicao+"° lugar!</div>';
+        } else {
+          html+='<div style="font-size:13px;font-weight:700;color:var(--texto2)">'+meuRes.posicao+'&deg; lugar</div>';
+        }
         if(meuRes.knockout>0) html+='<div style="font-size:11px;color:#92400E">KO: '+meuRes.knockout+'</div>';
         if(USER.admin||meuRes){
           html+='<div style="font-size:13px;font-weight:700;color:'+(fin.saldo>=0?'var(--verde)':'var(--vermelho)')+'">'+fmtMoeda(fin.saldo)+'</div>';
         }
         html+='</div>';
       } else if(!r.realizada&&minhaP){
-        html+='<span style="font-size:18px">'+(minhaP.status==='in'?'&#x1F91A;':'&#x1F919;')+'</span>';
+        html+='<span style="font-size:18px">'+(minhaP.status==='in'?'✅ IN':'❌ FOLD')+'</span>';
       } else if(!r.realizada){
         html+='<div style="font-size:10px;color:var(--texto3)">-</div>';
       }
@@ -1439,7 +1467,7 @@ function calcFinanceiro(res,rodada){
 
 function renderRodadas(){
   var el=document.getElementById('s-rodadas');
-  var html='<h2 style="font-family:Barlow Condensed,sans-serif;font-size:24px;font-weight:900;margin-bottom:16px">[D] Rodadas do Semestre</h2>';
+  var html='<h2 style="font-family:Barlow Condensed,sans-serif;font-size:24px;font-weight:900;margin-bottom:16px">📅 Rodadas do Semestre</h2>';
 
   RODADAS.forEach(function(r){
     var pres=PRESENCAS[r.id]||[];
@@ -1453,7 +1481,7 @@ function renderRodadas(){
     html+='<div>';
     html+='<div class="rodada-num">Rodada '+r.numero+'</div>';
     html+='<div class="rodada-data">'+fmtData(r.data)+(r.horario?' das '+r.horario+' às 18h15':'')+'</div>';
-    if(r.local) html+='<div style="font-size:11px;color:var(--texto3)">[L] '+r.local+'</div>';
+    if(r.local) html+='<div style="font-size:11px;color:var(--texto3)">📍 '+r.local+'</div>';
     html+='</div>';
     html+='<span class="rodada-badge badge-'+status+'">'+
       (status==='realizada'?'Realizada':status==='proxima'?'Próxima':'Futura')+'</span>';
@@ -1532,11 +1560,11 @@ function renderRodadas(){
         html+='<tr style="'+bgT+'">';
         html+='<td style="padding:4px 3px;border:1px solid #e5e7eb;text-align:center;font-weight:700;color:var(--verde)">'+resT.posicao+'°</td>';
         html+='<td style="padding:4px 5px;border:1px solid #e5e7eb;'+(isMeT?'color:#1a5c28;font-weight:700':'')+'">'+resT.nome+'</td>';
+        html+='<td style="padding:4px 3px;border:1px solid #e5e7eb;text-align:center">'+(resT.fichas||0)+'</td>';
+        html+='<td style="padding:4px 3px;border:1px solid #e5e7eb;text-align:center;font-weight:700;color:'+(isMeT?'#1a5c28':'var(--texto)')+'">'+ ptsT+'</td>';
         html+='<td style="padding:4px 3px;border:1px solid #e5e7eb;text-align:center">'+(resT.rebuy||0)+'</td>';
         html+='<td style="padding:4px 3px;border:1px solid #e5e7eb;text-align:center">'+(resT.addon||0)+'</td>';
-        html+='<td style="padding:4px 3px;border:1px solid #e5e7eb;text-align:center">'+(resT.fichas||0)+'</td>';
         html+='<td style="padding:4px 3px;border:1px solid #e5e7eb;text-align:center">'+(resT.knockout||0)+'</td>';
-        html+='<td style="padding:4px 3px;border:1px solid #e5e7eb;text-align:center;font-weight:700;color:'+(isMeT?'#1a5c28':'var(--texto)')+'">'+ptsT+'</td>';
         html+='</tr>';
       });
       // Total de fichas
@@ -1737,7 +1765,7 @@ async function renderCampeoes(){
       html+='</tbody></table></div>';
     }
         if(USER.admin){
-      html+='<div class="admin-card" style="margin-top:16px"><h3>[+] Adicionar/Editar Campeão</h3>';
+      html+='<div class="admin-card" style="margin-top:16px"><h3>➕ Adicionar/Editar Campeão</h3>';
       html+='<div class="ainput-label">Nº Torneio</div><input class="ainput" id="camp-num" type="number" placeholder="Ex: 24" style="margin-bottom:8px;width:100%">';
       html+='<div class="ainput-label">1º Lugar</div><input class="ainput" id="camp-1" placeholder="Nome" style="margin-bottom:8px;width:100%">';
       html+='<div class="ainput-label">2º Lugar</div><input class="ainput" id="camp-2" placeholder="Nome" style="margin-bottom:8px;width:100%">';
@@ -1770,7 +1798,7 @@ async function renderCampeoes(){
       html+='</tbody></table></div>';
     }
     if(USER.admin){
-      html+='<div class="admin-card" style="margin-top:16px"><h3>[+] Adicionar Knockout</h3>';
+      html+='<div class="admin-card" style="margin-top:16px"><h3>➕ Adicionar Knockout</h3>';
       html+='<div class="aform-row"><div style="flex:1"><div class="ainput-label">Nº</div><input class="ainput" id="ko-num" type="number" placeholder="16"></div>';
       html+='<div style="flex:1"><div class="ainput-label">Ano</div><input class="ainput" id="ko-ano" type="number" placeholder="2026"></div></div>';
       html+='<div class="ainput-label">1º</div><input class="ainput" id="ko-1" placeholder="Nome" style="margin-bottom:8px;width:100%">';
@@ -1794,7 +1822,7 @@ async function renderCampeoes(){
       });
     }
     if(USER.admin){
-      html+='<div class="admin-card" style="margin-top:16px"><h3>[+] Adicionar King of Rebuy</h3>';
+      html+='<div class="admin-card" style="margin-top:16px"><h3>➕ Adicionar King of Rebuy</h3>';
       html+='<div class="aform-row"><div style="flex:1"><div class="ainput-label">Nº</div><input class="ainput" id="kr-num" type="number" placeholder="16"></div>';
       html+='<div style="flex:1"><div class="ainput-label">Ano</div><input class="ainput" id="kr-ano" type="number" placeholder="2026"></div></div>';
       html+='<div class="ainput-label">Campeão</div><input class="ainput" id="kr-nome" placeholder="Nome" style="margin-bottom:8px;width:100%">';
@@ -1868,14 +1896,14 @@ function renderRegras(){
     ['Ante','Pago na posicao Big Blind a partir do 7° nivel, no valor do Big Blind. Com menos de 6 jogadores o Ante equivale ao Small Blind (metade do BB).'],
     ['Mesa Final','9 jogadores. Novo sorteio de posicoes (redraw). Botao inicia no assento 1.'],
     ['Premiação por Rodada','Rateio proporcional ao total de fichas na mesa final. Multiplos de R$ 1,00. Fichas: valor x R$ 1,50.'],
-    ['Pontuacao','Tabela por posicao x n° de jogadores (8 a 25). Minimo 10 pontos. 8 jog: 40-30-25-21-18-15-12-10. 9 jog: 41-31-26-22-19-16-13-11-10. 10 jog: 42-32-27-23... 11 jog: 43-33-28-24... 12+ jog: tabela propria incrementando +1 a cada jogador adicional.'],
+    ['Pontuacao','8 jogadores: 40-30-25-21-18-15-12-10 | 9 jog: 41-31-26-22-19-16-13-11-10 | 10 jog: 42-32-27-23-20-17-14-12-11-10 | 11 jog: 43-33-28-24-21-18-15-13-12-11-10 | 12 jog: 44-34-29-25-22-20-18-16-14-12-11-10 | 13 jog: 45-35-30-26-23-21-19-17-15-13-12-11-10 | de 14 a 25 jogadores cada posicao sobe +1 ponto por jogador adicional. Minimo 10 pontos.'],
     ['Descarte','1 pior resultado descartado na somatoria final do semestre.'],
     ['King of Rebuy','Quem mais fez rebuys no semestre. Desempate: quem perdeu menos rodelas.'],
     ['Knockout','Registrado por rodada. Contagem total no semestre.'],
     ['Rateio do intervalo','Custo do salao/lanche dividido igualmente entre os participantes da rodada.'],
     ['Conduta','Sem collusion, sem soft play. Decisao do Diretor e final.'],
   ];
-  var html='<h2 style="font-family:Barlow Condensed,sans-serif;font-size:24px;font-weight:900;margin-bottom:16px">[C] Regras AJP</h2>';
+  var html='<h2 style="font-family:Barlow Condensed,sans-serif;font-size:24px;font-weight:900;margin-bottom:16px">📋 Regras AJP</h2>';
   regras.forEach(function(r,i){
     html+='<div class="regra-item">';
     html+='<div class="regra-num">'+String(i+1).padStart(2,'0')+' -- '+r[0]+'</div>';
@@ -2191,7 +2219,7 @@ function renderAdmin(){
       html+='<div style="font-size:13px;font-weight:700;margin-bottom:8px">IN: '+ins.length+'  FOLD: '+fold.length+'</div>';
       pres.slice().sort(function(a,b){return a.nome.localeCompare(b.nome);}).forEach(function(p){
         html+='<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--borda)">';
-        html+='<span style="font-size:13px">'+(p.status==='in'?'[IN]':'[FOLD]')+' '+p.nome+'</span>';
+        html+='<span style="font-size:13px">'+(p.status==='in'?'✅':'❌')+' '+p.nome+'</span>';
         html+='<button data-id="'+p.id+'" onclick="cancelarPresenca(this.dataset.id)" style="font-size:10px;padding:3px 8px;border-radius:6px;border:1px solid var(--vermelho);background:var(--vermelho-light);color:var(--vermelho);cursor:pointer">Cancelar</button>';
         html+='</div>';
       });
