@@ -1069,10 +1069,12 @@ async function renderInicio(){
     html+='<div class="card" style="text-align:center;padding:24px;color:var(--texto3)">[fim] Todas as rodadas foram realizadas!</div>';
   }
 
-  // Mini-lista das 8 rodadas do semestre
-  var todasRodadas=RODADAS.slice(0,8);
-  if(todasRodadas.length>0){
-    html+='<div class="card" style="margin-bottom:12px">';
+      html+='<td colspan="2" style="padding:4px 6px;color:#FFD700;font-weight:700;font-size:11px">Total</td>';
+      html+='<td style="padding:4px 3px;border-top:1px solid #334155;text-align:center;color:#FFD700;font-weight:700;font-size:11px">'+totalFichasT+'</td>';
+      html+='<td style="padding:4px 3px;border-top:1px solid #334155"></td>';
+      html+='<td style="padding:4px 3px;border-top:1px solid #334155;text-align:center;color:#FFD700;font-weight:700;font-size:11px">'+totalRbT+'</td>';
+      html+='<td style="padding:4px 3px;border-top:1px solid #334155;text-align:center;color:#FFD700;font-weight:700;font-size:11px">'+totalAdT+'</td>';
+      html+='<td style="padding:4px 3px;border-top:1px solid #334155;text-align:center;color:#FFD700;font-weight:700;font-size:11px">'+totalKoT+'</td>';
     html+='<div class="card-title">&#x1F4C5; Rodadas do Semestre</div>';
     todasRodadas.forEach(function(r){
       var pres=PRESENCAS[r.id]||[];
@@ -1127,7 +1129,6 @@ async function renderInicio(){
       html+='</div>';
     });
     html+='</div>';
-  }
 
   // CARD ACERTO DA RODADA
   var ultimaRod=null;
@@ -1194,8 +1195,6 @@ async function renderInicio(){
 
   el.innerHTML=html;
 }
-
-
 async function marcarPagoJogador(rodadaId, nome, saldo){
   var acerto=ACERTOS[rodadaId]&&ACERTOS[rodadaId][nome];
   // Marca pago pelo jogador E confirmado automaticamente
@@ -1531,10 +1530,6 @@ function renderRodadas(){
             html+='<button class="btn-fold" data-rid="'+r.id+'" data-rst="fold" onclick="confirmarPresenca(this.dataset.rid,this.dataset.rst)" style="font-size:12px;padding:8px">&#x1F44E; FOLD</button>';
             html+='</div>';
           }
-        }
-} else if(minhaP){
-        html+='<span class="'+(minhaP.status==='in'?'chip-in':'chip-fold')+'">'+
-          (minhaP.status==='in'?'\u2705 IN':'\u274C FOLD')+'</span>';
       }
       html+='</div>';
     }
@@ -1570,6 +1565,7 @@ function renderRodadas(){
       // Total de fichas
       var totalFichasT=todosResT.reduce(function(s,r){return s+(r.fichas||0);},0);
       var totalRbT=todosResT.reduce(function(s,r){return s+(r.rebuy||0);},0);
+      var totalAdT=todosResT.reduce(function(s,r){return s+(r.addon||0);},0);
       var totalKoT=todosResT.reduce(function(s,r){return s+(r.knockout||0);},0);
       html+='<tr style="background:#0F172A">';
       html+='<td colspan="4" style="padding:4px 6px;color:#FFD700;font-weight:700;font-size:11px">Total</td>';
@@ -1580,6 +1576,7 @@ function renderRodadas(){
       html+='</tbody></table></div>';
     }
     html+='</div>';
+  }
   });
 
   if(RODADAS.length===0){
@@ -1979,9 +1976,26 @@ function gerarRelatorio(){
 
   var thS='border:1px solid #334155;padding:6px 8px;font-size:11px;font-weight:700;color:#FFD700;background:#0F172A;white-space:nowrap;text-align:';
 
-  function tabelaRanking(titulo, sorted, colNome, colVal, colSub){
+  function gerarTextoWpp(titulo, sorted, colFn, subFn){
+    var linhas=[];
+    linhas.push('');
+    linhas.push('*'+titulo+'*');
+    linhas.push('```');
+    sorted.forEach(function(s,i){
+      var med=i===0?'1o':i===1?'2o':i===2?'3o':(i+1)+'o';
+      var sub=subFn?'  '+subFn(s):'';
+      linhas.push(med+' '+s.nome+' - '+colFn(s)+sub);
+    });
+    linhas.push('```');
+    return linhas.join(String.fromCharCode(10));
+  }
+
+  function tabelaRanking(titulo, sorted, colNome, colVal, colSub, textoWpp){
     var html='<div style="margin-bottom:16px">';
-    html+='<div style="font-size:13px;font-weight:700;color:var(--texto);margin-bottom:6px">'+titulo+'</div>';
+    html+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">';
+    html+='<div style="font-size:13px;font-weight:700;color:var(--texto)">'+titulo+'</div>';
+    html+='<button onclick="copiarTexto('+JSON.stringify(textoWpp)+')" style="font-size:10px;padding:4px 10px;border-radius:20px;border:none;background:#25D366;color:#fff;font-weight:700;cursor:pointer">Copiar</button>';
+    html+='</div>';
     html+='<div style="overflow-x:auto"><table style="border-collapse:collapse;width:100%;background:#fff">';
     html+='<thead><tr>';
     html+='<th style="'+thS+'center;width:36px">#</th>';
@@ -2004,37 +2018,39 @@ function gerarRelatorio(){
     return html;
   }
 
-  var html='';
-
-  // 1. Sem descarte
   var rankP=stats.slice().sort(function(a,b){return b.total-a.total||b.totalSem-a.totalSem;});
-  html+=tabelaRanking('Classificacao Sem Descarte', rankP,
-    'Pontos', function(s){return s.total+' pts';}, null);
-
-  // 2. Com descarte
-  if(rodsReal>=2){
-    var rankD=stats.slice().sort(function(a,b){return b.totalSem-a.totalSem||b.total-a.total;});
-    html+=tabelaRanking('Classificacao C/ Descarte', rankD,
-      'Pontos', function(s){return s.totalSem+' pts';},
-      function(s){return s.piorPts>0?'(-'+s.piorPts+' desc)':'';});
-  }
-
-  // 3. King of Rebuy
+  var rankD=stats.slice().sort(function(a,b){return b.totalSem-a.totalSem||b.total-a.total;});
   var rankR=stats.slice().sort(function(a,b){return b.rebuys-a.rebuys;});
-  html+=tabelaRanking('King of Rebuy', rankR,
-    'Rebuys', function(s){return s.rebuys;}, null);
-
-  // 4. Knockout
   var rankK=stats.slice().sort(function(a,b){return b.knockouts-a.knockouts;});
-  html+=tabelaRanking('Knockout', rankK,
-    'KOs', function(s){return s.knockouts;}, null);
 
-  html+='<div style="display:flex;gap:8px;margin-top:4px">';
-  html+='<button onclick="copiarRelatorio()" class="btn-sv" style="flex:1">Copiar texto</button>';
-  html+='<button onclick="abrirWhatsRel()" style="flex:1;padding:10px;border-radius:8px;border:none;background:#25D366;color:#fff;font-weight:700;cursor:pointer;font-size:13px">WhatsApp</button>';
+  var txtP=gerarTextoWpp('Classificacao Sem Descarte',rankP,function(s){return s.total+' pts';},null);
+  var txtD=rodsReal>=2?gerarTextoWpp('Classificacao C/ Descarte',rankD,function(s){return s.totalSem+' pts';},function(s){return s.piorPts>0?'(-'+s.piorPts+')':'';}):'';
+  var txtR=gerarTextoWpp('King of Rebuy',rankR,function(s){return s.rebuys+' rebuys';},null);
+  var txtK=gerarTextoWpp('Knockout',rankK,function(s){return s.knockouts+' KOs';},null);
+  var txtTudo=txtP+(rodsReal>=2?String.fromCharCode(10)+txtD:'')+String.fromCharCode(10)+txtR+String.fromCharCode(10)+txtK;
+
+  var html='';
+  html+='<div style="display:flex;gap:8px;margin-bottom:12px">';
+  html+='<button onclick="copiarTexto('+JSON.stringify(txtTudo)+')" style="flex:1;padding:10px;border-radius:8px;border:none;background:#25D366;color:#fff;font-weight:700;cursor:pointer;font-size:13px">Copiar Tudo (WhatsApp)</button>';
   html+='</div>';
+
+  html+=tabelaRanking('Classificacao Sem Descarte',rankP,'Pontos',function(s){return s.total+' pts';},null,txtP);
+  if(rodsReal>=2) html+=tabelaRanking('Classificacao C/ Descarte',rankD,'Pontos',function(s){return s.totalSem+' pts';},function(s){return s.piorPts>0?'(-'+s.piorPts+' desc)':'';},txtD);
+  html+=tabelaRanking('King of Rebuy',rankR,'Rebuys',function(s){return s.rebuys;},null,txtR);
+  html+=tabelaRanking('Knockout',rankK,'KOs',function(s){return s.knockouts;},null,txtK);
+
   el.innerHTML=html;
 }
+
+function copiarTexto(txt){
+  navigator.clipboard.writeText(txt).then(function(){toast('Copiado!','ok');}).catch(function(){
+    var ta=document.createElement('textarea');
+    ta.value=txt;document.body.appendChild(ta);ta.select();
+    document.execCommand('copy');document.body.removeChild(ta);
+    toast('Copiado!','ok');
+  });
+}
+
 
 function _gerarRelatorioOLD(){
   var stats=calcStatsAll();
@@ -2158,12 +2174,11 @@ function gerarRelatorioRodada(){
 
   html+='<tr style="background:#0F172A">';
   html+='<td colspan="2" style="border:1px solid #334155;padding:5px 8px;font-size:11px;font-weight:700;color:#FFD700">Totais</td>';
+  html+='<td style="border:1px solid #334155;padding:5px 8px;text-align:center;font-size:11px;font-weight:700;color:#e2e8f0">'+totFi.toLocaleString('pt-BR')+'</td>';
+  html+='<td style="border:1px solid #334155;padding:5px 8px"></td>';
   html+='<td style="border:1px solid #334155;padding:5px 8px;text-align:center;font-size:11px;font-weight:700;color:#e2e8f0">'+totRb+'</td>';
   html+='<td style="border:1px solid #334155;padding:5px 8px;text-align:center;font-size:11px;font-weight:700;color:#e2e8f0">'+totAd+'</td>';
   html+='<td style="border:1px solid #334155;padding:5px 8px;text-align:center;font-size:11px;font-weight:700;color:#e2e8f0">'+totKo+'</td>';
-  html+='<td style="border:1px solid #334155;padding:5px 8px;text-align:center;font-size:11px;font-weight:700;color:#e2e8f0">'+totFi.toLocaleString('pt-BR')+'</td>';
-  html+='<td style="border:1px solid #334155;padding:5px 8px"></td>';
-  html+='</tr>';
   html+='</tbody></table></div>';
   html+='<div style="display:flex;gap:8px">';
   html+='<button onclick="copiarRelatorio()" class="btn-sv" style="flex:1">Copiar</button>';
@@ -2778,11 +2793,33 @@ function gerarTabelaAdminRodada(){
 
   var totCor=totSaldo>=0?'#16A34A':'#DC2626';
   var nExtra=isRod1?2:0;
+  var totBuyin=res.length*15;
+  var totRebuyR=totRb*20;
+  var totAddonR=totAd*30;
+  var totFichasR=res.reduce(function(s,r){return s+(calcFinanceiro(r,ultimaRod).premio||0);},0);
+  var totRateio=res.reduce(function(s,r){return s+(parseFloat(r.rateio_ind)||0);},0);
+  var totCred=res.reduce(function(s,r){return s+(parseFloat(r.credito)||0);},0);
+  var totInscr=isRod1?res.reduce(function(s,r){return s+(parseFloat(r.inscricao)||0);},0):0;
+  var totCredAnt=isRod1?res.reduce(function(s,r){return s+(parseFloat(r.cred_anterior)||0);},0):0;
+  var tdT='border:1px solid #334155;padding:5px 8px;font-size:11px;font-weight:700;color:#e2e8f0;text-align:';
   html+='<tr style="background:#0F172A">';
-  html+='<td colspan="5" style="border:1px solid #334155;padding:6px 8px;font-size:11px;font-weight:700;color:#FFD700">TOTAIS</td>';
-  html+='<td style="border:1px solid #334155;padding:6px 8px;font-size:11px;font-weight:700;color:#e2e8f0;text-align:center">'+totFi.toLocaleString('pt-BR')+'</td>';
-  html+='<td colspan="'+(7+nExtra)+'" style="border:1px solid #334155;padding:6px 8px"></td>';
-  html+='<td style="border:1px solid #334155;padding:6px 8px;font-size:12px;font-weight:900;color:'+totCor+';text-align:right">'+(totSaldo>=0?'+ ':'- ')+'R$ '+Math.abs(totSaldo).toFixed(2).replace('.',',')+'</td>';
+  html+='<td style="'+tdT+'left" colspan="2">TOTAIS</td>';
+  html+='<td style="'+tdT+'center">'+totRb+'</td>';
+  html+='<td style="'+tdT+'center">'+totAd+'</td>';
+  html+='<td style="'+tdT+'center">'+totKo+'</td>';
+  html+='<td style="'+tdT+'center">'+totFi.toLocaleString('pt-BR')+'</td>';
+  html+='<td style="'+tdT+'center">--</td>';
+  html+='<td style="'+tdT+'right">+ R$ '+totFichasR.toFixed(2).replace('.',',')+'</td>';
+  html+='<td style="'+tdT+'right">- R$ '+totBuyin.toFixed(2).replace('.',',')+'</td>';
+  html+='<td style="'+tdT+'right">'+(totRebuyR>0?'- R$ '+totRebuyR.toFixed(2).replace('.',','):'--')+'</td>';
+  html+='<td style="'+tdT+'right">'+(totAddonR>0?'- R$ '+totAddonR.toFixed(2).replace('.',','):'--')+'</td>';
+  html+='<td style="'+tdT+'right">'+(totRateio>0?'- R$ '+totRateio.toFixed(2).replace('.',','):'--')+'</td>';
+  html+='<td style="'+tdT+'right">'+(totCred>0?'+ R$ '+totCred.toFixed(2).replace('.',','):'--')+'</td>';
+  if(isRod1){
+    html+='<td style="'+tdT+'right">'+(totInscr>0?'- R$ '+totInscr.toFixed(2).replace('.',','):'--')+'</td>';
+    html+='<td style="'+tdT+'right">'+(totCredAnt>0?'+ R$ '+totCredAnt.toFixed(2).replace('.',','):'--')+'</td>';
+  }
+  html+='<td style="border:1px solid #334155;padding:5px 8px;font-size:12px;font-weight:900;color:'+totCor+';text-align:right">'+(totSaldo>=0?'+ ':'- ')+'R$ '+Math.abs(totSaldo).toFixed(2).replace('.',',')+'</td>';
   html+='</tr>';
   html+='</tbody></table></div>';
   html+='<button onclick="copiarTabelaAdmin()" style="width:100%;padding:10px;border-radius:8px;border:none;background:var(--azul);color:#fff;font-weight:700;cursor:pointer;font-size:13px">Copiar texto</button>';
