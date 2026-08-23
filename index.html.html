@@ -1370,6 +1370,7 @@ async function confirmarPresenca(rodadaId, status){
 function calcStats(nome){
   var pontosPorRodada=[];
   var rebuys=0,addons=0,knockouts=0,rodadasJogadas=0;
+  var stats=USER&&!USER.admin?calcStats(USER.nome):null;
   RODADAS.forEach(function(r){
     if(!r.realizada) return;
     var res=RESULTADOS[r.id]?RESULTADOS[r.id].find(function(x){return x.nome===nome}):null;
@@ -1426,6 +1427,7 @@ function renderRodadas(){
   var el=document.getElementById('s-rodadas');
   var html='<h2 style="font-family:Barlow Condensed,sans-serif;font-size:24px;font-weight:900;margin-bottom:16px">📅 Rodadas do Semestre</h2>';
 
+  var stats=USER&&!USER.admin?calcStats(USER.nome):null;
   RODADAS.forEach(function(r){
     var pres=PRESENCAS[r.id]||[];
     var minhaP=pres.find(function(p){return p.nome===USER.nome;});
