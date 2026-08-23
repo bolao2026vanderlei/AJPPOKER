@@ -1571,13 +1571,13 @@ function renderRanking(aba){
   var sorted;
   if(RANK_ABA==='pontos'){
     sorted=stats.slice().sort(function(a,b){
-      return b.totalSem-a.totalSem||b.total-a.total||a.rodadasJogadas-b.rodadasJogadas;
+      return b.total-a.total||b.totalSem-a.totalSem||a.rodadasJogadas-b.rodadasJogadas;
     });
     // Agrupa por pontuação para empates reais
     var posAtual=0, ptxAnt=-1, countEmp=0;
     sorted.forEach(function(s,i){
-      if(s.totalSem!==ptxAnt){ posAtual=i+1; countEmp=0; }
-      ptxAnt=s.totalSem; countEmp++;
+      if(s.total!==ptxAnt){ posAtual=i+1; countEmp=0; }
+      ptxAnt=s.total; countEmp++;
       var pos=posAtual;
       var pc=pos===1?'ouro':pos===2?'prata':pos===3?'bronze':'';
       var me=s.nome===USER.nome;
@@ -1587,7 +1587,8 @@ function renderRanking(aba){
       html+='<div class="rank-nome">'+s.nome+(me?' <span style="font-size:10px;color:var(--verde)">(você)</span>':'')+'</div>';
       html+='</div>';
       html+='<div style="text-align:right">';
-      html+='<div class="rank-pts">'+s.total+'</div>';
+      html+='<div class="rank-pts">'+s.total+' pts</div>';
+      html+='<div style="font-size:10px;color:var(--texto3)">'+s.rodadasJogadas+' rodada'+(s.rodadasJogadas!==1?'s':'')+'</div>';
       html+='</div></div>';
     });
   } else if(RANK_ABA==='descarte'){
