@@ -1110,8 +1110,7 @@ async function renderInicio(){
         html+='<div style="font-size:13px;font-weight:700;color:var(--texto2)">'+meuRes.posicao+'° lugar</div>';
         if(isTop3Rd){
           var badgeBg=meuRes.posicao===1?'background:#FEF08A;color:#713F12':meuRes.posicao===2?'background:#E2E8F0;color:#1E293B':'background:#FED7AA;color:#7C2D12';
-          html+='<div style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;display:inline-block;margin-bottom:3px;"+badgeBg+">"+podMedal+" "+meuRes.posicao+"° lugar!</div>';
-        } else {
+          html+='<div style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;display:inline-block;margin-bottom:3px;'+badgeBg+'">'+podMedal+' '+meuRes.posicao+'° lugar!</div>';
           html+='<div style="font-size:13px;font-weight:700;color:var(--texto2)">'+meuRes.posicao+'&deg; lugar</div>';
         }
         if(meuRes.knockout>0) html+='<div style="font-size:11px;color:#92400E">KO: '+meuRes.knockout+'</div>';
