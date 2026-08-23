@@ -2536,7 +2536,11 @@ async function salvarResultados(){
   if(!rows.length){toast('Preencha pelo menos um jogador','err');return}
   loading('Salvando resultados...');
   try{
-    // Insere um por um para evitar problemas de batch
+    // Apaga resultados anteriores da rodada (evita duplicidade em caso de re-save)
+    await fetch('https://gpnrixcftsjzufnygisa.supabase.co/rest/v1/poker_resultados?rodada_id=eq.'+rodadaId,{
+      method:'DELETE',headers:Object.assign({},RHDR,{'Prefer':'return=minimal'})
+    });
+    // Insere um por um
     for(var ri=0;ri<rows.length;ri++){
       var ins=await dbInsertRest('poker_resultados',rows[ri]);
       if(ins&&ins.error){noloading();toast('Erro ao salvar '+rows[ri].nome+': '+ins.error.message,'err');return}
