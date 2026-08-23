@@ -1023,42 +1023,9 @@ async function _renderInicioInterno(el){
     }
   }
 
-  // -- PRÓXIMA RODADA --
+  // -- PROXIMA RODADA --
   if(proxRodada){
-    html+='<div class="prox-card">';
-    html+='<div class="prox-num">Rodada '+proxRodada.numero+'</div>';
-    html+='<div style="font-size:28px;font-weight:900;color:#fff;font-family:Barlow Condensed,sans-serif;letter-spacing:1px;margin-bottom:2px">📅 '+fmtData(proxRodada.data)+'</div>';
-    if(proxRodada.horario) html+='<div style="font-size:16px;color:#94A3B8;margin-bottom:12px">🕑 das '+proxRodada.horario+' às 18h15</div>';
-    if(proxRodada.local) html+='<div class="prox-local">📍 '+proxRodada.local+'</div>';
-
-    // Status de presença
-    if(!USER.admin){
-      if(!podeConfirmar){
-        html+='<div style="margin-top:8px;font-size:12px;color:rgba(255,255,255,.5);text-align:center">Confirmação disponível após o fechamento da rodada anterior</div>';
-      } else if(minhaPresenca){
-        var isIn=minhaPresenca.status==='in';
-        html+='<div style="background:'+(isIn?'rgba(22,163,74,.15)':'rgba(220,38,38,.1)')+';border:1px solid '+(isIn?'rgba(22,163,74,.4)':'rgba(220,38,38,.3)')+';border-radius:10px;padding:12px;margin-top:8px">';
-        html+='<div style="display:flex;align-items:center;justify-content:space-between">';
-        html+='<div style="display:flex;align-items:center;gap:8px">';
-        html+='<span style="font-size:24px">'+(isIn?'IN':'FOLD')+'</span>';
-        html+='<div>';
-        html+='<div style="font-size:16px;font-weight:900;color:#fff">'+(isIn?'\u2705 Você está IN':'\u274C Você está FOLD')+'</div>';
-        html+='<div style="font-size:12px;color:rgba(255,255,255,.7);margin-top:2px">'+(isIn?'Presença confirmada':'Ausência confirmada')+'</div>';
-        html+='</div></div>';
-        html+='<div style="margin-top:10px">';
-        html+='<div style="font-size:10px;color:rgba(255,255,255,.5);margin-bottom:5px">Alterar confirmação:</div>';
-        html+='<div class="presenca-btns">';
-        html+='<button class="btn-in" data-rid="'+proxRodada.id+'" data-rst="in" onclick="confirmarPresenca(this.dataset.rid,this.dataset.rst)">✅ IN</button>';
-        html+='<button class="btn-fold" data-rid="'+proxRodada.id+'" data-rst="fold" onclick="confirmarPresenca(this.dataset.rid,this.dataset.rst)">❌ FOLD</button>';
-        html+='</div></div>';
-      } else {
-        html+='<div class="presenca-btns">';
-        html+='<button class="btn-in" data-rid="'+proxRodada.id+'" data-rst="in" onclick="confirmarPresenca(this.dataset.rid,this.dataset.rst)">✅ IN</button>';
-        html+='<button class="btn-fold" data-rid="'+proxRodada.id+'" data-rst="fold" onclick="confirmarPresenca(this.dataset.rid,this.dataset.rst)">❌ FOLD</button>';
-        html+='</div>';
-      }
-    }
-    html+='</div>';
+    s
 
     // -- CONFIRMADOS -- card laranja/amarelo separado
     if(confirmados.length>0){
@@ -1078,64 +1045,67 @@ async function _renderInicioInterno(el){
       html+='</div></div>';
     }
   } else {
-    html+='<div class="card" style="text-align:center;padding:24px;color:var(--texto3)">[fim] Todas as rodadas foram realizadas!</div>';
+    html+='<div class="card" style="text-align:center;padding:24px;color:var(--texto3)">Todas as rodadas foram realizadas!</div>';
   }
 
-    html+='<div class="card" style="padding:12px 14px">';
-    html+='<div class="card-title">📅 Rodadas do Semestre</div>';
-    var todasRodadas=RODADAS.slice();
+  var todasRodadas=RODADAS.slice();
+    html+='<div class="card" style="padding:0;overflow:hidden">';
+    html+='<div class="card-title" style="padding:12px 14px;margin:0;border-bottom:1px solid var(--borda)">📅 Rodadas do Semestre</div>';
+    html+='<div>';
     todasRodadas.forEach(function(r){
       var pres=PRESENCAS[r.id]||[];
       var minhaP=pres.find(function(p){return p.nome===USER.nome});
       var meuRes=RESULTADOS[r.id]?RESULTADOS[r.id].find(function(x){return x.nome===USER.nome}):null;
       var isProx=!r.realizada&&RODADAS.findIndex(function(x){return !x.realizada})===RODADAS.indexOf(r);
-      var bgRow=isProx?'background:var(--verde-light);border-bottom:1px solid var(--cinza3);':'border-bottom:1px solid var(--cinza3);';
       var isPiorRod=r.realizada&&meuRes&&stats.piorPts>0&&getPts((RESULTADOS[r.id]||[]).length,meuRes.posicao)===stats.piorPts&&stats.rodadasJogadas>1;
-      var bordaRod=isPiorRod?'border-left:3px solid #DC2626;padding-left:8px;':'';
       var isTop3Row=r.realizada&&meuRes&&meuRes.posicao<=3;
+      var bgRow='border-bottom:1px solid var(--cinza3);padding:10px 14px;';
+      if(isProx) bgRow='background:var(--verde-light);border-bottom:1px solid var(--cinza3);padding:10px 14px;';
       if(isTop3Row){
-        if(meuRes.posicao===1) bgRow='background:#FEFCE8;border:2px solid #EAB308;border-radius:10px;animation:pulse-gold 2s ease-in-out infinite;padding:10px;margin-bottom:4px;';
-        else if(meuRes.posicao===2) bgRow='background:#F1F5F9;border:2px solid #94A3B8;border-radius:10px;padding:10px;margin-bottom:4px;';
-        else bgRow='background:#FFF7ED;border:2px solid #D97706;border-radius:10px;padding:10px;margin-bottom:4px;';
-      } else if(isPiorRod) bgRow+='border-left:3px solid #DC2626;padding-left:8px;';
+        if(meuRes.posicao===1) bgRow='background:#FEFCE8;border-bottom:2px solid #EAB308;animation:pulse-gold 2s ease-in-out infinite;padding:10px 14px;';
+        else if(meuRes.posicao===2) bgRow='background:#F1F5F9;border-bottom:1px solid #94A3B8;padding:10px 14px;';
+        else bgRow='background:#FFF7ED;border-bottom:1px solid #D97706;padding:10px 14px;';
+      } else if(isPiorRod) bgRow+='border-left:3px solid #DC2626;';
       html+='<div style="display:flex;align-items:center;gap:12px;'+bgRow+'">';
-      html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:24px;font-weight:900;color:'+(r.realizada?'var(--verde)':isProx?'var(--azul)':'var(--texto3)')+';min-width:32px;text-align:center">'+r.numero+'</div>';
+      // Número e medalha
+      html+='<div style="text-align:center;min-width:32px">';
+      html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:22px;font-weight:900;color:'+(r.realizada?'var(--verde)':isProx?'var(--azul)':'var(--texto3)')+'">'+r.numero+'</div>';
       if(isTop3Row){
-        var medPos=meuRes.posicao===1?'&#x1F947;':meuRes.posicao===2?'&#x1F948;':'&#x1F949;';
-        html+='<div style="font-size:22px;line-height:1;text-align:center">'+medPos+'</div>';
+        var medPos=meuRes.posicao===1?'🥇':meuRes.posicao===2?'🥈':'🥉';
+        html+='<div style="font-size:18px;line-height:1">'+medPos+'</div>';
       }
-      html+='<div style="flex:1">';
-      html+='<div style="font-size:14px;font-weight:700;color:var(--texto)">'+(r.data?fmtData(r.data):'A definir')+'</div>';
-      if(r.local) html+='<div style="font-size:12px;color:var(--texto3);margin-top:2px">&#x1F4CD; '+r.local+'</div>';
       html+='</div>';
+      // Info
+      html+='<div style="flex:1">';
+      html+='<div style="font-size:13px;font-weight:700;color:var(--texto)">'+(r.data?fmtData(r.data):'A definir')+'</div>';
+      if(r.local) html+='<div style="font-size:11px;color:var(--texto3);margin-top:1px">📍 '+r.local+'</div>';
       if(r.realizada&&meuRes){
         var nj=RESULTADOS[r.id].length;
         var pts=getPts(nj,meuRes.posicao);
-        var fin=calcFinanceiro(meuRes,r);
         var isPior=stats.piorPts>0&&pts===stats.piorPts&&stats.rodadasJogadas>1;
-        var isTop3Rd=(meuRes.posicao<=3);
-        var podMedal=meuRes.posicao===1?'&#x1F947;':meuRes.posicao===2?'&#x1F948;':meuRes.posicao===3?'&#x1F949;':'';
+        html+='<div style="font-size:11px;margin-top:3px;color:'+(isPior?'#DC2626':'var(--verde)')+'">'+pts+' pts — '+meuRes.posicao+'° lugar'+(isPior?' ✕':'')+'</div>';
+      } else if(isProx&&minhaP){
+        var isInP=minhaP.status==='in';
+        html+='<div style="font-size:11px;margin-top:3px;color:'+(isInP?'var(--verde)':'#DC2626')+'">'+(isInP?'✅ Confirmado IN':'❌ Confirmado FOLD')+'</div>';
+      }
+      html+='</div>';
+      // Resultado à direita
+      if(r.realizada&&meuRes){
+        var nj2=RESULTADOS[r.id].length;
+        var pts2=getPts(nj2,meuRes.posicao);
+        var isPior2=stats.piorPts>0&&pts2===stats.piorPts&&stats.rodadasJogadas>1;
         html+='<div style="text-align:right">';
-        html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:26px;font-weight:900;color:'+(isPior?'#DC2626':'var(--verde)')+'">'+pts+'pts'+(isPior?' &#x2715;':'')+'</div>';
-        html+='<div style="font-size:13px;font-weight:700;color:var(--texto2)">'+meuRes.posicao+'° lugar</div>';
-        if(isTop3Rd){
-          var badgeBg=meuRes.posicao===1?'background:#FEF08A;color:#713F12':meuRes.posicao===2?'background:#E2E8F0;color:#1E293B':'background:#FED7AA;color:#7C2D12';
-          html+='<div style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;display:inline-block;margin-bottom:3px;'+badgeBg+'">'+podMedal+' '+meuRes.posicao+'° lugar!</div>';
-          html+='<div style="font-size:13px;font-weight:700;color:var(--texto2)">'+meuRes.posicao+'&deg; lugar</div>';
-        }
-        if(meuRes.knockout>0) html+='<div style="font-size:11px;color:#92400E">KO: '+meuRes.knockout+'</div>';
-        if(USER.admin||meuRes){
-          html+='<div style="font-size:13px;font-weight:700;color:'+(fin.saldo>=0?'var(--verde)':'var(--vermelho)')+'">'+fmtMoeda(fin.saldo)+'</div>';
-        }
+        html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:22px;font-weight:900;color:'+(isPior2?'#DC2626':'var(--verde)')+'">'+pts2+'<span style="font-size:12px">pts</span></div>';
+        html+='<div style="font-size:11px;color:var(--texto3)">'+meuRes.posicao+'° lugar</div>';
         html+='</div>';
-      } else if(!r.realizada&&minhaP){
-        html+='<span style="font-size:18px">'+(minhaP.status==='in'?'✅ IN':'❌ FOLD')+'</span>';
-      } else if(!r.realizada){
-        html+='<div style="font-size:10px;color:var(--texto3)">-</div>';
+      } else if(r.realizada&&!meuRes){
+        html+='<div style="font-size:11px;color:var(--texto3)">não jogou</div>';
+      } else if(!r.realizada&&!isProx){
+        html+='<div style="font-size:11px;color:var(--texto3)">—</div>';
       }
       html+='</div>';
     });
-    html+='</div>';
+    html+='</div></div>';
 
   // CARD ACERTO DA RODADA
   var ultimaRod=null;
@@ -1202,6 +1172,7 @@ async function _renderInicioInterno(el){
 
   el.innerHTML=html;
 }
+
 async function marcarPagoJogador(rodadaId, nome, saldo){
   var acerto=ACERTOS[rodadaId]&&ACERTOS[rodadaId][nome];
   // Marca pago pelo jogador E confirmado automaticamente
