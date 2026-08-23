@@ -1428,76 +1428,80 @@ function renderRodadas(){
 
   RODADAS.forEach(function(r){
     var pres=PRESENCAS[r.id]||[];
-    var minhaP=pres.find(function(p){return p.nome===USER.nome});
+    var minhaP=pres.find(function(p){return p.nome===USER.nome;});
     var res=RESULTADOS[r.id]||[];
-    var meuRes=res.find(function(x){return x.nome===USER.nome});
-    var status=r.realizada?'realizada':(RODADAS.indexOf(r)===RODADAS.findIndex(function(x){return !x.realizada})?'proxima':'futura');
+    var meuRes=res.find(function(x){return x.nome===USER.nome;});
+    var rodIdx=RODADAS.indexOf(r);
+    var isProx=!r.realizada&&rodIdx===RODADAS.findIndex(function(x){return !x.realizada;});
+    var antRealizada=rodIdx<=0||(RODADAS[rodIdx-1]&&RODADAS[rodIdx-1].realizada);
+    var conf=pres.filter(function(p){return p.status==='in';}).length;
+    var fold=pres.filter(function(p){return p.status==='fold';}).length;
 
-    html+='<div class="rodada-item">';
-    html+='<div class="rodada-header">';
+    // Fundo: realizada = azul claro, próxima = verde claro, futura = padrão
+    var cardBg=r.realizada?'background:#EFF6FF;border:2px solid #BFDBFE;':
+               isProx?'background:#F0FDF4;border:2px solid #BBF7D0;':
+               'background:var(--fundo2);border:1px solid var(--borda);';
+    var badge=r.realizada?
+      '<span style="background:#2563EB;color:#fff;font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px">✅ Realizada</span>':
+      isProx?'<span style="background:#16A34A;color:#fff;font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px">🎯 Próxima</span>':
+      '<span style="background:var(--cinza3);color:var(--texto3);font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px">📆 Futura</span>';
+
+    html+='<div style="'+cardBg+'border-radius:var(--radius);padding:14px;margin-bottom:12px">';
+
+    // Header: número + badge
+    html+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">';
     html+='<div>';
-    html+='<div class="rodada-num">Rodada '+r.numero+'</div>';
-    html+='<div class="rodada-data">'+fmtData(r.data)+(r.horario?' das '+r.horario+' às 18h15':'')+'</div>';
-    if(r.local) html+='<div style="font-size:11px;color:var(--texto3)">📍 '+r.local+'</div>';
+    html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:22px;font-weight:900;color:'+(r.realizada?'#1D4ED8':isProx?'#15803D':'var(--texto)')+'">Rodada '+r.numero+'</div>';
+    html+='<div style="font-size:12px;color:var(--texto3);margin-top:1px">📅 '+fmtData(r.data)+(r.horario?' · 🕑 '+r.horario+' às 18h15':'')+'</div>';
+    if(r.local) html+='<div style="font-size:11px;color:var(--texto3);margin-top:1px">📍 '+r.local+'</div>';
     html+='</div>';
-    html+='<span class="rodada-badge badge-'+status+'">'+
-      (status==='realizada'?'Realizada':status==='proxima'?'Próxima':'Futura')+'</span>';
+    html+=badge;
     html+='</div>';
-    // Botão ver resultados
-    if(r.realizada){
-      html+='<button data-rid="'+r.id+'" onclick="toggleDetalhesRodada(this.dataset.rid)" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid var(--borda);background:var(--cinza2);color:var(--texto2);cursor:pointer;margin-top:6px">&#x1F4CA; Ver resultados</button>';
-    }
 
+    // Resultado do jogador (se realizada)
     if(r.realizada&&meuRes){
       var nj=res.length;
       var pts=getPts(nj,meuRes.posicao);
       var fin=calcFinanceiro(meuRes,r);
-      html+='<div class="rodada-resultado">';
-      html+='<span class="res-tag res-pos">'+meuRes.posicao+'º lugar</span>';
-      html+='<span class="res-tag res-pts">'+pts+' pts</span>';
-      if(meuRes.rebuy>0) html+='<span class="res-tag" style="background:#EDE9FE;color:#6D28D9">[RB] '+(meuRes.rebuy)+' rebuy</span>';
-      if(meuRes.knockout>0) html+='<span class="res-tag" style="background:#FEF9C3;color:#854D0E">[KO] '+meuRes.knockout+' KO</span>';
-      // Valor R$ só para o próprio jogador ou admin
-      if(USER.admin||meuRes){
-        html+='<span class="res-tag res-fin">'+(fin.saldo>=0?'+':'')+fmtMoeda(fin.saldo)+'</span>';
-      }
-      html+='</div>';
-    } else if(!r.realizada){
-      var conf=pres.filter(function(p){return p.status==='in'}).length;
-      var fold=pres.filter(function(p){return p.status==='fold'}).length;
-      html+='<div style="margin-top:8px">';
-      html+='<div style="font-size:12px;color:var(--texto3);margin-bottom:8px">'+conf+' confirmados · '+fold+' fold</div>';
-      if(status==='proxima'){
-        var rodIdx=RODADAS.indexOf(r);
-        var antRealizada=rodIdx<=0||(RODADAS[rodIdx-1]&&RODADAS[rodIdx-1].realizada);
-        if(!USER.admin){
-          if(!antRealizada){
-            html+='<div style="font-size:11px;color:var(--texto3);margin-top:4px">Disponível após rodada anterior</div>';
-          } else if(minhaP){
-            var isInR=minhaP.status==='in';
-            html+='<div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px;background:'+(isInR?'rgba(22,163,74,.1)':'rgba(220,38,38,.08)')+';border:1px solid '+(isInR?'rgba(22,163,74,.3)':'rgba(220,38,38,.2)')+';border-radius:8px;padding:8px 12px">';
-            html+='<div style="display:flex;align-items:center;gap:6px">';
-            html+='<span style="font-size:20px">'+(isInR?'&#x1F44D;':'&#x1F44E;')+'</span>';
-            html+='<span style="font-size:13px;font-weight:700;color:'+(isInR?'var(--verde)':'var(--vermelho)')+'">'+minhaP.status.toUpperCase()+'</span>';
-            html+='</div>';
-            html+='<button data-rid="'+r.id+'" onclick="alterarPresenca(this.dataset.rid)" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid var(--cinza3);background:var(--cinza2);cursor:pointer">Alterar</button>';
-            html+='</div>';
-          } else {
-            html+='<div class="presenca-btns" style="margin-top:6px">';
-            html+='<button class="btn-in" data-rid="'+r.id+'" data-rst="in" onclick="confirmarPresenca(this.dataset.rid,this.dataset.rst)" style="font-size:12px;padding:8px">&#x1F44D; IN</button>';
-            html+='<button class="btn-fold" data-rid="'+r.id+'" data-rst="fold" onclick="confirmarPresenca(this.dataset.rid,this.dataset.rst)" style="font-size:12px;padding:8px">&#x1F44E; FOLD</button>';
-            html+='</div>';
-          }
-      }
+      var isPior=stats&&stats.piorPts>0&&pts===stats.piorPts&&stats.rodadasJogadas>1;
+      html+='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">';
+      html+='<span style="background:#DBEAFE;color:#1D4ED8;font-size:12px;font-weight:700;padding:4px 10px;border-radius:20px">'+meuRes.posicao+'º lugar</span>';
+      html+='<span style="background:'+(isPior?'#FEE2E2':'#DCFCE7')+';color:'+(isPior?'#DC2626':'#16A34A')+';font-size:12px;font-weight:700;padding:4px 10px;border-radius:20px">'+pts+' pts'+(isPior?' ✕':'')+'</span>';
+      if(meuRes.rebuy>0) html+='<span style="background:#EDE9FE;color:#6D28D9;font-size:12px;font-weight:700;padding:4px 10px;border-radius:20px">🔄 '+meuRes.rebuy+' RB</span>';
+      if(meuRes.knockout>0) html+='<span style="background:#FEF9C3;color:#854D0E;font-size:12px;font-weight:700;padding:4px 10px;border-radius:20px">🥊 '+meuRes.knockout+' KO</span>';
+      html+='<span style="background:'+(fin.saldo>=0?'#D1FAE5':'#FEE2E2')+';color:'+(fin.saldo>=0?'#065F46':'#991B1B')+';font-size:12px;font-weight:700;padding:4px 10px;border-radius:20px">'+(fin.saldo>=0?'+':'')+fmtMoeda(fin.saldo)+'</span>';
       html+='</div>';
     }
-    // Tabela expandível de resultados
+
+    // Presenças (se não realizada)
+    if(!r.realizada){
+      html+='<div style="font-size:12px;color:var(--texto3);margin-bottom:8px">👥 '+conf+' confirmados · '+fold+' fold</div>';
+      if(isProx&&!USER.admin){
+        if(!antRealizada){
+          html+='<div style="font-size:11px;color:var(--texto3)">Disponível após rodada anterior</div>';
+        } else if(minhaP){
+          var isInR=minhaP.status==='in';
+          html+='<div style="display:flex;align-items:center;justify-content:space-between;background:'+(isInR?'rgba(22,163,74,.1)':'rgba(220,38,38,.08)')+';border:1px solid '+(isInR?'rgba(22,163,74,.3)':'rgba(220,38,38,.2)')+';border-radius:8px;padding:8px 12px">';
+          html+='<span style="font-size:13px;font-weight:700;color:'+(isInR?'var(--verde)':'var(--vermelho)')+'">'+(isInR?'✅ Confirmado IN':'❌ Confirmado FOLD')+'</span>';
+          html+='<button data-rid="'+r.id+'" onclick="alterarPresenca(this.dataset.rid)" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid var(--cinza3);background:var(--cinza2);cursor:pointer">Alterar</button>';
+          html+='</div>';
+        } else {
+          html+='<div class="presenca-btns" style="margin-top:4px">';
+          html+='<button class="btn-in" data-rid="'+r.id+'" data-rst="in" onclick="confirmarPresenca(this.dataset.rid,this.dataset.rst)">✅ IN</button>';
+          html+='<button class="btn-fold" data-rid="'+r.id+'" data-rst="fold" onclick="confirmarPresenca(this.dataset.rid,this.dataset.rst)">❌ FOLD</button>';
+          html+='</div>';
+        }
+      }
+    }
+
+    // Botão + tabela expandível de resultados
     if(r.realizada){
+      html+='<button data-rid="'+r.id+'" onclick="toggleDetalhesRodada(this.dataset.rid)" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #BFDBFE;background:#DBEAFE;color:#1D4ED8;cursor:pointer;margin-top:4px">📊 Ver resultados</button>';
       var todosResT=(RESULTADOS[r.id]||[]).slice().sort(function(a,b){return a.posicao-b.posicao;});
       var njtT=todosResT.length;
-      html+='<div id="det-rod-'+r.id+'" style="display:none;margin-top:8px;overflow-x:auto">';
+      html+='<div id="det-rod-'+r.id+'" style="display:none;margin-top:10px;overflow-x:auto">';
       html+='<table style="width:100%;border-collapse:collapse;font-size:11px">';
-      html+='<thead><tr style="background:#0F172A">';
+      html+='<thead><tr style="background:#1E3A5F">';
       html+='<th style="color:#FFD700;padding:5px 4px;text-align:center">#</th>';
       html+='<th style="color:#FFD700;padding:5px 4px;text-align:left">Jogador</th>';
       html+='<th style="color:#FFD700;padding:5px 4px;text-align:center">Fichas</th>';
@@ -1509,32 +1513,33 @@ function renderRodadas(){
       todosResT.forEach(function(resT,riT){
         var ptsT=getPts(njtT,resT.posicao);
         var isMeT=resT.nome===USER.nome;
-        var bgT=isMeT?'background:#e8f5eb':riT%2===0?'background:#fff':'background:#f8fafc';
+        var bgT=isMeT?'background:#DBEAFE':riT%2===0?'background:#fff':'background:#f8fafc';
         html+='<tr style="'+bgT+'">';
-        html+='<td style="padding:4px 3px;border:1px solid #e5e7eb;text-align:center;font-weight:700;color:var(--verde)">'+resT.posicao+'°</td>';
-        html+='<td style="padding:4px 5px;border:1px solid #e5e7eb;'+(isMeT?'color:#1a5c28;font-weight:700':'')+'">'+resT.nome+'</td>';
+        html+='<td style="padding:4px 3px;border:1px solid #e5e7eb;text-align:center;font-weight:700;color:#2563EB">'+resT.posicao+'°</td>';
+        html+='<td style="padding:4px 5px;border:1px solid #e5e7eb;'+(isMeT?'color:#1D4ED8;font-weight:700':'')+'">'+(isMeT?'⭐ ':'')+resT.nome+'</td>';
         html+='<td style="padding:4px 3px;border:1px solid #e5e7eb;text-align:center">'+(resT.fichas||0)+'</td>';
-        html+='<td style="padding:4px 3px;border:1px solid #e5e7eb;text-align:center;font-weight:700;color:'+(isMeT?'#1a5c28':'var(--texto)')+'">'+ ptsT+'</td>';
+        html+='<td style="padding:4px 3px;border:1px solid #e5e7eb;text-align:center;font-weight:700;color:'+(isMeT?'#1D4ED8':'var(--texto)')+'">'+ptsT+'</td>';
         html+='<td style="padding:4px 3px;border:1px solid #e5e7eb;text-align:center">'+(resT.rebuy||0)+'</td>';
         html+='<td style="padding:4px 3px;border:1px solid #e5e7eb;text-align:center">'+(resT.addon||0)+'</td>';
         html+='<td style="padding:4px 3px;border:1px solid #e5e7eb;text-align:center">'+(resT.knockout||0)+'</td>';
         html+='</tr>';
       });
-      // Total de fichas
       var totalFichasT=todosResT.reduce(function(s,r){return s+(r.fichas||0);},0);
       var totalRbT=todosResT.reduce(function(s,r){return s+(r.rebuy||0);},0);
       var totalAdT=todosResT.reduce(function(s,r){return s+(r.addon||0);},0);
       var totalKoT=todosResT.reduce(function(s,r){return s+(r.knockout||0);},0);
-      html+='<tr style="background:#0F172A">';
-      html+='<td colspan="4" style="padding:4px 6px;color:#FFD700;font-weight:700;font-size:11px">Total</td>';
-      html+='<td style="padding:4px 3px;border-top:1px solid #334155;text-align:center;color:#FFD700;font-weight:700;font-size:11px">'+totalFichasT+'</td>';
-      html+='<td style="padding:4px 3px;border-top:1px solid #334155;text-align:center;color:#FFD700;font-weight:700;font-size:11px">'+totalKoT+'</td>';
-      html+='<td style="padding:4px 3px;border-top:1px solid #334155;text-align:center;color:#FFD700;font-weight:700;font-size:11px">'+njtT+' jog</td>';
+      html+='<tr style="background:#1E3A5F">';
+      html+='<td colspan="2" style="padding:4px 6px;color:#FFD700;font-weight:700;font-size:11px">Totais</td>';
+      html+='<td style="padding:4px 3px;text-align:center;color:#FFD700;font-weight:700;font-size:11px">'+totalFichasT+'</td>';
+      html+='<td style="padding:4px 3px"></td>';
+      html+='<td style="padding:4px 3px;text-align:center;color:#FFD700;font-weight:700;font-size:11px">'+totalRbT+'</td>';
+      html+='<td style="padding:4px 3px;text-align:center;color:#FFD700;font-weight:700;font-size:11px">'+totalAdT+'</td>';
+      html+='<td style="padding:4px 3px;text-align:center;color:#FFD700;font-weight:700;font-size:11px">'+totalKoT+'</td>';
       html+='</tr>';
       html+='</tbody></table></div>';
     }
+
     html+='</div>';
-  }
   });
 
   if(RODADAS.length===0){
@@ -1545,7 +1550,6 @@ function renderRodadas(){
 }
 
 
-var RANK_ABA='pontos';
 function renderRanking(aba){
   RANK_ABA=aba||RANK_ABA;
   var el=document.getElementById('s-ranking');
