@@ -2534,17 +2534,24 @@ async function salvarResultados(){
     });
   }
   if(!rows.length){toast('Preencha pelo menos um jogador','err');return}
+  loading('Salvando resultados...');
   try{
-    var ins=await dbInsertRest('poker_resultados',rows);
-    if(ins&&ins.error){toast('Erro: '+ins.error.message,'err');return}
-    await fetch('"""+SUPA+"""/rest/v1/poker_rodadas?id=eq.'+rodadaId,{
+    // Insere um por um para evitar problemas de batch
+    for(var ri=0;ri<rows.length;ri++){
+      var ins=await dbInsertRest('poker_resultados',rows[ri]);
+      if(ins&&ins.error){noloading();toast('Erro ao salvar '+rows[ri].nome+': '+ins.error.message,'err');return}
+    }
+    // Marca rodada como realizada
+    var patchRes=await fetch('https://gpnrixcftsjzufnygisa.supabase.co/rest/v1/poker_rodadas?id=eq.'+rodadaId,{
       method:'PATCH',headers:Object.assign({},RHDR,{'Prefer':'return=minimal'}),
       body:JSON.stringify({realizada:true})
     });
-    toast('Rodada '+rodSel.numero+' salva!','ok');
+    if(!patchRes.ok){noloading();toast('Erro ao marcar rodada: '+patchRes.status,'err');return}
+    noloading();
+    toast('Rodada '+rodSel.numero+' salva com '+rows.length+' jogadores!','ok');
     await carregarTudo();
     renderAdmin();
-  }catch(e){toast('Erro: '+e.message,'err');}
+  }catch(e){noloading();toast('Erro: '+e.message,'err');}
 }
 
 
