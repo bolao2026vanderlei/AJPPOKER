@@ -1045,12 +1045,16 @@ async function _renderInicioInterno(el){
         html+='<div style="font-size:16px;font-weight:900;color:#fff">'+(isIn?'\u2705 Você está IN':'\u274C Você está FOLD')+'</div>';
         html+='<div style="font-size:12px;color:rgba(255,255,255,.7);margin-top:2px">'+(isIn?'Presença confirmada':'Ausência confirmada')+'</div>';
         html+='</div></div>';
-        html+='<button data-rid="'+proxRodada.id+'" onclick="alterarPresenca(this.dataset.rid)" style="font-size:11px;padding:6px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:rgba(255,255,255,.6);cursor:pointer">Alterar</button>';
+        html+='<div style="margin-top:10px">';
+        html+='<div style="font-size:10px;color:rgba(255,255,255,.5);margin-bottom:5px">Alterar confirmação:</div>';
+        html+='<div class="presenca-btns">';
+        html+='<button class="btn-in" data-rid="'+proxRodada.id+'" data-rst="in" onclick="confirmarPresenca(this.dataset.rid,this.dataset.rst)">✅ IN</button>';
+        html+='<button class="btn-fold" data-rid="'+proxRodada.id+'" data-rst="fold" onclick="confirmarPresenca(this.dataset.rid,this.dataset.rst)">❌ FOLD</button>';
         html+='</div></div>';
       } else {
         html+='<div class="presenca-btns">';
-        html+='<button class="btn-in" data-rid="'+proxRodada.id+'" data-rst="in" onclick="confirmarPresenca(this.dataset.rid,this.dataset.rst)">IN IN</button>';
-        html+='<button class="btn-fold" data-rid="'+proxRodada.id+'" data-rst="fold" onclick="confirmarPresenca(this.dataset.rid,this.dataset.rst)">FOLD FOLD</button>';
+        html+='<button class="btn-in" data-rid="'+proxRodada.id+'" data-rst="in" onclick="confirmarPresenca(this.dataset.rid,this.dataset.rst)">✅ IN</button>';
+        html+='<button class="btn-fold" data-rid="'+proxRodada.id+'" data-rst="fold" onclick="confirmarPresenca(this.dataset.rid,this.dataset.rst)">❌ FOLD</button>';
         html+='</div>';
       }
     }
@@ -1078,9 +1082,7 @@ async function _renderInicioInterno(el){
   }
 
       html+='<td colspan="2" style="padding:4px 6px;color:#FFD700;font-weight:700;font-size:11px">Total</td>';
-      html+='<td style="padding:4px 3px;border-top:1px solid #334155;text-align:center;color:#FFD700;font-weight:700;font-size:11px">'+totalFichasT+'</td>';
       html+='<td style="padding:4px 3px;border-top:1px solid #334155"></td>';
-      html+='<td style="padding:4px 3px;border-top:1px solid #334155;text-align:center;color:#FFD700;font-weight:700;font-size:11px">'+totalRbT+'</td>';
     html+='<div class="card-title">&#x1F4C5; Rodadas do Semestre</div>';
     todasRodadas.forEach(function(r){
       var pres=PRESENCAS[r.id]||[];
@@ -1384,8 +1386,14 @@ function toggleDetalhesRodada(rid){
   }
 }
 
-function alterarPresenca(rodadaId){
-  // Remove presença local para mostrar botões novamente
+async function alterarPresenca(rodadaId){
+  // Remove no banco e localmente, depois mostra botões para nova confirmação
+  var pres=PRESENCAS[rodadaId]?PRESENCAS[rodadaId].find(function(p){return p.nome===USER.nome;}):null;
+  if(pres&&pres.id){
+    await fetch('https://gpnrixcftsjzufnygisa.supabase.co/rest/v1/poker_presencas?id=eq.'+pres.id,{
+      method:'DELETE',headers:Object.assign({},RHDR,{'Prefer':'return=minimal'})
+    });
+  }
   if(PRESENCAS[rodadaId]){
     PRESENCAS[rodadaId]=PRESENCAS[rodadaId].filter(function(p){return p.nome!==USER.nome;});
   }
