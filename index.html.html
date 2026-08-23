@@ -843,7 +843,7 @@ async function carregarTudo(){
     PRESENCAS={};
     (presencas||[]).forEach(function(p){
       if(!PRESENCAS[p.rodada_id]) PRESENCAS[p.rodada_id]=[];
-      PRESENCAS[p.rodada_id].push({nome:p.nome,status:p.status});
+      PRESENCAS[p.rodada_id].push({id:p.id,nome:p.nome,status:p.status,rodada_id:p.rodada_id});
     });
     RESULTADOS={};
     (resultados||[]).forEach(function(r){
@@ -901,6 +901,14 @@ function ir(s){
 
 async function renderInicio(){
   var el=document.getElementById('s-inicio');
+  try{
+    return await _renderInicioInterno(el);
+  }catch(e){
+    console.error('renderInicio ERRO:',e);
+    el.innerHTML='<div style="padding:20px;color:red;font-size:12px">Erro: '+e.message+'<br><pre>'+e.stack+'</pre></div>';
+  }
+}
+async function _renderInicioInterno(el){
   var proxRodada=RODADAS.find(function(r){return !r.realizada})||null;
 
   // Só libera confirmação se a rodada anterior foi realizada
