@@ -1081,10 +1081,10 @@ async function _renderInicioInterno(el){
     html+='<div class="card" style="text-align:center;padding:24px;color:var(--texto3)">[fim] Todas as rodadas foram realizadas!</div>';
   }
 
-    html+='<div class="card-title">&#x1F4C5; Rodadas do Semestre</div>';
-  var todasRodadas=RODADAS.slice();
+    html+='<div class="card" style="padding:12px 14px">';
+    html+='<div class="card-title">📅 Rodadas do Semestre</div>';
+    var todasRodadas=RODADAS.slice();
     todasRodadas.forEach(function(r){
-      var pres=PRESENCAS[r.id]||[];
       var minhaP=pres.find(function(p){return p.nome===USER.nome});
       var meuRes=RESULTADOS[r.id]?RESULTADOS[r.id].find(function(x){return x.nome===USER.nome}):null;
       var isProx=!r.realizada&&RODADAS.findIndex(function(x){return !x.realizada})===RODADAS.indexOf(r);
