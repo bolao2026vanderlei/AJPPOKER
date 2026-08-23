@@ -1048,66 +1048,8 @@ async function _renderInicioInterno(el){
     html+='<div class="card" style="text-align:center;padding:24px;color:var(--texto3)">Todas as rodadas foram realizadas!</div>';
   }
 
-  var todasRodadas=RODADAS.slice();
-    html+='<div class="card" style="padding:0;overflow:hidden">';
-    html+='<div class="card-title" style="padding:12px 14px;margin:0;border-bottom:1px solid var(--borda)">📅 Rodadas do Semestre</div>';
-    html+='<div>';
-    todasRodadas.forEach(function(r){
-      var pres=PRESENCAS[r.id]||[];
-      var minhaP=pres.find(function(p){return p.nome===USER.nome});
-      var meuRes=RESULTADOS[r.id]?RESULTADOS[r.id].find(function(x){return x.nome===USER.nome}):null;
-      var isProx=!r.realizada&&RODADAS.findIndex(function(x){return !x.realizada})===RODADAS.indexOf(r);
-      var isPiorRod=r.realizada&&meuRes&&stats.piorPts>0&&getPts((RESULTADOS[r.id]||[]).length,meuRes.posicao)===stats.piorPts&&stats.rodadasJogadas>1;
-      var isTop3Row=r.realizada&&meuRes&&meuRes.posicao<=3;
-      var bgRow='border-bottom:1px solid var(--cinza3);padding:10px 14px;';
-      if(isProx) bgRow='background:var(--verde-light);border-bottom:1px solid var(--cinza3);padding:10px 14px;';
-      if(isTop3Row){
-        if(meuRes.posicao===1) bgRow='background:#FEFCE8;border-bottom:2px solid #EAB308;animation:pulse-gold 2s ease-in-out infinite;padding:10px 14px;';
-        else if(meuRes.posicao===2) bgRow='background:#F1F5F9;border-bottom:1px solid #94A3B8;padding:10px 14px;';
-        else bgRow='background:#FFF7ED;border-bottom:1px solid #D97706;padding:10px 14px;';
-      } else if(isPiorRod) bgRow+='border-left:3px solid #DC2626;';
-      html+='<div style="display:flex;align-items:center;gap:12px;'+bgRow+'">';
-      // Número e medalha
-      html+='<div style="text-align:center;min-width:32px">';
-      html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:22px;font-weight:900;color:'+(r.realizada?'var(--verde)':isProx?'var(--azul)':'var(--texto3)')+'">'+r.numero+'</div>';
-      if(isTop3Row){
-        var medPos=meuRes.posicao===1?'🥇':meuRes.posicao===2?'🥈':'🥉';
-        html+='<div style="font-size:18px;line-height:1">'+medPos+'</div>';
-      }
-      html+='</div>';
-      // Info
-      html+='<div style="flex:1">';
-      html+='<div style="font-size:13px;font-weight:700;color:var(--texto)">'+(r.data?fmtData(r.data):'A definir')+'</div>';
-      if(r.local) html+='<div style="font-size:11px;color:var(--texto3);margin-top:1px">📍 '+r.local+'</div>';
-      if(r.realizada&&meuRes){
-        var nj=RESULTADOS[r.id].length;
-        var pts=getPts(nj,meuRes.posicao);
-        var isPior=stats.piorPts>0&&pts===stats.piorPts&&stats.rodadasJogadas>1;
-        html+='<div style="font-size:11px;margin-top:3px;color:'+(isPior?'#DC2626':'var(--verde)')+'">'+pts+' pts — '+meuRes.posicao+'° lugar'+(isPior?' ✕':'')+'</div>';
-      } else if(isProx&&minhaP){
-        var isInP=minhaP.status==='in';
-        html+='<div style="font-size:11px;margin-top:3px;color:'+(isInP?'var(--verde)':'#DC2626')+'">'+(isInP?'✅ Confirmado IN':'❌ Confirmado FOLD')+'</div>';
-      }
-      html+='</div>';
-      // Resultado à direita
-      if(r.realizada&&meuRes){
-        var nj2=RESULTADOS[r.id].length;
-        var pts2=getPts(nj2,meuRes.posicao);
-        var isPior2=stats.piorPts>0&&pts2===stats.piorPts&&stats.rodadasJogadas>1;
-        html+='<div style="text-align:right">';
-        html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:22px;font-weight:900;color:'+(isPior2?'#DC2626':'var(--verde)')+'">'+pts2+'<span style="font-size:12px">pts</span></div>';
-        html+='<div style="font-size:11px;color:var(--texto3)">'+meuRes.posicao+'° lugar</div>';
-        html+='</div>';
-      } else if(r.realizada&&!meuRes){
-        html+='<div style="font-size:11px;color:var(--texto3)">não jogou</div>';
-      } else if(!r.realizada&&!isProx){
-        html+='<div style="font-size:11px;color:var(--texto3)">—</div>';
-      }
-      html+='</div>';
-    });
-    html+='</div></div>';
 
-  // CARD ACERTO DA RODADA
+    // CARD ACERTO DA RODADA
   var ultimaRod=null;
   for(var ri=RODADAS.length-1;ri>=0;ri--){
     if(RODADAS[ri].realizada){ultimaRod=RODADAS[ri];break;}
