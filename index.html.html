@@ -1081,9 +1081,8 @@ async function _renderInicioInterno(el){
     html+='<div class="card" style="text-align:center;padding:24px;color:var(--texto3)">[fim] Todas as rodadas foram realizadas!</div>';
   }
 
-      html+='<td colspan="2" style="padding:4px 6px;color:#FFD700;font-weight:700;font-size:11px">Total</td>';
-      html+='<td style="padding:4px 3px;border-top:1px solid #334155"></td>';
     html+='<div class="card-title">&#x1F4C5; Rodadas do Semestre</div>';
+  var todasRodadas=RODADAS.slice();
     todasRodadas.forEach(function(r){
       var pres=PRESENCAS[r.id]||[];
       var minhaP=pres.find(function(p){return p.nome===USER.nome});
