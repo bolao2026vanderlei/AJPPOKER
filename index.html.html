@@ -984,14 +984,16 @@ async function _renderInicioInterno(el){
 
   html+='<div class="hero-card" style="padding:12px">';
   html+='<div class="hero-label" style="font-size:10px">&#x1F504; Rebuys</div>';
-  html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:36px;font-weight:900;color:var(--roxo);line-height:1">'+stats.rebuys+'</div>';
-  html+='<div style="font-size:10px;color:var(--texto3);margin-top:2px">'+posExibRebuy+' '+nJogExib+'</div>';
+  html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:44px;font-weight:900;color:var(--roxo);line-height:1">'+posExibRebuy+'</div>';
+  html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:20px;font-weight:700;color:var(--texto2)">'+stats.rebuys+' RBs</div>';
+  html+='<div style="font-size:9px;color:var(--texto3);margin-top:2px">'+nJogExib+'</div>';
   html+='</div>';
 
   html+='<div class="hero-card" style="padding:12px">';
   html+='<div class="hero-label" style="font-size:10px">&#x1F94A; Rodelas</div>';
-  html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:36px;font-weight:900;color:#92400E;line-height:1">'+stats.knockouts+'</div>';
-  html+='<div style="font-size:10px;color:var(--texto3);margin-top:2px">'+posExibKO+' '+nJogExib+'</div>';
+  html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:44px;font-weight:900;color:#92400E;line-height:1">'+posExibKO+'</div>';
+  html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:20px;font-weight:700;color:var(--texto2)">'+stats.knockouts+' KOs</div>';
+  html+='<div style="font-size:9px;color:var(--texto3);margin-top:2px">'+nJogExib+'</div>';
   html+='</div>';
 
   html+='</div>';
@@ -1025,15 +1027,49 @@ async function _renderInicioInterno(el){
 
   // -- PROXIMA RODADA --
   if(proxRodada){
+    html+='<div class="prox-card">';
+    html+='<div class="prox-num">Rodada '+proxRodada.numero+'</div>';
+    html+='<div style="margin-bottom:12px">';
+    html+='<div style="font-size:26px;font-weight:900;color:#fff;font-family:Barlow Condensed,sans-serif;letter-spacing:1px">📅 '+fmtData(proxRodada.data)+'</div>';
+    if(proxRodada.horario) html+='<div style="font-size:15px;color:#94A3B8;margin-top:2px">🕑 das '+proxRodada.horario+' às 18h15</div>';
+    if(proxRodada.local) html+='<div class="prox-local" style="margin-top:4px">📍 '+proxRodada.local+'</div>';
+    html+='</div>';
+    if(!USER.admin) html+='<div style="border-top:1px solid rgba(255,255,255,.15);margin-bottom:12px"></div>';
+    if(!USER.admin){
+      if(!podeConfirmar){
+        html+='<div style="font-size:12px;color:rgba(255,255,255,.5);text-align:center;padding:4px 0">Confirmação disponível após fechamento da rodada anterior</div>';
+      } else if(minhaPresenca){
+        var isIn=minhaPresenca.status==='in';
+        html+='<div style="display:flex;align-items:center;gap:10px;background:'+(isIn?'rgba(22,163,74,.15)':'rgba(220,38,38,.1)')+';border:1px solid '+(isIn?'rgba(22,163,74,.4)':'rgba(220,38,38,.3)')+';border-radius:10px;padding:10px;margin-bottom:10px">';
+        html+='<span style="font-size:26px">'+(isIn?'✅':'❌')+'</span>';
+        html+='<div>';
+        html+='<div style="font-size:15px;font-weight:900;color:#fff">'+(isIn?'Você está IN':'Você está FOLD')+'</div>';
+        html+='<div style="font-size:11px;color:rgba(255,255,255,.6)">'+(isIn?'Presença confirmada':'Ausência confirmada')+'</div>';
+        html+='</div></div>';
+        html+='<div style="border-top:1px solid rgba(255,255,255,.1);margin-bottom:8px"></div>';
+        html+='<div style="font-size:10px;color:rgba(255,255,255,.5);margin-bottom:6px">Alterar confirmação:</div>';
+        html+='<div class="presenca-btns">';
+        html+='<button class="btn-in" data-rid="'+proxRodada.id+'" data-rst="in" onclick="confirmarPresenca(this.dataset.rid,this.dataset.rst)">✅ IN</button>';
+        html+='<button class="btn-fold" data-rid="'+proxRodada.id+'" data-rst="fold" onclick="confirmarPresenca(this.dataset.rid,this.dataset.rst)">❌ FOLD</button>';
+        html+='</div>';
+      } else {
+        html+='<div style="font-size:13px;color:rgba(255,255,255,.7);text-align:center;margin-bottom:8px">Confirme sua presença:</div>';
+        html+='<div class="presenca-btns">';
+        html+='<button class="btn-in" data-rid="'+proxRodada.id+'" data-rst="in" onclick="confirmarPresenca(this.dataset.rid,this.dataset.rst)">✅ IN</button>';
+        html+='<button class="btn-fold" data-rid="'+proxRodada.id+'" data-rst="fold" onclick="confirmarPresenca(this.dataset.rid,this.dataset.rst)">❌ FOLD</button>';
+        html+='</div>';
+      }
+    }
+    html+='</div>';
 
-    // -- CONFIRMADOS -- card laranja/amarelo separado
+    // -- CONFIRMADOS IN --
     if(confirmados.length>0){
       confirmados.sort(function(a,b){return a.nome.localeCompare(b.nome);});
       html+='<div style="background:linear-gradient(135deg,#78350F,#92400E);border-radius:var(--radius);padding:14px;margin-top:8px;border:1px solid #D97706">';
       html+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">';
       html+='<div style="width:36px;height:36px;border-radius:50%;background:#D97706;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:#fff;flex-shrink:0">'+confirmados.length+'</div>';
-      html+='<div><div style="font-size:16px;font-weight:800;color:#fff">Confirmados IN</div>';
-      html+='<div style="font-size:11px;color:rgba(255,255,255,.6)">Rodada '+proxRodada.numero+'</div></div>';
+      html+='<div><div style="font-size:16px;font-weight:800;color:#fff">Confirmados IN — Rodada '+proxRodada.numero+'</div>';
+      html+='<div style="font-size:11px;color:rgba(255,255,255,.6)">'+fmtData(proxRodada.data)+'</div></div>';
       html+='</div>';
       html+='<div style="display:flex;flex-wrap:wrap;gap:6px">';
       confirmados.forEach(function(p){
@@ -1048,68 +1084,65 @@ async function _renderInicioInterno(el){
   }
 
 
-    // CARD ACERTO DA RODADA
-  var ultimaRod=null;
-  for(var ri=RODADAS.length-1;ri>=0;ri--){
-    if(RODADAS[ri].realizada){ultimaRod=RODADAS[ri];break;}
-  }
-  if(ultimaRod&&!USER.admin){
-    var resUlt=(RESULTADOS[ultimaRod.id]||[]).find(function(x){return x.nome===USER.nome;});
-    if(resUlt){
-      var finUlt=calcFinanceiro(resUlt,ultimaRod);
-      var saldo=finUlt.saldo;
-      var positivo=saldo>=0;
-      var bgCard=positivo?'linear-gradient(135deg,#14532D,#052e16)':'linear-gradient(135deg,#450a0a,#1a0505)';
-      var corBorda=positivo?'rgba(74,222,128,.3)':'rgba(248,113,113,.3)';
-      var corLabel=positivo?'#4ade80':'#f87171';
-      var acertoReg=ACERTOS[ultimaRod.id]&&ACERTOS[ultimaRod.id][USER.nome];
-      var pagoJ=acertoReg&&acertoReg.pago_jogador;
-      var pagoA=acertoReg&&acertoReg.confirmado_admin;
-      var obsAdmin=acertoReg&&acertoReg.obs_admin;
-      html+='<div style="background:'+bgCard+';border-radius:var(--radius);padding:18px;margin-bottom:16px;border:1px solid '+corBorda+'">';
-      html+='<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:'+corLabel+';margin-bottom:6px">&#x1F4B0; Acerto -- Rodada '+ultimaRod.numero+'</div>';
-      html+='<div style="font-size:36px;font-weight:900;color:#fff;line-height:1">'+(positivo?'+':'')+fmtMoeda(saldo)+'</div>';
-      html+='<div style="font-size:13px;color:rgba(255,255,255,.6);margin-top:4px">'+(positivo?'Você tem a receber':'Você tem a pagar')+'</div>';
-
-      // Tabela de detalhamento dos custos
-      html+='<div style="margin-top:12px;background:rgba(0,0,0,.25);border-radius:10px;padding:12px;font-size:12px;color:rgba(255,255,255,.85);line-height:1.9">';
-      html+='<div style="display:flex;justify-content:space-between"><span>Fichas ('+resUlt.fichas+' × R$1,50/mil)</span><span style="color:#4ade80">+ R$ '+Math.abs(finUlt.premio).toFixed(2).replace('.',',')+'</span></div>';
-      html+='<div style="display:flex;justify-content:space-between"><span>Buy-in</span><span style="color:#f87171">- R$ 15,00</span></div>';
-      if(finUlt.custoRebuy>0) html+='<div style="display:flex;justify-content:space-between"><span>Rebuy ('+resUlt.rebuy+'× R$ 20,00)</span><span style="color:#f87171">- R$ '+Math.abs(finUlt.custoRebuy).toFixed(2).replace('.',',')+'</span></div>';
-      if(finUlt.custoAddon>0) html+='<div style="display:flex;justify-content:space-between"><span>Addon ('+resUlt.addon+'× R$ 30,00)</span><span style="color:#f87171">- R$ '+Math.abs(finUlt.custoAddon).toFixed(2).replace('.',',')+'</span></div>';
-        if(finUlt.rateio_ind>0) html+='<div style="display:flex;justify-content:space-between"><span>Rateio intervalo</span><span style="color:#f87171">- R$ '+Math.abs(finUlt.rateio_ind).toFixed(2).replace('.',',')+'</span></div>';
-    if(finUlt.inscricao>0) html+='<div style="display:flex;justify-content:space-between"><span>Inscrição torneio</span><span style="color:#f87171">- R$ '+Math.abs(finUlt.inscricao).toFixed(2).replace('.',',')+'</span></div>';
-    if(finUlt.cred_anterior>0) html+='<div style="display:flex;justify-content:space-between"><span>Crédito torneio anterior</span><span style="color:#4ade80">+ R$ '+Math.abs(finUlt.cred_anterior).toFixed(2).replace('.',',')+'</span></div>';
-    if(finUlt.credito>0) html+='<div style="display:flex;justify-content:space-between"><span>Crédito</span><span style="color:#4ade80">+ R$ '+Math.abs(finUlt.credito).toFixed(2).replace('.',',')+'</span></div>';
-      html+='<div style="border-top:1px solid rgba(255,255,255,.2);margin-top:6px;padding-top:6px;display:flex;justify-content:space-between;font-weight:700;font-size:14px">';
-      html+='<span>Total</span><span style="color:'+(positivo?'#4ade80':'#f87171')+'">'+(positivo?'+ ':'- ')+'R$ '+Math.abs(saldo).toFixed(2).replace('.',',')+'</span></div>';
-      html+='</div>';
-
-      // Status pagamento
-      if(pagoA){
-        html+='<div style="margin-top:12px;background:rgba(74,222,128,.15);border:1px solid rgba(74,222,128,.3);border-radius:8px;padding:10px;font-size:13px;font-weight:700;color:#4ade80">&#x2705; Pagamento confirmado pelo admin'+(obsAdmin?' · '+obsAdmin:'')+'</div>';
-      } else if(pagoJ&&!positivo){
-        html+='<div style="margin-top:12px;background:rgba(250,204,21,.1);border:1px solid rgba(250,204,21,.3);border-radius:8px;padding:10px;font-size:13px;font-weight:700;color:#fde047">&#x23F3; Pagamento enviado -- aguardando confirmação</div>';
-      }
-      if(!positivo&&!pagoA){
-        html+='<div style="margin-top:14px;background:rgba(0,0,0,.25);border-radius:10px;padding:12px">';
-        html+='<div style="font-size:11px;color:rgba(255,255,255,.5);margin-bottom:4px">PIX para pagamento:</div>';
-        html+='<div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:8px">Juliano Sakamoto</div>';
-        html+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">';
-        html+='<div style="font-size:14px;color:#FCD34D;font-weight:700;flex:1;letter-spacing:1px">02446807950</div>';
-        html+='<button data-pix="02446807950" onclick="copiarPix(this.dataset.pix)" style="font-size:11px;padding:6px 12px;border-radius:8px;border:none;background:#16A34A;color:#fff;cursor:pointer;font-weight:700">&#x1F4CB; Copiar</button>';
-        html+='</div>';
-        if(!pagoJ){
-          html+='<button data-rid="'+ultimaRod.id+'" data-nome="'+USER.nome+'" data-saldo="'+saldo+'" onclick="marcarPagoJogador(this.dataset.rid,this.dataset.nome,this.dataset.saldo)" style="width:100%;padding:12px;border:none;border-radius:10px;background:#2563EB;color:#fff;font-size:14px;font-weight:700;cursor:pointer">&#x1F4E4; Marquei como pago</button>';
+    // CARD ACERTO DA RODADA -- mostra apenas a ultima rodada realizada
+  if(!USER.admin){
+    var ultimaRod=null;
+    for(var ri=RODADAS.length-1;ri>=0;ri--){
+      if(RODADAS[ri].realizada){ultimaRod=RODADAS[ri];break;}
+    }
+    if(ultimaRod){
+      var resUlt=(RESULTADOS[ultimaRod.id]||[]).find(function(x){return x.nome===USER.nome;});
+      if(resUlt){
+        var finUlt=calcFinanceiro(resUlt,ultimaRod);
+        var saldo=finUlt.saldo;
+        var acertoReg=ACERTOS[ultimaRod.id]&&ACERTOS[ultimaRod.id][USER.nome];
+        var pagoA=acertoReg&&acertoReg.confirmado_admin;
+        if(saldo!==0&&!pagoA){
+          var positivo=saldo>=0;
+          var bgCard=positivo?'linear-gradient(135deg,#14532D,#052e16)':'linear-gradient(135deg,#450a0a,#1a0505)';
+          var corBorda=positivo?'rgba(74,222,128,.3)':'rgba(248,113,113,.3)';
+          var corLabel=positivo?'#4ade80':'#f87171';
+          var pagoJ=acertoReg&&acertoReg.pago_jogador;
+          var obsAdmin=acertoReg&&acertoReg.obs_admin;
+          html+='<div style="background:'+bgCard+';border-radius:var(--radius);padding:18px;margin-bottom:16px;border:1px solid '+corBorda+'">';
+          html+='<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:'+corLabel+';margin-bottom:6px">💰 Acerto — Rodada '+ultimaRod.numero+'</div>';
+          html+='<div style="font-size:36px;font-weight:900;color:#fff;line-height:1">'+(positivo?'+':'')+fmtMoeda(saldo)+'</div>';
+          html+='<div style="font-size:13px;color:rgba(255,255,255,.6);margin-top:4px">'+(positivo?'Você tem a receber':'Você tem a pagar')+'</div>';
+          html+='<div style="margin-top:12px;background:rgba(0,0,0,.25);border-radius:10px;padding:12px;font-size:12px;color:rgba(255,255,255,.85);line-height:1.9">';
+          html+='<div style="display:flex;justify-content:space-between"><span>Fichas ('+resUlt.fichas+' × R$1,50/mil)</span><span style="color:#4ade80">+ R$ '+Math.abs(finUlt.premio).toFixed(2).replace('.',',')+' </span></div>';
+          html+='<div style="display:flex;justify-content:space-between"><span>Buy-in</span><span style="color:#f87171">- R$ 15,00</span></div>';
+          if(finUlt.custoRebuy>0) html+='<div style="display:flex;justify-content:space-between"><span>Rebuy ('+resUlt.rebuy+'× R$ 20,00)</span><span style="color:#f87171">- R$ '+Math.abs(finUlt.custoRebuy).toFixed(2).replace('.',',')+' </span></div>';
+          if(finUlt.custoAddon>0) html+='<div style="display:flex;justify-content:space-between"><span>Addon ('+resUlt.addon+'× R$ 30,00)</span><span style="color:#f87171">- R$ '+Math.abs(finUlt.custoAddon).toFixed(2).replace('.',',')+' </span></div>';
+          if(finUlt.rateio_ind>0) html+='<div style="display:flex;justify-content:space-between"><span>Rateio intervalo</span><span style="color:#f87171">- R$ '+Math.abs(finUlt.rateio_ind).toFixed(2).replace('.',',')+' </span></div>';
+          if(finUlt.inscricao>0) html+='<div style="display:flex;justify-content:space-between"><span>Inscrição torneio</span><span style="color:#f87171">- R$ '+Math.abs(finUlt.inscricao).toFixed(2).replace('.',',')+' </span></div>';
+          if(finUlt.cred_anterior>0) html+='<div style="display:flex;justify-content:space-between"><span>Crédito torneio anterior</span><span style="color:#4ade80">+ R$ '+Math.abs(finUlt.cred_anterior).toFixed(2).replace('.',',')+' </span></div>';
+          if(finUlt.credito>0) html+='<div style="display:flex;justify-content:space-between"><span>Crédito rateio</span><span style="color:#4ade80">+ R$ '+Math.abs(finUlt.credito).toFixed(2).replace('.',',')+' </span></div>';
+          html+='<div style="border-top:1px solid rgba(255,255,255,.2);margin-top:6px;padding-top:6px;display:flex;justify-content:space-between;font-weight:700;font-size:14px">';
+          html+='<span>Total</span><span style="color:'+(positivo?'#4ade80':'#f87171')+'">'+(positivo?'+ ':'- ')+'R$ '+Math.abs(saldo).toFixed(2).replace('.',',')+' </span></div>';
+          html+='</div>';
+          if(pagoA){
+            html+='<div style="margin-top:12px;background:rgba(74,222,128,.15);border:1px solid rgba(74,222,128,.3);border-radius:8px;padding:10px;font-size:13px;font-weight:700;color:#4ade80">✅ Pagamento confirmado'+(obsAdmin?' · '+obsAdmin:'')+' </div>';
+          } else if(pagoJ&&!positivo){
+            html+='<div style="margin-top:12px;background:rgba(250,204,21,.1);border:1px solid rgba(250,204,21,.3);border-radius:8px;padding:10px;font-size:13px;font-weight:700;color:#fde047">⏳ Pagamento enviado — aguardando confirmação</div>';
+          }
+          if(!positivo&&!pagoJ&&!pagoA){
+            html+='<div style="margin-top:14px;background:rgba(0,0,0,.25);border-radius:10px;padding:12px">';
+            html+='<div style="font-size:11px;color:rgba(255,255,255,.5);margin-bottom:4px">PIX para pagamento:</div>';
+            html+='<div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:8px">Juliano Sakamoto</div>';
+            html+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">';
+            html+='<div style="font-size:14px;color:#FCD34D;font-weight:700;flex:1;letter-spacing:1px">02446807950</div>';
+            html+='<button data-pix="02446807950" onclick="copiarPix(this.dataset.pix)" style="font-size:11px;padding:6px 12px;border-radius:8px;border:none;background:#16A34A;color:#fff;cursor:pointer;font-weight:700">📋 Copiar</button>';
+            html+='</div>';
+            html+='<button data-rid="'+ultimaRod.id+'" data-nome="'+USER.nome+'" data-saldo="'+saldo+'" onclick="marcarPagoJogador(this.dataset.rid,this.dataset.nome,this.dataset.saldo)" style="width:100%;padding:12px;border:none;border-radius:10px;background:#2563EB;color:#fff;font-size:14px;font-weight:700;cursor:pointer">📤 Marquei como pago</button>';
+            html+='</div>';
+          } else if(positivo&&!pagoA){
+            html+='<div style="margin-top:10px;font-size:12px;color:rgba(255,255,255,.4)">Aguarde o pagamento pelo organizador</div>';
+          }
+          html+='</div>';
         }
-        html+='</div>';
-      } else if(positivo&&!pagoA){
-        html+='<div style="margin-top:10px;font-size:12px;color:rgba(255,255,255,.4)">Aguarde o pagamento pelo organizador</div>';
       }
-      html+='</div>';
     }
   }
-
 
   el.innerHTML=html;
 }
