@@ -326,6 +326,7 @@ body.dark .hero-card{background:var(--card)}
 body.dark input[type=number], body.dark input[type=text], body.dark input[type=date], body.dark select{background:var(--fundo2) !important;color:var(--texto) !important;border-color:var(--borda) !important}
 body.dark datalist{background:var(--fundo2)}
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 </head>
 <body>
 <div id="loading"><div class="bspin"></div><p>AJP Poker...</p></div>
@@ -1070,63 +1071,47 @@ async function _renderInicioInterno(el){
     html+='</div>';
   }
 
-  // -- CARD SALDO FINANCEIRO
-  if(rodsRealizadas>0){
-    var saldoTotal=0,totalFichasR=0,totalRateioLanche=0,totalCustos=0;
+  // -- CARD EVOLUCAO PONTOS
+  if(rodsRealizadas>0&&stats.rodadasJogadas>0){
+    var ev_labels=[];
+    var ev_meus=[], ev_media=[], ev_lider=[];
+    var statsAll2=calcStatsAll();
     RODADAS.forEach(function(r){
       if(!r.realizada) return;
-      var resR=(RESULTADOS[r.id]||[]).find(function(x){return x.nome===USER.nome;});
-      if(resR){
-        var fin=calcFinanceiro(resR,r);
-        saldoTotal+=fin.saldo;
-        totalFichasR+=fin.premio;
-        totalRateioLanche+=fin.rateio_ind||0;
-        totalCustos+=fin.buyin+(fin.custoRebuy||0)+(fin.custoAddon||0)+(fin.inscricao||0)-(fin.credito||0)-(fin.cred_anterior||0);
-      }
+      var resR=(RESULTADOS[r.id]||[]);
+      var nj=resR.length;
+      if(!nj) return;
+      ev_labels.push('Rod.'+r.numero);
+      var meuRes=resR.find(function(x){return x.nome===USER.nome;});
+      ev_meus.push(meuRes?getPts(nj,meuRes.posicao):null);
+      var soma=0,ct=0;
+      statsAll2.forEach(function(s){
+        var rr=resR.find(function(x){return x.nome===s.nome;});
+        if(rr){soma+=getPts(nj,rr.posicao);ct++;}
+      });
+      ev_media.push(ct>0?Math.round(soma/ct):null);
+      var maxPt=0;
+      resR.forEach(function(x){var p=getPts(nj,x.posicao);if(p>maxPt)maxPt=p;});
+      ev_lider.push(maxPt);
     });
-    var saldoPos=saldoTotal>=0;
-    var saldoCor=saldoPos?'#16A34A':'#DC2626';
-    var saldoBg=saldoPos?'rgba(22,163,74,.08)':'rgba(220,38,38,.06)';
-    html+='<div class="card" style="padding:14px;margin-bottom:12px;background:'+saldoBg+';border:1px solid '+(saldoPos?'rgba(22,163,74,.2)':'rgba(220,38,38,.2)')+'">';
-    html+='<div style="font-size:13px;font-weight:700;color:var(--texto);margin-bottom:10px">'+(saldoPos?'💰':'💸')+' Saldo do Torneio</div>';
-    html+='<div style="display:flex;flex-direction:column;gap:5px;font-size:12px">';
-    html+='<div style="display:flex;justify-content:space-between"><span style="color:var(--texto3)">Fichas em R$</span><span style="font-weight:700;color:#16A34A">+ R$ '+totalFichasR.toFixed(2).replace('.',',')+' </span></div>';
-    html+='<div style="display:flex;justify-content:space-between"><span style="color:var(--texto3)">Buy-in / Rebuy / Addon</span><span style="font-weight:700;color:#DC2626">- R$ '+totalCustos.toFixed(2).replace('.',',')+' </span></div>';
-    if(totalRateioLanche>0) html+='<div style="display:flex;justify-content:space-between"><span style="color:var(--texto3)">Rateio / Lanche</span><span style="font-weight:700;color:#DC2626">- R$ '+totalRateioLanche.toFixed(2).replace('.',',')+' </span></div>';
-    html+='<div style="border-top:1px solid '+(saldoPos?'rgba(22,163,74,.2)':'rgba(220,38,38,.2)')+';margin-top:6px;padding-top:8px;display:flex;justify-content:space-between;align-items:center">';
-    html+='<span style="font-size:12px;color:var(--texto3)">Saldo acumulado</span>';
-    html+='<span style="font-family:Barlow Condensed,sans-serif;font-size:26px;font-weight:900;color:'+saldoCor+'">'+(saldoPos?'+ ':'- ')+'R$ '+Math.abs(saldoTotal).toFixed(2).replace('.',',')+' </span>';
+    html+='<div class="card" style="padding:14px;margin-bottom:12px">';
+    html+='<div style="font-size:13px;font-weight:700;color:var(--texto);margin-bottom:10px">📈 Evolução de Pontos</div>';
+    html+='<div style="display:flex;gap:8px;margin-bottom:10px">';
+    html+='<div style="flex:1;background:var(--cinza2);border-radius:8px;padding:8px;text-align:center"><div style="font-size:10px;color:var(--texto3)">Total</div><div style="font-size:20px;font-weight:900;font-family:Barlow Condensed,sans-serif;color:var(--azul)">'+stats.total+' pts</div></div>';
+    html+='<div style="flex:1;background:var(--cinza2);border-radius:8px;padding:8px;text-align:center"><div style="font-size:10px;color:var(--texto3)">C/ Descarte</div><div style="font-size:20px;font-weight:900;font-family:Barlow Condensed,sans-serif;color:var(--verde)">'+stats.totalSem+' pts</div></div>';
+    html+='<div style="flex:1;background:var(--cinza2);border-radius:8px;padding:8px;text-align:center"><div style="font-size:10px;color:var(--texto3)">Posição</div><div style="font-size:20px;font-weight:900;font-family:Barlow Condensed,sans-serif;color:var(--amarelo)">'+posExibTotal+'</div></div>';
     html+='</div>';
-    html+='<div style="font-size:10px;color:var(--texto3);text-align:right">'+(saldoPos?'a receber':'a pagar')+' em '+stats.rodadasJogadas+' rodada'+(stats.rodadasJogadas!==1?'s':'')+' </div>';
+    html+='<div style="display:flex;gap:12px;margin-bottom:8px;font-size:11px;color:var(--texto3)">';
+    html+='<span><span style="display:inline-block;width:12px;height:3px;background:#2a78d6;border-radius:2px;vertical-align:middle;margin-right:3px"></span>Você</span>';
+    html+='<span><span style="display:inline-block;width:12px;height:2px;border-top:2px dashed #888;vertical-align:middle;margin-right:3px"></span>Média</span>';
+    html+='<span><span style="display:inline-block;width:12px;height:3px;background:#eb6834;border-radius:2px;vertical-align:middle;margin-right:3px"></span>Líder</span>';
+    html+='</div>';
+    html+='<div style="position:relative;width:100%;height:200px">';
+    html+='<canvas id="ev-chart" data-labels=\''+JSON.stringify(ev_labels)+'\'  data-meus=\''+JSON.stringify(ev_meus)+'\'  data-media=\''+JSON.stringify(ev_media)+'\'  data-lider=\''+JSON.stringify(ev_lider)+'\' role="img" aria-label="Evolução de pontos por rodada"></canvas>';
     html+='</div></div>';
+    setTimeout(function(){renderEvoChart();},100);
   }
 
-  // -- CARD INSCRIÇÃO SEMESTRAL -- separado, antes da próxima rodada
-  var rodsRealizadasN=RODADAS.filter(function(r){return r.realizada;}).length;
-  var jog=JOGADORES.find(function(j){return j.nome===USER.nome;});
-  var jaDefiniu=jog&&(jog.inscrito===true||jog.status_inscricao==='avulso');
-  if(!USER.admin && rodsRealizadasN===0){
-    if(!jaDefiniu){
-      html+='<div style="background:linear-gradient(135deg,#78350F,#451A03);border-radius:var(--radius);padding:16px;margin-bottom:14px;border:1px solid #D97706">';
-      html+='<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#FCD34D;margin-bottom:6px">🏆 Novo Semestre -- Inscrição</div>';
-      html+='<div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:3px">Confirme sua participação</div>';
-      html+='<div style="font-size:12px;color:rgba(255,255,255,.6);margin-bottom:14px">Deseja pontuar na classificação deste semestre?</div>';
-      html+='<div style="display:flex;gap:8px">';
-      html+='<button onclick="confirmarInscricao(true)" style="flex:1;padding:11px;border:none;border-radius:10px;background:#16A34A;color:#fff;font-size:13px;font-weight:700;cursor:pointer">[ok] Inscrever</button>';
-      html+='<button onclick="confirmarInscricao(false)" style="flex:1;padding:11px;border-radius:10px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.6);font-size:13px;font-weight:600;cursor:pointer;border:1px solid rgba(255,255,255,.15)">[A] Avulso</button>';
-      html+='</div></div>';
-    } else {
-      var isInscrito=jog&&jog.inscrito;
-      html+='<div style="background:'+(isInscrito?'linear-gradient(135deg,#14532D,#052e16)':'linear-gradient(135deg,#1c1917,#0c0a09)')+';border-radius:var(--radius);padding:12px 16px;margin-bottom:14px;border:1px solid '+(isInscrito?'#16A34A':'#44403c')+'">';
-      html+='<div style="display:flex;align-items:center;justify-content:space-between">';
-      html+='<div>';
-      html+='<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:'+(isInscrito?'#4ade80':'#a8a29e')+';margin-bottom:2px">'+(isInscrito?'\u2705 Inscrito no Torneio':'[A] Jogador Avulso')+'</div>';
-      html+='<div style="font-size:13px;font-weight:600;color:#fff">'+(isInscrito?'Você está na classificação':'Joga sem pontuar no ranking')+'</div>';
-      html+='</div>';
-      html+='<button onclick="cancelarInscricao()" style="font-size:11px;padding:5px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:rgba(255,255,255,.5);cursor:pointer">Alterar</button>';
-      html+='</div></div>';
-    }
-  }
 
   // -- PROXIMA RODADA --
   if(proxRodada){
@@ -2275,6 +2260,34 @@ function toggleDark(){
   localStorage.setItem('poker_dark', isDark?'1':'0');
   var btn=document.getElementById('btn-dark');
   if(btn) btn.textContent=isDark?'☀️':'🌙';
+}
+
+function renderEvoChart(){
+  var el=document.getElementById('ev-chart');
+  if(!el||!window.Chart) return;
+  if(el._chart) el._chart.destroy();
+  var labels=JSON.parse(el.dataset.labels||'[]');
+  var meus=JSON.parse(el.dataset.meus||'[]');
+  var media=JSON.parse(el.dataset.media||'[]');
+  var lider=JSON.parse(el.dataset.lider||'[]');
+  var isDark=document.body.classList.contains('dark');
+  var grid=isDark?'rgba(255,255,255,0.07)':'#e1e0d9';
+  var muted='#898781';
+  el._chart=new Chart(el,{
+    type:'line',
+    data:{labels:labels,datasets:[
+      {label:'Voce',data:meus,borderColor:'#2a78d6',backgroundColor:'rgba(42,120,214,0.08)',borderWidth:2.5,pointRadius:6,pointBackgroundColor:'#2a78d6',pointBorderColor:'#fff',pointBorderWidth:2,fill:true,tension:0.3,spanGaps:true},
+      {label:'Media',data:media,borderColor:'#888',backgroundColor:'transparent',borderWidth:1.5,borderDash:[5,4],pointRadius:4,pointBackgroundColor:'#888',pointBorderColor:'#fff',pointBorderWidth:2,fill:false,tension:0.3,spanGaps:true},
+      {label:'Lider',data:lider,borderColor:'#eb6834',backgroundColor:'transparent',borderWidth:2,pointRadius:5,pointBackgroundColor:'#eb6834',pointBorderColor:'#fff',pointBorderWidth:2,fill:false,tension:0.3,spanGaps:true}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.dataset.label+': '+c.parsed.y+' pts';}}}},
+      scales:{
+        x:{ticks:{color:muted,font:{size:11}},grid:{display:false},border:{color:'#c3c2b7'}},
+        y:{min:0,ticks:{color:muted,font:{size:11},callback:function(v){return v+'pts'},stepSize:10},grid:{color:grid,lineWidth:1},border:{display:false}}
+      }
+    }
+  });
 }
 
 document.addEventListener('DOMContentLoaded', function(){
