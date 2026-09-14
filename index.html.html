@@ -1049,32 +1049,43 @@ async function _renderInicioInterno(el){
 
   // -- CARD SALDO FINANCEIRO
   if(rodsRealizadas>0){
-    var saldoTotal=0;
+    var saldoTotal=0,totalFichasR=0,totalRateioLanche=0;
     RODADAS.forEach(function(r){
       if(!r.realizada) return;
       var resR=(RESULTADOS[r.id]||[]).find(function(x){return x.nome===USER.nome;});
       if(resR){
         var fin=calcFinanceiro(resR,r);
         saldoTotal+=fin.saldo;
+        totalFichasR+=fin.premio;
+        totalRateioLanche+=fin.rateio_ind||0;
       }
     });
     var saldoPos=saldoTotal>=0;
     var saldoCor=saldoPos?'#16A34A':'#DC2626';
     var saldoBg=saldoPos?'rgba(22,163,74,.08)':'rgba(220,38,38,.06)';
     html+='<div class="card" style="padding:14px;margin-bottom:12px;background:'+saldoBg+';border:1px solid '+(saldoPos?'rgba(22,163,74,.2)':'rgba(220,38,38,.2)')+'">';
-    html+='<div style="display:flex;align-items:center;justify-content:space-between">';
-    html+='<div>';
-    html+='<div style="font-size:13px;font-weight:700;color:var(--texto)">'+(saldoPos?'💰':'💸')+' Saldo do Torneio</div>';
-    html+='<div style="font-size:11px;color:var(--texto3);margin-top:2px">acumulado em '+stats.rodadasJogadas+' rodada'+(stats.rodadasJogadas!==1?'s':'')+'</div>';
+    html+='<div style="font-size:13px;font-weight:700;color:var(--texto);margin-bottom:10px">'+(saldoPos?'💰':'💸')+' Saldo do Torneio</div>';
+    html+='<div style="display:flex;flex-direction:column;gap:6px;font-size:12px">';
+    html+='<div style="display:flex;justify-content:space-between;align-items:center">';
+    html+='<span style="color:var(--texto3)">Fichas em R$</span>';
+    html+='<span style="font-weight:700;color:#16A34A">+ R$ '+totalFichasR.toFixed(2).replace('.',',')+' </span>';
     html+='</div>';
-    html+='<div style="text-align:right">';
-    html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:28px;font-weight:900;color:'+saldoCor+'">'+(saldoPos?'+ ':'- ')+'R$ '+Math.abs(saldoTotal).toFixed(2).replace('.',',')+'</div>';
-    html+='<div style="font-size:10px;color:var(--texto3)">'+(saldoPos?'a receber':'a pagar')+'</div>';
-    html+='</div></div>';
+    if(totalRateioLanche>0){
+      html+='<div style="display:flex;justify-content:space-between;align-items:center">';
+      html+='<span style="color:var(--texto3)">Rateio / Lanche</span>';
+      html+='<span style="font-weight:700;color:#DC2626">- R$ '+totalRateioLanche.toFixed(2).replace('.',',')+' </span>';
+      html+='</div>';
+    }
+    html+='<div style="border-top:1px solid '+(saldoPos?'rgba(22,163,74,.2)':'rgba(220,38,38,.2)')+';margin-top:4px;padding-top:8px;display:flex;justify-content:space-between;align-items:center">';
+    html+='<span style="font-size:12px;color:var(--texto3)">Saldo acumulado</span>';
+    html+='<span style="font-family:Barlow Condensed,sans-serif;font-size:26px;font-weight:900;color:'+saldoCor+'">'+(saldoPos?'+ ':'- ')+'R$ '+Math.abs(saldoTotal).toFixed(2).replace('.',',')+' </span>';
+    html+='</div>';
+    html+='<div style="font-size:10px;color:var(--texto3);text-align:right">'+(saldoPos?'a receber':'a pagar')+' em '+stats.rodadasJogadas+' rodada'+(stats.rodadasJogadas!==1?'s':'')+' </div>';
+    html+='</div>';
     html+='</div>';
   }
 
-// -- CARD INSCRIÇÃO SEMESTRAL -- separado, antes da próxima rodada
+  // -- CARD INSCRIÇÃO SEMESTRAL -- separado, antes da próxima rodada
   var rodsRealizadasN=RODADAS.filter(function(r){return r.realizada;}).length;
   var jog=JOGADORES.find(function(j){return j.nome===USER.nome;});
   var jaDefiniu=jog&&(jog.inscrito===true||jog.status_inscricao==='avulso');
@@ -1185,7 +1196,7 @@ async function _renderInicioInterno(el){
           html+='<div style="font-size:36px;font-weight:900;color:#fff;line-height:1">'+(positivo?'+':'')+fmtMoeda(saldo)+'</div>';
           html+='<div style="font-size:13px;color:rgba(255,255,255,.6);margin-top:4px">'+(positivo?'Você tem a receber':'Você tem a pagar')+'</div>';
           html+='<div style="margin-top:12px;background:rgba(0,0,0,.25);border-radius:10px;padding:12px;font-size:12px;color:rgba(255,255,255,.85);line-height:1.9">';
-          html+='<div style="display:flex;justify-content:space-between"><span>Fichas ('+resUlt.fichas+' = R$ '+Math.round((resUlt.fichas||0)/1000*1.5).toFixed(2).replace('.',',')+'</span><span style="color:#4ade80">+ R$ '+Math.abs(finUlt.premio).toFixed(2).replace('.',',')+' </span></div>';
+          html+='<div style="display:flex;justify-content:space-between"><span>Fichas ('+resUlt.fichas+' × R$1,50/mil = R$ '+Math.round((resUlt.fichas||0)/1000*1.5).toFixed(2).replace('.',',')+'</span><span style="color:#4ade80">+ R$ '+Math.abs(finUlt.premio).toFixed(2).replace('.',',')+' </span></div>';
           html+='<div style="display:flex;justify-content:space-between"><span>Buy-in</span><span style="color:#f87171">- R$ 15,00</span></div>';
           if(finUlt.custoRebuy>0) html+='<div style="display:flex;justify-content:space-between"><span>Rebuy ('+resUlt.rebuy+'× R$ 20,00)</span><span style="color:#f87171">- R$ '+Math.abs(finUlt.custoRebuy).toFixed(2).replace('.',',')+' </span></div>';
           if(finUlt.custoAddon>0) html+='<div style="display:flex;justify-content:space-between"><span>Addon ('+resUlt.addon+'× R$ 30,00)</span><span style="color:#f87171">- R$ '+Math.abs(finUlt.custoAddon).toFixed(2).replace('.',',')+' </span></div>';
