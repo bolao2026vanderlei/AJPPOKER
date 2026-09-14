@@ -458,6 +458,7 @@ body{font-family:'Inter',sans-serif;background:var(--fundo);color:var(--texto);m
     </div>
     <div class="header-user">
       <div class="avatar" id="uavatar">?</div>
+      <button id="btn-dark" onclick="toggleDark()" title="Alternar tema" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:20px;width:30px;height:30px;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">🌙</button>
       <button class="btn-sair" onclick="sair()">Sair</button>
     </div>
   </div>
@@ -473,7 +474,7 @@ body{font-family:'Inter',sans-serif;background:var(--fundo);color:var(--texto);m
   <div class="secao" id="s-admin" style="display:none"></div>
 
   <!-- NAVBAR -->
-  <nav class="navbar" style="position:relative"><button id="btn-dark" onclick="toggleDark()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:20px;width:32px;height:32px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:10">🌙</button>
+  <nav class="navbar">
     <button class="nav-btn on" id="bn-inicio" onclick="ir('inicio')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
       Início
