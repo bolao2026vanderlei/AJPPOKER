@@ -944,7 +944,7 @@ async function _renderInicioInterno(el){
   var rankPontosSem=statsAll.slice().sort(function(a,b){return b.totalSem-a.totalSem||b.total-a.total;});
   var rankPontosTotal=statsAll.slice().sort(function(a,b){return b.total-a.total;});
   var rankRebuy=statsAll.slice().sort(function(a,b){return b.rebuys-a.rebuys||a.knockouts-b.knockouts;});
-  var rankKO=statsAll.slice().sort(function(a,b){return b.knockouts-a.knockouts;});
+  var rankKO=statsAll.slice().sort(function(a,b){return b.knockouts-a.knockouts||a.koPerdidos-b.koPerdidos;});
   var posTotal=rankPontosTotal.findIndex(function(x){return x.nome===USER.nome;})+1;
   var posSem=rankPontosSem.findIndex(function(x){return x.nome===USER.nome;})+1;
   var posRebuy=rankRebuy.findIndex(function(x){return x.nome===USER.nome;})+1;
@@ -1369,7 +1369,7 @@ async function confirmarPresenca(rodadaId, status){
 
 function calcStats(nome){
   var pontosPorRodada=[];
-  var rebuys=0,addons=0,knockouts=0,rodadasJogadas=0;
+  var rebuys=0,addons=0,knockouts=0,koPerdidos=0,rodadasJogadas=0;
   RODADAS.forEach(function(r){
     if(!r.realizada) return;
     var res=RESULTADOS[r.id]?RESULTADOS[r.id].find(function(x){return x.nome===nome}):null;
@@ -1381,6 +1381,7 @@ function calcStats(nome){
       rebuys+=(res.rebuy||0);
       addons+=(res.addon||0);
       knockouts+=(res.knockout||0);
+      koPerdidos+=(res.ko_perdidos||0);
     } else {
       // Não participou -- não conta pontos (0 implícito mas não descarta)
     }
@@ -1393,7 +1394,7 @@ function calcStats(nome){
     :total;
   var piorPts=pontosPorRodada.length>1?ordenado[0]:0;
   return{total:total,totalSem:totalSem,piorPts:piorPts,rebuys:rebuys,addons:addons,
-    knockouts:knockouts,rodadasJogadas:rodadasJogadas,rank:0};
+    knockouts:knockouts,koPerdidos:koPerdidos,rodadasJogadas:rodadasJogadas,rank:0};
 }
 
 function calcStatsAll(){
@@ -1509,7 +1510,7 @@ function renderRodadas(){
       html+='<th style="color:#FFD700;padding:5px 4px;text-align:center">Pts</th>';
       html+='<th style="color:#FFD700;padding:5px 4px;text-align:center">RB</th>';
       html+='<th style="color:#FFD700;padding:5px 4px;text-align:center">AD</th>';
-      html+='<th style="color:#FFD700;padding:5px 4px;text-align:center">KO</th>';
+      html+='<th style="color:#FFD700;padding:5px 4px;text-align:center">KO+</th>'; html+='<th style="color:#FFD700;padding:5px 4px;text-align:center">KO-</th>';
       html+='</tr></thead><tbody>';
       todosResT.forEach(function(resT,riT){
         var ptsT=getPts(njtT,resT.posicao);
@@ -1522,7 +1523,7 @@ function renderRodadas(){
         html+='<td style="padding:4px 3px;border:1px solid #e5e7eb;text-align:center;font-weight:700;color:'+(isMeT?'#1D4ED8':'var(--texto)')+'">'+ptsT+'</td>';
         html+='<td style="padding:4px 3px;border:1px solid #e5e7eb;text-align:center">'+(resT.rebuy||0)+'</td>';
         html+='<td style="padding:4px 3px;border:1px solid #e5e7eb;text-align:center">'+(resT.addon||0)+'</td>';
-        html+='<td style="padding:4px 3px;border:1px solid #e5e7eb;text-align:center">'+(resT.knockout||0)+'</td>';
+        html+='<td style="padding:4px 3px;border:1px solid #e5e7eb;text-align:center">'+(resT.knockout||0)+'</td>'; html+='<td style="padding:4px 3px;border:1px solid #e5e7eb;text-align:center;color:#dc2626">'+(resT.ko_perdidos||0)+'</td>';
         html+='</tr>';
       });
       var totalFichasT=todosResT.reduce(function(s,r){return s+(r.fichas||0);},0);
@@ -1535,7 +1536,7 @@ function renderRodadas(){
       html+='<td style="padding:4px 3px"></td>';
       html+='<td style="padding:4px 3px;text-align:center;color:#FFD700;font-weight:700;font-size:11px">'+totalRbT+'</td>';
       html+='<td style="padding:4px 3px;text-align:center;color:#FFD700;font-weight:700;font-size:11px">'+totalAdT+'</td>';
-      html+='<td style="padding:4px 3px;text-align:center;color:#FFD700;font-weight:700;font-size:11px">'+totalKoT+'</td>';
+      html+='<td style="padding:4px 3px;text-align:center;color:#FFD700;font-weight:700;font-size:11px">'+totalKoT+'</td>'; html+='<td style="padding:4px 3px;text-align:center;color:#f87171;font-weight:700;font-size:11px">'+todosResT.reduce(function(s,r){return s+(r.ko_perdidos||0);},0)+'</td>';
       html+='</tr>';
       html+='</tbody></table></div>';
     }
@@ -1654,7 +1655,7 @@ function renderRanking(aba){
     });
   } else {
     sorted=stats.slice().sort(function(a,b){
-      return b.knockouts-a.knockouts||a.rodadasJogadas-b.rodadasJogadas;
+      return b.knockouts-a.knockouts||a.koPerdidos-b.koPerdidos||a.rodadasJogadas-b.rodadasJogadas;
     });
     var posKO=0,antKO=-1;
     sorted.forEach(function(s,i){
@@ -1985,7 +1986,7 @@ function gerarRelatorio(){
   var rankP=stats.slice().sort(function(a,b){return b.total-a.total||b.totalSem-a.totalSem;});
   var rankD=stats.slice().sort(function(a,b){return b.totalSem-a.totalSem||b.total-a.total;});
   var rankR=stats.slice().sort(function(a,b){return b.rebuys-a.rebuys||a.knockouts-b.knockouts;});
-  var rankK=stats.slice().sort(function(a,b){return b.knockouts-a.knockouts;});
+  var rankK=stats.slice().sort(function(a,b){return b.knockouts-a.knockouts||a.koPerdidos-b.koPerdidos;});
 
   var txtP=gerarTextoWpp('Classificacao Sem Descarte',rankP,function(s){return s.total+' pts';},null);
   var txtD=rodsReal>=2?gerarTextoWpp('Classificacao C/ Descarte',rankD,function(s){return s.totalSem+' pts';},function(s){return s.piorPts>0?'(-'+s.piorPts+')':'';}):'';
@@ -2065,7 +2066,7 @@ function _gerarRelatorioOLD(){
   linhas.push('');
   linhas.push(sep);
   linhas.push('*KNOCKOUT*');
-  var rankK=stats.slice().sort(function(a,b){return b.knockouts-a.knockouts;});
+  var rankK=stats.slice().sort(function(a,b){return b.knockouts-a.knockouts||a.koPerdidos-b.koPerdidos;});
   var posK=0,antK=-1;
   rankK.forEach(function(s,i){
     if(s.knockouts!==antK){posK=i+1;} antK=s.knockouts;
@@ -2464,16 +2465,17 @@ function gerarLinhasJogadores(){
   var html=datalist+'<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;table-layout:fixed">';
   html+='<colgroup>';
   html+='<col style="width:32px">';    // #
-  html+='<col style="width:130px">';   // Jogador
-  html+='<col style="width:46px">';    // RB
-  html+='<col style="width:46px">';    // AD
-  html+='<col style="width:70px">';    // Fichas
-  html+='<col style="width:46px">';    // KO
-  html+='<col style="width:54px">';    // Cred.Rateio
-  html+='<col style="width:54px">';    // Rateio
+  html+='<col style="width:120px">';   // Jogador
+  html+='<col style="width:40px">';    // RB
+  html+='<col style="width:40px">';    // AD
+  html+='<col style="width:62px">';    // Fichas
+  html+='<col style="width:44px">';    // KO+
+  html+='<col style="width:44px">';    // KO-
+  html+='<col style="width:50px">';    // Cred.Rateio
+  html+='<col style="width:50px">';    // Rateio
   if(isRod1){
     html+='<col style="width:54px">';  // Inscr.
-    html+='<col style="width:60px">';  // CredAnt.
+    html+='<col style="width:54px">';  // CredAnt.
   }
   html+='</colgroup>';
   html+='<thead><tr style="background:#0F172A">';
@@ -2482,7 +2484,8 @@ function gerarLinhasJogadores(){
   html+='<th style="'+thS+'">RB</th>';
   html+='<th style="'+thS+'">AD</th>';
   html+='<th style="'+thS+'">Fichas</th>';
-  html+='<th style="'+thS+'">KO</th>';
+  html+='<th style="'+thS+'">KO+</th>';
+  html+='<th style="'+thS+'">KO-</th>';
   html+='<th style="'+thS+'">Créd.</th>';
   html+='<th style="'+thS+'">Rateio</th>';
   if(isRod1){
@@ -2498,7 +2501,8 @@ function gerarLinhasJogadores(){
     html+='<td style="padding:2px"><input class="ainput" id="jog-rebuy-'+i+'" type="number" min="0" max="8" value="0" style="'+inN+'"></td>';
     html+='<td style="padding:2px"><input class="ainput" id="jog-addon-'+i+'" type="number" min="0" max="1" value="1" style="'+inN+'"></td>';
     html+='<td style="padding:2px"><input class="ainput" id="jog-fichas-'+i+'" type="number" min="0" value="0" style="'+inN+'"></td>';
-    html+='<td style="padding:2px"><input class="ainput" id="jog-ko-'+i+'" type="number" min="0" value="0" style="'+inN+'"></td>';
+    html+='<td style="padding:2px"><input class="ainput" id="jog-ko-'+i+'" type="number" min="0" value="0" style="'+inN+'" title="KO ganhos"></td>';
+    html+='<td style="padding:2px"><input class="ainput" id="jog-kop-'+i+'" type="number" min="0" value="0" style="'+inN+'" title="KO perdidos"></td>';
     html+='<td style="padding:2px"><input class="ainput" id="jog-cred-'+i+'" type="number" min="0" value="0" step="0.01" style="'+inN+'"></td>';
     html+='<td style="padding:2px"><input class="ainput" id="jog-rateio-'+i+'" type="number" min="0" value="'+rateioPad+'" step="0.01" style="'+inN+'"></td>';
     if(isRod1){
@@ -2533,6 +2537,7 @@ async function salvarResultados(){
       addon:parseInt(document.getElementById('jog-addon-'+i).value)||0,
       fichas:parseFloat(document.getElementById('jog-fichas-'+i).value)||0,
       knockout:parseInt(document.getElementById('jog-ko-'+i).value)||0,
+      ko_perdidos:(parseFloat(document.getElementById('jog-fichas-'+i)?document.getElementById('jog-fichas-'+i).value:1)||0)===0?1:(parseInt(document.getElementById('jog-kop-'+i)?document.getElementById('jog-kop-'+i).value:0)||0),
       credito:parseFloat(document.getElementById('jog-cred-'+i)?document.getElementById('jog-cred-'+i).value:0)||0,
       rateio_ind:parseFloat(document.getElementById('jog-rateio-'+i)?document.getElementById('jog-rateio-'+i).value:0)||0,
       inscricao:isRod1?parseFloat(document.getElementById('jog-inscricao-'+i)?document.getElementById('jog-inscricao-'+i).value:0)||0:0,
@@ -2745,7 +2750,8 @@ function gerarTabelaAdminRodada(){
   html+='<th style="'+thL+'">Jogador</th>';
   html+='<th style="'+thC+'">RB</th>';
   html+='<th style="'+thC+'">AD</th>';
-  html+='<th style="'+thC+'">KO</th>';
+  html+='<th style="'+thC+'">KO+</th>';
+  html+='<th style="'+thC+'">KO-</th>';
   html+='<th style="'+thC+'">Fichas</th>';
   html+='<th style="'+thC+'">Pts</th>';
   html+='<th style="'+thR+'">Fichas R$</th>';
@@ -2806,6 +2812,7 @@ function gerarTabelaAdminRodada(){
   html+='<td style="'+tdT+'center">'+totRb+'</td>';
   html+='<td style="'+tdT+'center">'+totAd+'</td>';
   html+='<td style="'+tdT+'center">'+totKo+'</td>';
+  html+='<td style="'+tdT+'center">'+totKoPerd+'</td>';
   html+='<td style="'+tdT+'center">'+totFi.toLocaleString('pt-BR')+'</td>';
   html+='<td style="'+tdT+'center">--</td>';
   html+='<td style="'+tdT+'right">+ R$ '+totFichasR.toFixed(2).replace('.',',')+'</td>';
