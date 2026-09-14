@@ -998,7 +998,72 @@ async function _renderInicioInterno(el){
 
   html+='</div>';
 
-  // -- CARD INSCRIÇÃO SEMESTRAL -- separado, antes da próxima rodada
+    // -- CARD PARTICIPACAO
+  if(rodsRealizadas>0){
+    var pct=Math.round(stats.rodadasJogadas/rodsRealizadas*100);
+    var barColor=pct>=75?'#16A34A':pct>=50?'#D97706':'#DC2626';
+    html+='<div class="card" style="padding:14px;margin-bottom:12px">';
+    html+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">';
+    html+='<div style="font-size:13px;font-weight:700;color:var(--texto)">🎯 Presenças</div>';
+    html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:22px;font-weight:900;color:'+barColor+'">'+ stats.rodadasJogadas+'<span style="font-size:13px;color:var(--texto3)"> de '+rodsRealizadas+'</span></div>';
+    html+='</div>';
+    html+='<div style="background:var(--cinza3);border-radius:20px;height:8px;overflow:hidden">';
+    html+='<div style="background:'+barColor+';width:'+pct+'%;height:100%;border-radius:20px"></div>';
+    html+='</div>';
+    html+='<div style="font-size:11px;color:var(--texto3);margin-top:4px;text-align:right">'+pct+'% de presença</div>';
+    html+='</div>';
+  }
+
+  // -- CARD FICHAS TOTAL
+  if(rodsRealizadas>0&&stats.rodadasJogadas>0){
+    var totalFichas=0,totalSaldoFichas=0;
+    RODADAS.forEach(function(r){
+      if(!r.realizada) return;
+      var resR=(RESULTADOS[r.id]||[]).find(function(x){return x.nome===USER.nome;});
+      if(resR){totalFichas+=(resR.fichas||0);totalSaldoFichas+=Math.round((resR.fichas||0)/1000*1.5);}
+    });
+    html+='<div class="card" style="padding:14px;margin-bottom:12px">';
+    html+='<div style="font-size:13px;font-weight:700;color:var(--texto);margin-bottom:10px">🎲 Fichas do Torneio</div>';
+    html+='<div style="display:flex;justify-content:space-between;align-items:center">';
+    html+='<div style="text-align:center;flex:1">';
+    html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:28px;font-weight:900;color:var(--azul)">'+totalFichas.toLocaleString("pt-BR")+"</div>";
+    html+='<div style="font-size:10px;color:var(--texto3);margin-top:2px">fichas totais</div>';
+    html+='</div>';
+    html+='<div style="width:1px;background:var(--borda);align-self:stretch;margin:0 12px"></div>';
+    html+='<div style="text-align:center;flex:1">';
+    html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:28px;font-weight:900;color:var(--verde)">R$ '+totalSaldoFichas.toFixed(2).replace(".",",")+"</div>";
+    html+='<div style="font-size:10px;color:var(--texto3);margin-top:2px">em prêmios</div>';
+    html+='</div></div></div>';
+  }
+
+  // -- CARD SALDO FINANCEIRO
+  if(rodsRealizadas>0){
+    var saldoTotal=0;
+    RODADAS.forEach(function(r){
+      if(!r.realizada) return;
+      var resR=(RESULTADOS[r.id]||[]).find(function(x){return x.nome===USER.nome;});
+      if(resR){
+        var fin=calcFinanceiro(resR,r);
+        saldoTotal+=fin.saldo;
+      }
+    });
+    var saldoPos=saldoTotal>=0;
+    var saldoCor=saldoPos?'#16A34A':'#DC2626';
+    var saldoBg=saldoPos?'rgba(22,163,74,.08)':'rgba(220,38,38,.06)';
+    html+='<div class="card" style="padding:14px;margin-bottom:12px;background:'+saldoBg+';border:1px solid '+(saldoPos?'rgba(22,163,74,.2)':'rgba(220,38,38,.2)')+'">';
+    html+='<div style="display:flex;align-items:center;justify-content:space-between">';
+    html+='<div>';
+    html+='<div style="font-size:13px;font-weight:700;color:var(--texto)">'+(saldoPos?'💰':'💸')+' Saldo do Torneio</div>';
+    html+='<div style="font-size:11px;color:var(--texto3);margin-top:2px">acumulado em '+stats.rodadasJogadas+' rodada'+(stats.rodadasJogadas!==1?'s':'')+'</div>';
+    html+='</div>';
+    html+='<div style="text-align:right">';
+    html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:28px;font-weight:900;color:'+saldoCor+'">'+(saldoPos?'+ ':'- ')+'R$ '+Math.abs(saldoTotal).toFixed(2).replace('.',',')+'</div>';
+    html+='<div style="font-size:10px;color:var(--texto3)">'+(saldoPos?'a receber':'a pagar')+'</div>';
+    html+='</div></div>';
+    html+='</div>';
+  }
+
+// -- CARD INSCRIÇÃO SEMESTRAL -- separado, antes da próxima rodada
   var rodsRealizadasN=RODADAS.filter(function(r){return r.realizada;}).length;
   var jog=JOGADORES.find(function(j){return j.nome===USER.nome;});
   var jaDefiniu=jog&&(jog.inscrito===true||jog.status_inscricao==='avulso');
@@ -1109,7 +1174,7 @@ async function _renderInicioInterno(el){
           html+='<div style="font-size:36px;font-weight:900;color:#fff;line-height:1">'+(positivo?'+':'')+fmtMoeda(saldo)+'</div>';
           html+='<div style="font-size:13px;color:rgba(255,255,255,.6);margin-top:4px">'+(positivo?'Você tem a receber':'Você tem a pagar')+'</div>';
           html+='<div style="margin-top:12px;background:rgba(0,0,0,.25);border-radius:10px;padding:12px;font-size:12px;color:rgba(255,255,255,.85);line-height:1.9">';
-          html+='<div style="display:flex;justify-content:space-between"><span>Fichas ('+resUlt.fichas+' × R$1,50/mil)</span><span style="color:#4ade80">+ R$ '+Math.abs(finUlt.premio).toFixed(2).replace('.',',')+' </span></div>';
+          html+='<div style="display:flex;justify-content:space-between"><span>Fichas ('+resUlt.fichas+' = R$ '+Math.round((resUlt.fichas||0)/1000*1.5).toFixed(2).replace('.',',')+'</span><span style="color:#4ade80">+ R$ '+Math.abs(finUlt.premio).toFixed(2).replace('.',',')+' </span></div>';
           html+='<div style="display:flex;justify-content:space-between"><span>Buy-in</span><span style="color:#f87171">- R$ 15,00</span></div>';
           if(finUlt.custoRebuy>0) html+='<div style="display:flex;justify-content:space-between"><span>Rebuy ('+resUlt.rebuy+'× R$ 20,00)</span><span style="color:#f87171">- R$ '+Math.abs(finUlt.custoRebuy).toFixed(2).replace('.',',')+' </span></div>';
           if(finUlt.custoAddon>0) html+='<div style="display:flex;justify-content:space-between"><span>Addon ('+resUlt.addon+'× R$ 30,00)</span><span style="color:#f87171">- R$ '+Math.abs(finUlt.custoAddon).toFixed(2).replace('.',',')+' </span></div>';
@@ -1657,9 +1722,9 @@ function renderRanking(aba){
     sorted=stats.slice().sort(function(a,b){
       return b.knockouts-a.knockouts||a.koPerdidos-b.koPerdidos||a.rodadasJogadas-b.rodadasJogadas;
     });
-    var posKO=0,antKO=-1;
+    var posKO=0,antKO=-1,antKOPerd=-1;
     sorted.forEach(function(s,i){
-      if(s.knockouts!==antKO){posKO=i+1;} antKO=s.knockouts;
+      if(s.knockouts!==antKO||s.koPerdidos!==antKOPerd){posKO=i+1;} antKO=s.knockouts; antKOPerd=s.koPerdidos;
       var me=s.nome===USER.nome;
       html+='<div class="rank-item'+(me?' me':'')+'">';
       html+='<div class="rank-pos '+(posKO===1?'ouro':posKO===2?'prata':posKO===3?'bronze':'')+'">'+posKO+'</div>';
@@ -2537,7 +2602,7 @@ async function salvarResultados(){
       addon:parseInt(document.getElementById('jog-addon-'+i).value)||0,
       fichas:parseFloat(document.getElementById('jog-fichas-'+i).value)||0,
       knockout:parseInt(document.getElementById('jog-ko-'+i).value)||0,
-      ko_perdidos:(parseFloat(document.getElementById('jog-fichas-'+i)?document.getElementById('jog-fichas-'+i).value:1)||0)===0?1:(parseInt(document.getElementById('jog-kop-'+i)?document.getElementById('jog-kop-'+i).value:0)||0),
+      ko_perdidos:(function(){var ficEl=document.getElementById('jog-fichas-'+i);var ficVal=ficEl?ficEl.value.trim():'';return ficVal!==''&&parseFloat(ficVal)===0?1:(parseInt(document.getElementById('jog-kop-'+i)?document.getElementById('jog-kop-'+i).value:0)||0);})(),
       credito:parseFloat(document.getElementById('jog-cred-'+i)?document.getElementById('jog-cred-'+i).value:0)||0,
       rateio_ind:parseFloat(document.getElementById('jog-rateio-'+i)?document.getElementById('jog-rateio-'+i).value:0)||0,
       inscricao:isRod1?parseFloat(document.getElementById('jog-inscricao-'+i)?document.getElementById('jog-inscricao-'+i).value:0)||0:0,
