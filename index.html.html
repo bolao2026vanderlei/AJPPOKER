@@ -1071,44 +1071,6 @@ async function _renderInicioInterno(el){
     html+='</div>';
   }
 
-  // -- CARD EVOLUCAO PONTOS
-  if(rodsRealizadas>0&&stats.rodadasJogadas>0){
-    var ev_labels=[],ev_meus=[],ev_media=[];
-    var statsAll2=calcStatsAll();
-    var acumPts={};
-    statsAll2.forEach(function(s){acumPts[s.nome]=0;});
-    RODADAS.forEach(function(r){
-      if(!r.realizada) return;
-      var resR=(RESULTADOS[r.id]||[]);
-      var nj=resR.length; if(!nj) return;
-      ev_labels.push('Rod.'+r.numero);
-      var meuRes=resR.find(function(x){return x.nome===USER.nome;});
-      var meuPt=meuRes?getPts(nj,meuRes.posicao):null;
-      statsAll2.forEach(function(s){
-        var rr=resR.find(function(x){return x.nome===s.nome;});
-        if(rr) acumPts[s.nome]+=getPts(nj,rr.posicao);
-      });
-      ev_meus.push(meuPt!==null?acumPts[USER.nome]||0:null);
-      var soma=0,ct=0;
-      statsAll2.forEach(function(s){if(acumPts[s.nome]>0){soma+=acumPts[s.nome];ct++;}});
-      ev_media.push(ct>0?Math.round(soma/ct):null);
-    });
-    html+='<div class="card" style="padding:14px;margin-bottom:12px">';
-    html+='<div style="font-size:13px;font-weight:700;color:var(--texto);margin-bottom:8px">📈 Evolução de Pontos</div>';
-    html+='<div style="display:flex;gap:12px;margin-bottom:8px;font-size:11px;color:var(--texto3)">';
-    html+='<span><span style="display:inline-block;width:12px;height:3px;background:#2a78d6;border-radius:2px;vertical-align:middle;margin-right:3px"></span>Você</span>';
-    html+='<span><span style="display:inline-block;width:12px;height:2px;border-top:2px dashed #888;vertical-align:middle;margin-right:3px"></span>Média do grupo</span>';
-    html+='</div>';
-    html+='<div style="position:relative;width:100%;height:200px">';
-    html+='<canvas id="ev-chart-main"'
-      +' data-labels=\''+JSON.stringify(ev_labels)+'\''
-      +' data-meus=\''+JSON.stringify(ev_meus)+'\''
-      +' data-media=\''+JSON.stringify(ev_media)+'\''
-      +' role="img" aria-label="Grafico evolucao pontos"></canvas>';
-    html+='</div></div>';
-    setTimeout(function(){renderEvoChart('ev-chart-main');},100);
-  }
-
   // -- CARD SALDO FINANCEIRO
   if(rodsRealizadas>0){
     var saldoTotal=0,totalFichasR=0,totalRateioLanche=0,totalCustos=0;
@@ -1138,6 +1100,49 @@ async function _renderInicioInterno(el){
     html+='</div>';
     html+='<div style="font-size:10px;color:var(--texto3);text-align:right">'+(saldoPos?'a receber':'a pagar')+' em '+stats.rodadasJogadas+' rodada'+(stats.rodadasJogadas!==1?'s':'')+' </div>';
     html+='</div></div>';
+  }
+
+  // -- CARD EVOLUCAO PONTOS
+  if(rodsRealizadas>0&&stats.rodadasJogadas>0){
+    var ev_labels=[],ev_meus=[],ev_pos=[],ev_colors=[],ev_borders=[];
+    var ptsPorRod=[];
+    RODADAS.forEach(function(r){
+      if(!r.realizada) return;
+      var resR=(RESULTADOS[r.id]||[]);
+      var nj=resR.length; if(!nj) return;
+      var meuRes=resR.find(function(x){return x.nome===USER.nome;});
+      ptsPorRod.push({rod:r,pts:meuRes?getPts(nj,meuRes.posicao):null,pos:meuRes?meuRes.posicao:null});
+    });
+    var jogados=ptsPorRod.filter(function(x){return x.pts!==null;});
+    var idxDescarte=-1;
+    if(jogados.length>=2){
+      var minPts=999;
+      ptsPorRod.forEach(function(x,i){if(x.pts!==null&&x.pts<minPts){minPts=x.pts;idxDescarte=i;}});
+    }
+    ptsPorRod.forEach(function(x,i){
+      ev_labels.push('Rod.'+x.rod.numero);
+      ev_meus.push(x.pts);
+      ev_pos.push(x.pos);
+      var isDesc=i===idxDescarte;
+      ev_colors.push(isDesc?'rgba(200,200,200,0.5)':'rgba(42,120,214,0.8)');
+      ev_borders.push(isDesc?'#bbb':'#2a78d6');
+    });
+    html+='<div class="card" style="padding:14px;margin-bottom:12px">';
+    html+='<div style="font-size:13px;font-weight:700;color:var(--texto);margin-bottom:8px">📈 Pontos por Rodada</div>';
+    html+='<div style="display:flex;gap:12px;margin-bottom:8px;font-size:11px;color:var(--texto3)">';
+    html+='<span><span style="display:inline-block;width:12px;height:10px;background:rgba(42,120,214,0.8);border-radius:2px;vertical-align:middle;margin-right:3px"></span>Pontos</span>';
+    if(idxDescarte>=0) html+='<span><span style="display:inline-block;width:12px;height:10px;background:rgba(200,200,200,0.5);border:1px solid #bbb;border-radius:2px;vertical-align:middle;margin-right:3px"></span>Descartado</span>';
+    html+='</div>';
+    html+='<div style="position:relative;width:100%;height:200px">';
+    html+='<canvas id="ev-chart-main"'
+      +' data-labels=\''+JSON.stringify(ev_labels)+'\''
+      +' data-meus=\''+JSON.stringify(ev_meus)+'\''
+      +' data-pos=\''+JSON.stringify(ev_pos)+'\''
+      +' data-colors=\''+JSON.stringify(ev_colors)+'\''
+      +' data-borders=\''+JSON.stringify(ev_borders)+'\''
+      +' role="img" aria-label="Pontos por rodada"></canvas>';
+    html+='</div></div>';
+    setTimeout(function(){renderEvoChart('ev-chart-main');},100);
   }
 
   // -- CARD INSCRIÇÃO SEMESTRAL -- separado, antes da próxima rodada
@@ -2324,6 +2329,7 @@ function renderEvoChart(chartId){
   var meus=JSON.parse(el.dataset.meus||'[]');
   var pos=JSON.parse(el.dataset.pos||'[]');
   var colors=JSON.parse(el.dataset.colors||'[]');
+  var borders=JSON.parse(el.dataset.borders||'[]');
   var isDark=document.body.classList.contains('dark');
   var grid=isDark?'rgba(255,255,255,0.07)':'#e1e0d9';
   var muted='#898781';
@@ -2332,19 +2338,16 @@ function renderEvoChart(chartId){
     var meta=chart.getDatasetMeta(0);
     meta.data.forEach(function(bar,i){
       if(meus[i]===null||meus[i]===undefined) return;
-      var pv=pos[i];
-      var isDesc=colors[i]&&colors[i].indexOf('220,38')>=0;
-      // pontos em destaque
+      var isDesc=borders[i]==='#bbb';
       ctx.save();
-      ctx.font='bold 12px sans-serif';
       ctx.textAlign='center';
-      ctx.fillStyle=isDesc?'#DC2626':'#1D4ED8';
+      ctx.font='bold 12px sans-serif';
+      ctx.fillStyle=isDesc?'#aaa':'#1D4ED8';
       ctx.fillText(meus[i]+'pts',bar.x,bar.y-18);
-      // posicao menor abaixo
-      if(pv!==null&&pv!==undefined){
+      if(pos[i]!==null&&pos[i]!==undefined){
         ctx.font='10px sans-serif';
-        ctx.fillStyle='#7C3AED';
-        ctx.fillText(pv+'o',bar.x,bar.y-6);
+        ctx.fillStyle=isDesc?'#bbb':'#7C3AED';
+        ctx.fillText(pos[i]+'o',bar.x,bar.y-6);
       }
       ctx.restore();
     });
@@ -2353,13 +2356,13 @@ function renderEvoChart(chartId){
     type:'bar',
     plugins:[labelPlugin],
     data:{labels:labels,datasets:[
-      {label:'Voce',data:meus,backgroundColor:colors,borderColor:colors.map(function(c){return c.replace('0.75','1').replace('0.6','1');}),borderWidth:1,borderRadius:4}
+      {label:'Pontos',data:meus,backgroundColor:colors,borderColor:borders,borderWidth:1,borderRadius:4}
     ]},
     options:{responsive:true,maintainAspectRatio:false,
-      layout:{padding:{top:30}},
+      layout:{padding:{top:28}},
       plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){
         var pv=pos[c.dataIndex];
-        var isDesc=colors[c.dataIndex]&&colors[c.dataIndex].indexOf('220,38')>=0;
+        var isDesc=borders[c.dataIndex]==='#bbb';
         return c.parsed.y+' pts'+(pv?' - '+pv+'o lugar':'')+(isDesc?' (descartado)':'');
       }}}},
       scales:{
