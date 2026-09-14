@@ -15,9 +15,17 @@
   --roxo:#7C3AED;--roxo-light:#EDE9FE;
   --cinza:#6B7280;--cinza2:#F3F4F6;--cinza3:#E5E7EB;
   --texto:#111827;--texto2:#374151;--texto3:#6B7280;
-  --card:#FFFFFF;--fundo:#F9FAFB;--borda:#E5E7EB;
+  --card:#FFFFFF;--fundo:#F9FAFB;--fundo2:#FFFFFF;--borda:#E5E7EB;
   --radius:12px;--shadow:0 1px 3px rgba(0,0,0,.1),0 1px 2px rgba(0,0,0,.06);
   --shadow-lg:0 4px 6px rgba(0,0,0,.07),0 10px 15px rgba(0,0,0,.05);
+}
+body.dark{
+  --texto:#F1F5F9;--texto2:#CBD5E1;--texto3:#64748B;
+  --card:#1E293B;--fundo:#0F172A;--fundo2:#1E293B;--borda:#334155;
+  --cinza2:#1E293B;--cinza3:#334155;
+  --verde-light:rgba(22,163,74,.15);--azul-light:rgba(37,99,235,.15);
+  --amarelo-light:rgba(217,119,6,.15);--roxo-light:rgba(124,58,237,.15);
+  --vermelho-light:rgba(220,38,38,.15);
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{font-family:'Inter',sans-serif;background:var(--fundo);color:var(--texto);min-height:100vh}
@@ -465,7 +473,7 @@ body{font-family:'Inter',sans-serif;background:var(--fundo);color:var(--texto);m
   <div class="secao" id="s-admin" style="display:none"></div>
 
   <!-- NAVBAR -->
-  <nav class="navbar">
+  <nav class="navbar" style="position:relative"><button id="btn-dark" onclick="toggleDark()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:20px;width:32px;height:32px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:10">🌙</button>
     <button class="nav-btn on" id="bn-inicio" onclick="ir('inicio')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
       Início
@@ -1049,7 +1057,7 @@ async function _renderInicioInterno(el){
 
   // -- CARD SALDO FINANCEIRO
   if(rodsRealizadas>0){
-    var saldoTotal=0,totalFichasR=0,totalRateioLanche=0;
+    var saldoTotal=0,totalFichasR=0,totalRateioLanche=0,totalCustos=0;
     RODADAS.forEach(function(r){
       if(!r.realizada) return;
       var resR=(RESULTADOS[r.id]||[]).find(function(x){return x.nome===USER.nome;});
@@ -1058,6 +1066,7 @@ async function _renderInicioInterno(el){
         saldoTotal+=fin.saldo;
         totalFichasR+=fin.premio;
         totalRateioLanche+=fin.rateio_ind||0;
+        totalCustos+=fin.buyin+(fin.custoRebuy||0)+(fin.custoAddon||0)+(fin.inscricao||0)-(fin.credito||0)-(fin.cred_anterior||0);
       }
     });
     var saldoPos=saldoTotal>=0;
@@ -1065,24 +1074,16 @@ async function _renderInicioInterno(el){
     var saldoBg=saldoPos?'rgba(22,163,74,.08)':'rgba(220,38,38,.06)';
     html+='<div class="card" style="padding:14px;margin-bottom:12px;background:'+saldoBg+';border:1px solid '+(saldoPos?'rgba(22,163,74,.2)':'rgba(220,38,38,.2)')+'">';
     html+='<div style="font-size:13px;font-weight:700;color:var(--texto);margin-bottom:10px">'+(saldoPos?'💰':'💸')+' Saldo do Torneio</div>';
-    html+='<div style="display:flex;flex-direction:column;gap:6px;font-size:12px">';
-    html+='<div style="display:flex;justify-content:space-between;align-items:center">';
-    html+='<span style="color:var(--texto3)">Fichas em R$</span>';
-    html+='<span style="font-weight:700;color:#16A34A">+ R$ '+totalFichasR.toFixed(2).replace('.',',')+' </span>';
-    html+='</div>';
-    if(totalRateioLanche>0){
-      html+='<div style="display:flex;justify-content:space-between;align-items:center">';
-      html+='<span style="color:var(--texto3)">Rateio / Lanche</span>';
-      html+='<span style="font-weight:700;color:#DC2626">- R$ '+totalRateioLanche.toFixed(2).replace('.',',')+' </span>';
-      html+='</div>';
-    }
-    html+='<div style="border-top:1px solid '+(saldoPos?'rgba(22,163,74,.2)':'rgba(220,38,38,.2)')+';margin-top:4px;padding-top:8px;display:flex;justify-content:space-between;align-items:center">';
+    html+='<div style="display:flex;flex-direction:column;gap:5px;font-size:12px">';
+    html+='<div style="display:flex;justify-content:space-between"><span style="color:var(--texto3)">Fichas em R$</span><span style="font-weight:700;color:#16A34A">+ R$ '+totalFichasR.toFixed(2).replace('.',',')+' </span></div>';
+    html+='<div style="display:flex;justify-content:space-between"><span style="color:var(--texto3)">Buy-in / Rebuy / Addon</span><span style="font-weight:700;color:#DC2626">- R$ '+totalCustos.toFixed(2).replace('.',',')+' </span></div>';
+    if(totalRateioLanche>0) html+='<div style="display:flex;justify-content:space-between"><span style="color:var(--texto3)">Rateio / Lanche</span><span style="font-weight:700;color:#DC2626">- R$ '+totalRateioLanche.toFixed(2).replace('.',',')+' </span></div>';
+    html+='<div style="border-top:1px solid '+(saldoPos?'rgba(22,163,74,.2)':'rgba(220,38,38,.2)')+';margin-top:6px;padding-top:8px;display:flex;justify-content:space-between;align-items:center">';
     html+='<span style="font-size:12px;color:var(--texto3)">Saldo acumulado</span>';
     html+='<span style="font-family:Barlow Condensed,sans-serif;font-size:26px;font-weight:900;color:'+saldoCor+'">'+(saldoPos?'+ ':'- ')+'R$ '+Math.abs(saldoTotal).toFixed(2).replace('.',',')+' </span>';
     html+='</div>';
     html+='<div style="font-size:10px;color:var(--texto3);text-align:right">'+(saldoPos?'a receber':'a pagar')+' em '+stats.rodadasJogadas+' rodada'+(stats.rodadasJogadas!==1?'s':'')+' </div>';
-    html+='</div>';
-    html+='</div>';
+    html+='</div></div>';
   }
 
   // -- CARD INSCRIÇÃO SEMESTRAL -- separado, antes da próxima rodada
@@ -2254,11 +2255,20 @@ function copiarTabelaAdmin(){
   if(el) navigator.clipboard.writeText(el.innerText||el.textContent).then(function(){toast('Copiado!','ok');});
 }
 
+function toggleDark(){
+  var isDark=document.body.classList.toggle('dark');
+  localStorage.setItem('poker_dark', isDark?'1':'0');
+  var btn=document.getElementById('btn-dark');
+  if(btn) btn.textContent=isDark?'☀️':'🌙';
+}
+
 document.addEventListener('DOMContentLoaded', function(){
   document.getElementById('tela-login').style.display='flex';
   document.getElementById('app').style.display='none';
   document.getElementById('loading').style.display='none';
   try{
+    var dark=localStorage.getItem('poker_dark');
+    if(dark==='1'){document.body.classList.add('dark');var btn=document.getElementById('btn-dark');if(btn)btn.textContent='☀️';}
     var saved=localStorage.getItem('poker_user');
     if(saved){
       var u=JSON.parse(saved);
