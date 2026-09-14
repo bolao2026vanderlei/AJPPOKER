@@ -1016,24 +1016,35 @@ async function _renderInicioInterno(el){
 
   // -- CARD FICHAS TOTAL
   if(rodsRealizadas>0&&stats.rodadasJogadas>0){
-    var totalFichas=0,totalSaldoFichas=0;
+    var totalFichasGanhas=0, totalFichasPagas=0;
     RODADAS.forEach(function(r){
       if(!r.realizada) return;
       var resR=(RESULTADOS[r.id]||[]).find(function(x){return x.nome===USER.nome;});
-      if(resR){totalFichas+=(resR.fichas||0);totalSaldoFichas+=Math.round((resR.fichas||0)/1000*1.5);}
+      if(resR){
+        totalFichasGanhas+=(resR.fichas||0);
+        totalFichasPagas+=10000 + (resR.rebuy||0)*10000 + (resR.addon||0)*20000;
+      }
     });
+    var saldoFichas=totalFichasGanhas-totalFichasPagas;
+    var fichasPos=saldoFichas>=0;
+    var fichasCor=fichasPos?'#16A34A':'#DC2626';
     html+='<div class="card" style="padding:14px;margin-bottom:12px">';
     html+='<div style="font-size:13px;font-weight:700;color:var(--texto);margin-bottom:10px">🎲 Fichas do Torneio</div>';
-    html+='<div style="display:flex;justify-content:space-between;align-items:center">';
+    html+='<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">';
     html+='<div style="text-align:center;flex:1">';
-    html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:28px;font-weight:900;color:var(--azul)">'+totalFichas.toLocaleString("pt-BR")+"</div>";
-    html+='<div style="font-size:10px;color:var(--texto3);margin-top:2px">fichas totais</div>';
+    html+='<div style="font-size:10px;color:var(--texto3);margin-bottom:3px">Ganhas</div>';
+    html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:22px;font-weight:900;color:var(--azul)">'+totalFichasGanhas.toLocaleString('pt-BR')+'</div>';
     html+='</div>';
-    html+='<div style="width:1px;background:var(--borda);align-self:stretch;margin:0 12px"></div>';
     html+='<div style="text-align:center;flex:1">';
-    html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:28px;font-weight:900;color:var(--verde)">R$ '+totalSaldoFichas.toFixed(2).replace(".",",")+"</div>";
-    html+='<div style="font-size:10px;color:var(--texto3);margin-top:2px">em prêmios</div>';
-    html+='</div></div></div>';
+    html+='<div style="font-size:10px;color:var(--texto3);margin-bottom:3px">Investidas</div>';
+    html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:22px;font-weight:900;color:var(--texto2)">'+totalFichasPagas.toLocaleString('pt-BR')+'</div>';
+    html+='</div>';
+    html+='<div style="text-align:center;flex:1;border-left:1px solid var(--borda);padding-left:8px">';
+    html+='<div style="font-size:10px;color:var(--texto3);margin-bottom:3px">Saldo</div>';
+    html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:22px;font-weight:900;color:'+fichasCor+'">'+(fichasPos?'+':'')+saldoFichas.toLocaleString('pt-BR')+'</div>';
+    html+='</div>';
+    html+='</div>';
+    html+='</div>';
   }
 
   // -- CARD SALDO FINANCEIRO
