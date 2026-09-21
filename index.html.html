@@ -1148,18 +1148,16 @@ async function _renderInicioInterno(el){
   // -- TABELA PONTOS RODADA
   if(rodsRealizadas>0){
     var rodsReal=RODADAS.filter(function(r){return r.realizada;});
-    var jogAlfa=JOGADORES.slice().sort(function(a,b){return a.nome.localeCompare(b.nome);});
+    // somente inscritos no torneio
+    var jogAlfa=JOGADORES.filter(function(j){return j.inscrito;}).slice().sort(function(a,b){return a.nome.localeCompare(b.nome);});
+    if(jogAlfa.length===0) jogAlfa=JOGADORES.slice().sort(function(a,b){return a.nome.localeCompare(b.nome);});
     html+='<div class="card" style="padding:14px;margin-bottom:12px;overflow-x:auto">';
     html+='<div style="font-size:13px;font-weight:700;color:var(--texto);margin-bottom:10px">📋 Pontuação por Rodada</div>';
     html+='<table style="width:100%;border-collapse:collapse;font-size:12px">';
-    // cabecalho
     html+='<thead><tr style="background:var(--cinza2);border-bottom:2px solid var(--borda)">';
     html+='<th style="padding:7px 8px;text-align:left;font-size:11px;color:var(--texto3)">Jogador</th>';
-    rodsReal.forEach(function(r){
-      html+='<th style="padding:7px 6px;text-align:center;font-size:11px;color:var(--texto3)">Rod.'+r.numero+'</th>';
-    });
+    rodsReal.forEach(function(r){ html+='<th style="padding:7px 6px;text-align:center;font-size:11px;color:var(--texto3)">Rod.'+r.numero+'</th>'; });
     html+='</tr></thead><tbody>';
-    // linhas
     jogAlfa.forEach(function(j,ji){
       var isMe=j.nome===USER.nome;
       var bg=isMe?'rgba(37,99,235,.07)':ji%2===0?'var(--card)':'var(--cinza2)';
