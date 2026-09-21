@@ -1145,6 +1145,38 @@ async function _renderInicioInterno(el){
     setTimeout(function(){renderEvoChart('ev-chart-main');},100);
   }
 
+  // -- TABELA PONTOS RODADA
+  if(rodsRealizadas>0){
+    var rodsReal=RODADAS.filter(function(r){return r.realizada;});
+    var jogAlfa=JOGADORES.slice().sort(function(a,b){return a.nome.localeCompare(b.nome);});
+    html+='<div class="card" style="padding:14px;margin-bottom:12px;overflow-x:auto">';
+    html+='<div style="font-size:13px;font-weight:700;color:var(--texto);margin-bottom:10px">📋 Pontuação por Rodada</div>';
+    html+='<table style="width:100%;border-collapse:collapse;font-size:12px">';
+    // cabecalho
+    html+='<thead><tr style="background:var(--cinza2);border-bottom:2px solid var(--borda)">';
+    html+='<th style="padding:7px 8px;text-align:left;font-size:11px;color:var(--texto3)">Jogador</th>';
+    rodsReal.forEach(function(r){
+      html+='<th style="padding:7px 6px;text-align:center;font-size:11px;color:var(--texto3)">Rod.'+r.numero+'</th>';
+    });
+    html+='</tr></thead><tbody>';
+    // linhas
+    jogAlfa.forEach(function(j,ji){
+      var isMe=j.nome===USER.nome;
+      var bg=isMe?'rgba(37,99,235,.07)':ji%2===0?'var(--card)':'var(--cinza2)';
+      html+='<tr style="background:'+bg+'">';
+      html+='<td style="padding:6px 8px;border-bottom:1px solid var(--borda);'+(isMe?'font-weight:700;color:var(--azul)':'')+'">'+j.nome+'</td>';
+      rodsReal.forEach(function(r){
+        var resR=RESULTADOS[r.id]||[];
+        var nj=resR.length;
+        var res=resR.find(function(x){return x.nome===j.nome;});
+        var pts=res&&nj?getPts(nj,res.posicao):null;
+        html+='<td style="padding:6px 6px;text-align:center;border-bottom:1px solid var(--borda);'+(isMe?'font-weight:700':'')+'">'+(pts!==null?pts:'–')+'</td>';
+      });
+      html+='</tr>';
+    });
+    html+='</tbody></table></div>';
+  }
+
   // -- CARD INSCRIÇÃO SEMESTRAL -- separado, antes da próxima rodada
   var rodsRealizadasN=RODADAS.filter(function(r){return r.realizada;}).length;
   var jog=JOGADORES.find(function(j){return j.nome===USER.nome;});
