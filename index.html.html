@@ -1148,27 +1148,55 @@ async function _renderInicioInterno(el){
   // -- TABELA PONTOS RODADA
   if(rodsRealizadas>0){
     var rodsReal=RODADAS.filter(function(r){return r.realizada;});
-    // somente inscritos no torneio
     var jogAlfa=JOGADORES.filter(function(j){return j.inscrito;}).slice().sort(function(a,b){return a.nome.localeCompare(b.nome);});
     if(jogAlfa.length===0) jogAlfa=JOGADORES.slice().sort(function(a,b){return a.nome.localeCompare(b.nome);});
+
+    // Calcula pontos e descarte de cada jogador
+    var dadosJog=jogAlfa.map(function(j){
+      var ptsPorRod=rodsReal.map(function(r){
+        var resR=RESULTADOS[r.id]||[];
+        var nj=resR.length;
+        var res=resR.find(function(x){return x.nome===j.nome;});
+        return res&&nj?getPts(nj,res.posicao):null;
+      });
+      var jogados=ptsPorRod.filter(function(x){return x!==null;});
+      var idxDesc=-1;
+      if(jogados.length>=2){
+        var minV=Math.min.apply(null,jogados);
+        idxDesc=ptsPorRod.findIndex(function(x){return x===minV;});
+      }
+      return{nome:j.nome,pts:ptsPorRod,idxDesc:idxDesc};
+    });
+
     html+='<div class="card" style="padding:14px;margin-bottom:12px;overflow-x:auto">';
-    html+='<div style="font-size:13px;font-weight:700;color:var(--texto);margin-bottom:10px">📋 Pontuação por Rodada</div>';
+    html+='<div style="font-size:13px;font-weight:700;color:var(--texto);margin-bottom:6px">📋 Pontuação por Rodada</div>';
+    html+='<div style="font-size:10px;color:var(--texto3);margin-bottom:8px;display:flex;gap:10px">';
+    html+='<span style="color:#16A34A;font-weight:700">Verde</span><span> = conta</span>';
+    html+='<span style="color:#DC2626;text-decoration:line-through;font-weight:700">Tachado</span><span> = descartado</span>';
+    html+='</div>';
     html+='<table style="width:100%;border-collapse:collapse;font-size:12px">';
     html+='<thead><tr style="background:var(--cinza2);border-bottom:2px solid var(--borda)">';
     html+='<th style="padding:7px 8px;text-align:left;font-size:11px;color:var(--texto3)">Jogador</th>';
     rodsReal.forEach(function(r){ html+='<th style="padding:7px 6px;text-align:center;font-size:11px;color:var(--texto3)">Rod.'+r.numero+'</th>'; });
     html+='</tr></thead><tbody>';
-    jogAlfa.forEach(function(j,ji){
+
+    dadosJog.forEach(function(j,ji){
       var isMe=j.nome===USER.nome;
       var bg=isMe?'rgba(37,99,235,.07)':ji%2===0?'var(--card)':'var(--cinza2)';
       html+='<tr style="background:'+bg+'">';
-      html+='<td style="padding:6px 8px;border-bottom:1px solid var(--borda);'+(isMe?'font-weight:700;color:var(--azul)':'')+'">'+j.nome+'</td>';
-      rodsReal.forEach(function(r){
-        var resR=RESULTADOS[r.id]||[];
-        var nj=resR.length;
-        var res=resR.find(function(x){return x.nome===j.nome;});
-        var pts=res&&nj?getPts(nj,res.posicao):null;
-        html+='<td style="padding:6px 6px;text-align:center;border-bottom:1px solid var(--borda);'+(isMe?'font-weight:700':'')+'">'+(pts!==null?pts:'–')+'</td>';
+      html+='<td style="padding:6px 8px;border-bottom:1px solid var(--borda);font-size:11px;'+(isMe?'font-weight:700;color:var(--azul)':'')+'">'+j.nome+'</td>';
+      j.pts.forEach(function(p,ri){
+        var isDesc=ri===j.idxDesc;
+        var val=p!==null?p:'–';
+        if(p===null){
+          html+='<td style="padding:6px 4px;text-align:center;border-bottom:1px solid var(--borda);color:var(--texto3)">–</td>';
+        } else if(isDesc){
+          // descartado: tachado em vermelho, fundo vermelho suave
+          html+='<td style="padding:6px 4px;text-align:center;border-bottom:1px solid var(--borda);color:#DC2626;text-decoration:line-through;background:rgba(220,38,38,.06)">'+p+'</td>';
+        } else {
+          // conta: verde negrito, fundo verde suave
+          html+='<td style="padding:6px 4px;text-align:center;border-bottom:1px solid var(--borda);color:#16A34A;font-weight:700;background:rgba(22,163,74,.07)">'+p+'</td>';
+        }
       });
       html+='</tr>';
     });
