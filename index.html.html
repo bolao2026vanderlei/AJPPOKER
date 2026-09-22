@@ -1174,6 +1174,40 @@ async function _renderInicioInterno(el){
 
   // -- PROXIMA RODADA --
   if(proxRodada){
+    // -- COUNTDOWN PROXIMA RODADA
+    if(proxRodada&&proxRodada.data&&proxRodada.horario){
+      var dtProx=new Date(proxRodada.data+'T'+proxRodada.horario+':00');
+      var diffMs=dtProx-new Date();
+      if(diffMs>0){
+        var dH=Math.floor(diffMs/3600000);
+        var dM=Math.floor((diffMs%3600000)/60000);
+        var dD=Math.floor(dH/24);
+        var hR=dH%24;
+        var cs=dD>0?(dD+'d '+hR+'h '+dM+'min'):(dH+'h '+dM+'min');
+        html+='<div class="card" style="padding:14px;margin-bottom:12px;background:rgba(37,99,235,.06);border:1px solid rgba(37,99,235,.2)">';
+        html+='<div style="display:flex;align-items:center;justify-content:space-between">';
+        html+='<div>';
+        html+='<div style="font-size:11px;color:var(--texto3);margin-bottom:4px">Próxima rodada começa em</div>';
+        html+='<div id="countdown-rod" style="font-family:Barlow Condensed,sans-serif;font-size:34px;font-weight:900;color:var(--azul);line-height:1">'+cs+'</div>';
+        html+='<div style="font-size:11px;color:var(--texto3);margin-top:4px">📅 '+fmtData(proxRodada.data)+' • '+proxRodada.horario+'h</div>';
+        html+='</div>';
+        html+='<div style="font-size:26px;font-family:Georgia,serif;font-weight:900;letter-spacing:2px"><span style="color:#DC2626">A♥</span><span style="color:#1e293b"> A♠</span></div>';
+        html+='</div></div>';
+        if(window._countdownTimer) clearInterval(window._countdownTimer);
+        window._countdownTimer=setInterval(function(){
+          var el2=document.getElementById('countdown-rod');
+          if(!el2){clearInterval(window._countdownTimer);return;}
+          var diff2=dtProx-new Date();
+          if(diff2<=0){el2.textContent='Iniciando!';clearInterval(window._countdownTimer);return;}
+          var h2=Math.floor(diff2/3600000);
+          var m2=Math.floor((diff2%3600000)/60000);
+          var d2=Math.floor(h2/24);
+          el2.textContent=d2>0?(d2+'d '+(h2%24)+'h '+m2+'min'):(h2+'h '+m2+'min');
+        },60000);
+      }
+    }
+
+
     html+='<div class="prox-card">';
     html+='<div class="prox-num">Rodada '+proxRodada.numero+'</div>';
     html+='<div style="margin-bottom:12px">';
@@ -1209,40 +1243,7 @@ async function _renderInicioInterno(el){
     }
     html+='</div>';
 
-    // -- COUNTDOWN PROXIMA RODADA
-    if(proxRodada&&proxRodada.data&&proxRodada.horario){
-      var dtProx=new Date(proxRodada.data+'T'+proxRodada.horario+':00');
-      var diffMs=dtProx-new Date();
-      if(diffMs>0){
-        var dH=Math.floor(diffMs/3600000);
-        var dM=Math.floor((diffMs%3600000)/60000);
-        var dD=Math.floor(dH/24);
-        var hR=dH%24;
-        var cs=dD>0?(dD+'d '+hR+'h '+dM+'min'):(dH+'h '+dM+'min');
-        html+='<div class="card" style="padding:14px;margin-bottom:12px;background:rgba(37,99,235,.06);border:1px solid rgba(37,99,235,.2)">';
-        html+='<div style="display:flex;align-items:center;justify-content:space-between">';
-        html+='<div>';
-        html+='<div style="font-size:11px;color:var(--texto3);margin-bottom:4px">Próxima rodada começa em</div>';
-        html+='<div id="countdown-rod" style="font-family:Barlow Condensed,sans-serif;font-size:34px;font-weight:900;color:var(--azul);line-height:1">'+cs+'</div>';
-        html+='<div style="font-size:11px;color:var(--texto3);margin-top:4px">📅 '+fmtData(proxRodada.data)+' • '+proxRodada.horario+'h</div>';
-        html+='</div>';
-        html+='<div style="font-size:38px">🎲</div>';
-        html+='</div></div>';
-        if(window._countdownTimer) clearInterval(window._countdownTimer);
-        window._countdownTimer=setInterval(function(){
-          var el2=document.getElementById('countdown-rod');
-          if(!el2){clearInterval(window._countdownTimer);return;}
-          var diff2=dtProx-new Date();
-          if(diff2<=0){el2.textContent='Iniciando!';clearInterval(window._countdownTimer);return;}
-          var h2=Math.floor(diff2/3600000);
-          var m2=Math.floor((diff2%3600000)/60000);
-          var d2=Math.floor(h2/24);
-          el2.textContent=d2>0?(d2+'d '+(h2%24)+'h '+m2+'min'):(h2+'h '+m2+'min');
-        },60000);
-      }
-    }
-
-    // -- CONFIRMADOS IN --
+        // -- CONFIRMADOS IN --
     if(confirmados.length>0){
       confirmados.sort(function(a,b){return a.nome.localeCompare(b.nome);});
       html+='<div style="background:linear-gradient(135deg,#78350F,#92400E);border-radius:var(--radius);padding:14px;margin-top:8px;border:1px solid #D97706">';
@@ -1608,6 +1609,7 @@ function renderRodadas(){
   var html='<h2 style="font-family:Barlow Condensed,sans-serif;font-size:24px;font-weight:900;margin-bottom:16px">📅 Rodadas do Semestre</h2>';
 
   var stats=USER&&!USER.admin?calcStats(USER.nome):null;
+  var rodsRealizadas=RODADAS.filter(function(r){return r.realizada;}).length;
 
   // TABELA PONTOS POR RODADA
   if(!USER.admin){
