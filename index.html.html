@@ -1145,64 +1145,6 @@ async function _renderInicioInterno(el){
     setTimeout(function(){renderEvoChart('ev-chart-main');},100);
   }
 
-  // -- TABELA PONTOS RODADA
-  if(rodsRealizadas>0){
-    var rodsReal=RODADAS.filter(function(r){return r.realizada;});
-    var jogAlfa=JOGADORES.filter(function(j){return j.inscrito;}).slice().sort(function(a,b){return a.nome.localeCompare(b.nome);});
-    if(jogAlfa.length===0) jogAlfa=JOGADORES.slice().sort(function(a,b){return a.nome.localeCompare(b.nome);});
-
-    // Calcula pontos e descarte de cada jogador
-    var dadosJog=jogAlfa.map(function(j){
-      var ptsPorRod=rodsReal.map(function(r){
-        var resR=RESULTADOS[r.id]||[];
-        var nj=resR.length;
-        var res=resR.find(function(x){return x.nome===j.nome;});
-        return res&&nj?getPts(nj,res.posicao):null;
-      });
-      var jogados=ptsPorRod.filter(function(x){return x!==null;});
-      var idxDesc=-1;
-      if(jogados.length>=2){
-        var minV=Math.min.apply(null,jogados);
-        idxDesc=ptsPorRod.findIndex(function(x){return x===minV;});
-      }
-      return{nome:j.nome,pts:ptsPorRod,idxDesc:idxDesc};
-    });
-
-    html+='<div class="card" style="padding:14px;margin-bottom:12px;overflow-x:auto">';
-    html+='<div style="font-size:13px;font-weight:700;color:var(--texto);margin-bottom:6px">📋 Pontuação por Rodada</div>';
-    html+='<div style="font-size:10px;color:var(--texto3);margin-bottom:8px;display:flex;gap:10px">';
-    html+='<span style="color:#16A34A;font-weight:700">Verde</span><span> = conta</span>';
-    html+='<span style="color:#DC2626;text-decoration:line-through;font-weight:700">Tachado</span><span> = descartado</span>';
-    html+='</div>';
-    html+='<table style="width:100%;border-collapse:collapse;font-size:12px">';
-    html+='<thead><tr style="background:var(--cinza2);border-bottom:2px solid var(--borda)">';
-    html+='<th style="padding:7px 8px;text-align:left;font-size:11px;color:var(--texto3)">Jogador</th>';
-    rodsReal.forEach(function(r){ html+='<th style="padding:7px 6px;text-align:center;font-size:11px;color:var(--texto3)">Rod.'+r.numero+'</th>'; });
-    html+='</tr></thead><tbody>';
-
-    dadosJog.forEach(function(j,ji){
-      var isMe=j.nome===USER.nome;
-      var bg=isMe?'rgba(37,99,235,.07)':ji%2===0?'var(--card)':'var(--cinza2)';
-      html+='<tr style="background:'+bg+'">';
-      html+='<td style="padding:6px 8px;border-bottom:1px solid var(--borda);font-size:11px;'+(isMe?'font-weight:700;color:var(--azul)':'')+'">'+j.nome+'</td>';
-      j.pts.forEach(function(p,ri){
-        var isDesc=ri===j.idxDesc;
-        var val=p!==null?p:'–';
-        if(p===null){
-          html+='<td style="padding:6px 4px;text-align:center;border-bottom:1px solid var(--borda);color:var(--texto3)">–</td>';
-        } else if(isDesc){
-          // descartado: tachado em vermelho, fundo vermelho suave
-          html+='<td style="padding:6px 4px;text-align:center;border-bottom:1px solid var(--borda);color:#DC2626;background:rgba(220,38,38,.06)">'+p+'</td>';
-        } else {
-          // conta: verde negrito, fundo verde suave
-          html+='<td style="padding:6px 4px;text-align:center;border-bottom:1px solid var(--borda);color:#16A34A;font-weight:700;background:rgba(22,163,74,.07)">'+p+'</td>';
-        }
-      });
-      html+='</tr>';
-    });
-    html+='</tbody></table></div>';
-  }
-
   // -- CARD INSCRIÇÃO SEMESTRAL -- separado, antes da próxima rodada
   var rodsRealizadasN=RODADAS.filter(function(r){return r.realizada;}).length;
   var jog=JOGADORES.find(function(j){return j.nome===USER.nome;});
@@ -1266,6 +1208,39 @@ async function _renderInicioInterno(el){
       }
     }
     html+='</div>';
+
+    // -- COUNTDOWN PROXIMA RODADA
+    if(proxRodada&&proxRodada.data&&proxRodada.horario){
+      var dtProx=new Date(proxRodada.data+'T'+proxRodada.horario+':00');
+      var diffMs=dtProx-new Date();
+      if(diffMs>0){
+        var dH=Math.floor(diffMs/3600000);
+        var dM=Math.floor((diffMs%3600000)/60000);
+        var dD=Math.floor(dH/24);
+        var hR=dH%24;
+        var cs=dD>0?(dD+'d '+hR+'h '+dM+'min'):(dH+'h '+dM+'min');
+        html+='<div class="card" style="padding:14px;margin-bottom:12px;background:rgba(37,99,235,.06);border:1px solid rgba(37,99,235,.2)">';
+        html+='<div style="display:flex;align-items:center;justify-content:space-between">';
+        html+='<div>';
+        html+='<div style="font-size:11px;color:var(--texto3);margin-bottom:4px">Próxima rodada começa em</div>';
+        html+='<div id="countdown-rod" style="font-family:Barlow Condensed,sans-serif;font-size:34px;font-weight:900;color:var(--azul);line-height:1">'+cs+'</div>';
+        html+='<div style="font-size:11px;color:var(--texto3);margin-top:4px">📅 '+fmtData(proxRodada.data)+' • '+proxRodada.horario+'h</div>';
+        html+='</div>';
+        html+='<div style="font-size:38px">🎲</div>';
+        html+='</div></div>';
+        if(window._countdownTimer) clearInterval(window._countdownTimer);
+        window._countdownTimer=setInterval(function(){
+          var el2=document.getElementById('countdown-rod');
+          if(!el2){clearInterval(window._countdownTimer);return;}
+          var diff2=dtProx-new Date();
+          if(diff2<=0){el2.textContent='Iniciando!';clearInterval(window._countdownTimer);return;}
+          var h2=Math.floor(diff2/3600000);
+          var m2=Math.floor((diff2%3600000)/60000);
+          var d2=Math.floor(h2/24);
+          el2.textContent=d2>0?(d2+'d '+(h2%24)+'h '+m2+'min'):(h2+'h '+m2+'min');
+        },60000);
+      }
+    }
 
     // -- CONFIRMADOS IN --
     if(confirmados.length>0){
@@ -1633,6 +1608,68 @@ function renderRodadas(){
   var html='<h2 style="font-family:Barlow Condensed,sans-serif;font-size:24px;font-weight:900;margin-bottom:16px">📅 Rodadas do Semestre</h2>';
 
   var stats=USER&&!USER.admin?calcStats(USER.nome):null;
+
+  // TABELA PONTOS POR RODADA
+  if(!USER.admin){
+    if(rodsRealizadas>0){
+      var rodsReal=RODADAS.filter(function(r){return r.realizada;});
+      var jogAlfa=JOGADORES.filter(function(j){return j.inscrito;}).slice().sort(function(a,b){return a.nome.localeCompare(b.nome);});
+      if(jogAlfa.length===0) jogAlfa=JOGADORES.slice().sort(function(a,b){return a.nome.localeCompare(b.nome);});
+
+      // Calcula pontos e descarte de cada jogador
+      var dadosJog=jogAlfa.map(function(j){
+        var ptsPorRod=rodsReal.map(function(r){
+          var resR=RESULTADOS[r.id]||[];
+          var nj=resR.length;
+          var res=resR.find(function(x){return x.nome===j.nome;});
+          return res&&nj?getPts(nj,res.posicao):0;
+        });
+        // descarte: menor valor (inclui zeros de ausência)
+        var idxDesc=-1;
+        var totalRods=ptsPorRod.filter(function(x){return x>0;}).length;
+        if(totalRods>=2){
+          var minV=Math.min.apply(null,ptsPorRod);
+          idxDesc=ptsPorRod.findIndex(function(x){return x===minV;});
+        }
+        return{nome:j.nome,pts:ptsPorRod,idxDesc:idxDesc};
+      });
+
+      html+='<div class="card" style="padding:14px;margin-bottom:12px;overflow-x:auto">';
+      html+='<div style="font-size:13px;font-weight:700;color:var(--texto);margin-bottom:6px">📋 Pontuação por Rodada</div>';
+      html+='<div style="font-size:10px;color:var(--texto3);margin-bottom:8px;display:flex;gap:10px">';
+      html+='<span style="color:#16A34A;font-weight:700">Verde</span><span> = conta</span>';
+      html+='<span style="color:#DC2626;font-weight:700">Tachado</span><span> = descartado</span>';
+      html+='</div>';
+      html+='<table style="width:100%;border-collapse:collapse;font-size:12px">';
+      html+='<thead><tr style="background:var(--cinza2);border-bottom:2px solid var(--borda)">';
+      html+='<th style="padding:7px 8px;text-align:left;font-size:11px;color:var(--texto3)">Jogador</th>';
+      rodsReal.forEach(function(r){ html+='<th style="padding:7px 6px;text-align:center;font-size:11px;color:var(--texto3)">Rod.'+r.numero+'</th>'; });
+      html+='</tr></thead><tbody>';
+
+      dadosJog.forEach(function(j,ji){
+        var isMe=j.nome===USER.nome;
+        var bg=isMe?'rgba(37,99,235,.07)':ji%2===0?'var(--card)':'var(--cinza2)';
+        html+='<tr style="background:'+bg+'">';
+        html+='<td style="padding:6px 8px;border-bottom:1px solid var(--borda);font-size:11px;'+(isMe?'font-weight:700;color:var(--azul)':'')+'">'+j.nome+'</td>';
+        j.pts.forEach(function(p,ri){
+          var isDesc=ri===j.idxDesc;
+          var val=p!==null?p:'–';
+          if(p===null){
+            html+='<td style="padding:6px 4px;text-align:center;border-bottom:1px solid var(--borda);color:var(--texto3)">–</td>';
+          } else if(isDesc){
+            // descartado: tachado em vermelho, fundo vermelho suave
+            html+='<td style="padding:6px 4px;text-align:center;border-bottom:1px solid var(--borda);color:#DC2626;background:rgba(220,38,38,.06)">'+p+'</td>';
+          } else {
+            // conta: verde negrito, fundo verde suave
+            html+='<td style="padding:6px 4px;text-align:center;border-bottom:1px solid var(--borda);color:#16A34A;font-weight:700;background:rgba(22,163,74,.07)">'+p+'</td>';
+          }
+        });
+        html+='</tr>';
+      });
+      html+='</tbody></table></div>';
+    }
+      }
+
   RODADAS.forEach(function(r){
     var pres=PRESENCAS[r.id]||[];
     var minhaP=pres.find(function(p){return p.nome===USER.nome;});
