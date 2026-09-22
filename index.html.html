@@ -1191,7 +1191,7 @@ async function _renderInicioInterno(el){
         html+='<div id="countdown-rod" style="font-family:Barlow Condensed,sans-serif;font-size:34px;font-weight:900;color:var(--azul);line-height:1">'+cs+'</div>';
         html+='<div style="font-size:11px;color:var(--texto3);margin-top:4px">📅 '+fmtData(proxRodada.data)+' • '+proxRodada.horario+'h</div>';
         html+='</div>';
-        html+='<div style="font-size:26px;font-family:Georgia,serif;font-weight:900;letter-spacing:2px"><span style="color:#DC2626">A♥</span><span style="color:#1e293b"> A♠</span></div>';
+        html+='<div style="font-size:13px;font-weight:700;color:var(--azul);text-align:center;letter-spacing:1px">POKER<br>NIGHT</div>';
         html+='</div></div>';
         if(window._countdownTimer) clearInterval(window._countdownTimer);
         window._countdownTimer=setInterval(function(){
@@ -1628,7 +1628,7 @@ function renderRodadas(){
         });
         // descarte: menor valor (inclui zeros de ausência)
         var idxDesc=-1;
-        var totalRods=ptsPorRod.filter(function(x){return x>0;}).length;
+        var totalRods=ptsPorRod.length;
         if(totalRods>=2){
           var minV=Math.min.apply(null,ptsPorRod);
           idxDesc=ptsPorRod.findIndex(function(x){return x===minV;});
