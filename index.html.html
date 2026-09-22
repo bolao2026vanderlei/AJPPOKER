@@ -1185,13 +1185,13 @@ async function _renderInicioInterno(el){
         var hR=dH%24;
         var cs=dD>0?(dD+'d '+hR+'h '+dM+'min'):(dH+'h '+dM+'min');
         html+='<div class="card" style="padding:14px;margin-bottom:12px;background:rgba(37,99,235,.06);border:1px solid rgba(37,99,235,.2)">';
-        html+='<div style="display:flex;align-items:center;justify-content:space-between">';
+        html+='<div style="display:flex;align-items:center;justify-content:center">';
         html+='<div>';
         html+='<div style="font-size:11px;color:var(--texto3);margin-bottom:4px">Próxima rodada começa em</div>';
         html+='<div id="countdown-rod" style="font-family:Barlow Condensed,sans-serif;font-size:34px;font-weight:900;color:var(--azul);line-height:1">'+cs+'</div>';
         html+='<div style="font-size:11px;color:var(--texto3);margin-top:4px">📅 '+fmtData(proxRodada.data)+' • '+proxRodada.horario+'h</div>';
         html+='</div>';
-        html+='<div style="font-size:13px;font-weight:700;color:var(--azul);text-align:center;letter-spacing:1px">POKER<br>NIGHT</div>';
+        html+='';
         html+='</div></div>';
         if(window._countdownTimer) clearInterval(window._countdownTimer);
         window._countdownTimer=setInterval(function(){
@@ -1640,7 +1640,7 @@ function renderRodadas(){
       html+='<div style="font-size:13px;font-weight:700;color:var(--texto);margin-bottom:6px">📋 Pontuação por Rodada</div>';
       html+='<div style="font-size:10px;color:var(--texto3);margin-bottom:8px;display:flex;gap:10px">';
       html+='<span style="color:#16A34A;font-weight:700">Verde</span><span> = conta</span>';
-      html+='<span style="color:#DC2626;font-weight:700">Tachado</span><span> = descartado</span>';
+      html+='<span style="color:#DC2626;font-weight:700">Vermelho</span><span> = descartado</span>';
       html+='</div>';
       html+='<table style="width:100%;border-collapse:collapse;font-size:12px">';
       html+='<thead><tr style="background:var(--cinza2);border-bottom:2px solid var(--borda)">';
