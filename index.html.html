@@ -3072,19 +3072,20 @@ function gerarTabelaAdminRodada(){
   html+='<th style="border:1px solid #334155;padding:6px 8px;font-size:11px;font-weight:700;color:#FFD700;background:#1e3a5f;white-space:nowrap;text-align:right">TOTAL</th>';
   html+='</tr></thead><tbody>';
 
-  var totFi=0,totRb=0,totKo=0,totAd=0,totSaldo=0;
+  var totFi=0,totRb=0,totKo=0,totKoPerd=0,totAd=0,totSaldo=0;
   res.forEach(function(r,ri){
     var fin=calcFinanceiro(r,ultimaRod);
     var pts=getPts(nj,r.posicao);
     var bg=ri%2===0?'#fff':'#f8fafc';
     var saldoCor=fin.saldo>=0?'#16A34A':'#DC2626';
-    totFi+=r.fichas||0;totRb+=r.rebuy||0;totKo+=r.knockout||0;totAd+=r.addon||0;totSaldo+=fin.saldo;
+    totFi+=r.fichas||0;totRb+=r.rebuy||0;totKo+=r.knockout||0;totKoPerd+=r.ko_perdidos||0;totAd+=r.addon||0;totSaldo+=fin.saldo;
     html+='<tr style="background:'+bg+'">';
     html+=td(r.posicao+'°','center');
     html+=td(r.nome,'left');
     html+=td(r.rebuy||0,'center');
     html+=td(r.addon||0,'center');
     html+=td(r.knockout||0,'center');
+    html+=td(r.ko_perdidos||0,'center');
     html+=td((r.fichas||0).toLocaleString('pt-BR'),'center');
     html+=td(pts,'center','#1D4ED8');
     html+=td(pos(fin.premio),'right','#16A34A');
