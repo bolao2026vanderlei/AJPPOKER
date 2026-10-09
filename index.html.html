@@ -988,7 +988,7 @@ async function _renderInicioInterno(el){
   var posExibKO=temDados&&stats.knockouts>0?posKO+'º':'--';
   var nJogExib=nJog>0?'de '+nJog:'';
 
-  html+='<div class="hero-card" style="background:linear-gradient(135deg,#16A34A,#15803D);border:none;padding:12px">';
+  html+='<div class="hero-card" style="background:linear-gradient(135deg,#16A34A,#15803D);border:none;padding:12px;cursor:pointer" onclick="ir(\'ranking\');renderRanking(\'descarte\')">';
   html+='<div class="hero-label" style="color:rgba(255,255,255,.7);font-size:10px">C/ Descarte</div>';
   html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:44px;font-weight:900;color:#fff;line-height:1">'+(rodsRealizadas>=2&&stats.totalSem>0?posSem+'º':'--')+'</div>';
   html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:20px;font-weight:700;color:rgba(255,255,255,.9)">'+stats.totalSem+' pts</div>';
@@ -999,21 +999,21 @@ async function _renderInicioInterno(el){
   }
   html+='</div>';
 
-  html+='<div class="hero-card" style="background:linear-gradient(135deg,#2563EB,#1D4ED8);border:none;padding:12px">';
+  html+='<div class="hero-card" style="background:linear-gradient(135deg,#2563EB,#1D4ED8);border:none;padding:12px;cursor:pointer" onclick="ir(\'ranking\');renderRanking(\'pontos\')">';
   html+='<div class="hero-label" style="color:rgba(255,255,255,.7);font-size:10px">Sem Descarte</div>';
   html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:44px;font-weight:900;color:#fff;line-height:1">'+posExibTotal+'</div>';
   html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:20px;font-weight:700;color:rgba(255,255,255,.9)">'+stats.total+' pts</div>';
   html+='<div style="font-size:9px;color:rgba(255,255,255,.5);margin-top:2px">'+nJogExib+'</div>';
   html+='</div>';
 
-  html+='<div class="hero-card" style="padding:12px">';
+  html+='<div class="hero-card" style="padding:12px;cursor:pointer" onclick="ir(\'ranking\');renderRanking(\'rebuy\')">';
   html+='<div class="hero-label" style="font-size:10px">&#x1F504; Rebuys</div>';
   html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:44px;font-weight:900;color:var(--roxo);line-height:1">'+posExibRebuy+'</div>';
   html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:20px;font-weight:700;color:var(--texto2)">'+stats.rebuys+' RBs</div>';
   html+='<div style="font-size:9px;color:var(--texto3);margin-top:2px">'+nJogExib+'</div>';
   html+='</div>';
 
-  html+='<div class="hero-card" style="padding:12px">';
+  html+='<div class="hero-card" style="padding:12px;cursor:pointer" onclick="ir(\'ranking\');renderRanking(\'knockout\')">';
   html+='<div class="hero-label" style="font-size:10px">&#x1F94A; Rodelas</div>';
   html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:44px;font-weight:900;color:#92400E;line-height:1">'+posExibKO+'</div>';
   html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:20px;font-weight:700;color:var(--texto2)">'+stats.knockouts+' KOs</div>';
@@ -1332,16 +1332,18 @@ async function marcarPagoJogador(rodadaId, nome, saldo){
   var acerto=ACERTOS[rodadaId]&&ACERTOS[rodadaId][nome];
   // Marca pago pelo jogador E confirmado automaticamente
   if(acerto){
-    await fetch('https://gpnrixcftsjzufnygisa.supabase.co/rest/v1/poker_acertos?id=eq.'+acerto.id,{
+    var r=await fetch('https://gpnrixcftsjzufnygisa.supabase.co/rest/v1/poker_acertos?id=eq.'+acerto.id,{
       method:'PATCH', headers:Object.assign({},RHDR,{'Prefer':'return=minimal'}),
       body:JSON.stringify({pago_jogador:true, confirmado_admin:true})
     });
+    if(!r.ok){ toast('Erro ao salvar','err'); return; }
   } else {
-    await dbInsertRest('poker_acertos',[{rodada_id:parseInt(rodadaId),nome:nome,saldo:parseFloat(saldo),pago_jogador:true,confirmado_admin:true}]);
+    var ins=await dbInsertRest('poker_acertos',[{rodada_id:parseInt(rodadaId),nome:nome,saldo:parseFloat(saldo),pago_jogador:true,confirmado_admin:true}]);
+    if(!ins){ toast('Erro ao registrar','err'); return; }
   }
-  toast('Pagamento confirmado!','ok');
+  toast('Pagamento confirmado! ✅','ok');
   await carregarTudo();
-  renderAcerto();
+  renderInicio();
 }
 
 async function confirmarPagamentoAdmin(rodadaId, nome, saldo, obs){
@@ -1796,10 +1798,65 @@ function renderRodadas(){
 }
 
 
+function calcRankAnterior(aba){
+  // Calcula ranking excluindo a última rodada realizada
+  var rodsReal=RODADAS.filter(function(r){return r.realizada;});
+  if(rodsReal.length<2) return null; // sem comparação possível
+  var ultimaRod=rodsReal[rodsReal.length-1];
+  // Stats sem a última rodada
+  var statsAnt=JOGADORES.filter(function(j){return j.inscrito;}).map(function(j){
+    var total=0,totalSem=0,rebuys=0,knockouts=0,koPerdidos=0,pts=[];
+    rodsReal.forEach(function(r){
+      if(r.id===ultimaRod.id) return; // exclui última
+      var resR=RESULTADOS[r.id]||[];
+      var nj=resR.length;
+      var res=resR.find(function(x){return x.nome===j.nome;});
+      if(res){
+        var p=getPts(nj,res.posicao);
+        total+=p; pts.push(p);
+        rebuys+=(res.rebuy||0);
+        knockouts+=(res.knockout||0);
+        koPerdidos+=(res.ko_perdidos||0);
+      }
+    });
+    // descarte
+    if(pts.length>1){ var mn=Math.min.apply(null,pts); totalSem=total-mn; } else { totalSem=total; }
+    return{nome:j.nome,total:total,totalSem:totalSem,rebuys:rebuys,knockouts:knockouts,koPerdidos:koPerdidos};
+  });
+  var sorted;
+  if(aba==='pontos') sorted=statsAnt.slice().sort(function(a,b){return b.total-a.total||b.totalSem-a.totalSem;});
+  else if(aba==='descarte') sorted=statsAnt.slice().sort(function(a,b){return b.totalSem-a.totalSem||b.total-a.total;});
+  else if(aba==='rebuy') sorted=statsAnt.slice().sort(function(a,b){return b.rebuys-a.rebuys||a.knockouts-b.knockouts;});
+  else sorted=statsAnt.slice().sort(function(a,b){return b.knockouts-a.knockouts||a.koPerdidos-b.koPerdidos;});
+  var posMap={};
+  var posAnt=0,antVal=-999999;
+  sorted.forEach(function(s,i){
+    var val=aba==='pontos'?s.total:aba==='descarte'?s.totalSem:aba==='rebuy'?s.rebuys:s.knockouts;
+    if(val!==antVal){posAnt=i+1;} antVal=val;
+    posMap[s.nome]=posAnt;
+  });
+  return posMap;
+}
+function setaRank(nomesOrdenados, rankAnt){
+  // rankAnt: {nome: posAnterior}
+  var ret={};
+  nomesOrdenados.forEach(function(nome,i){
+    var posAtual=i+1;
+    if(!rankAnt||rankAnt[nome]==null){ret[nome]=''; return;}
+    var posAnt=rankAnt[nome];
+    var diff=posAnt-posAtual; // positivo = subiu
+    if(diff===0) ret[nome]='';
+    else if(diff>0) ret[nome]='<span style="color:#16A34A;font-size:11px;font-weight:700;margin-left:4px">▲'+diff+'</span>';
+    else ret[nome]='<span style="color:#DC2626;font-size:11px;font-weight:700;margin-left:4px">▼'+Math.abs(diff)+'</span>';
+  });
+  return ret;
+}
+
 function renderRanking(aba){
   RANK_ABA=aba||RANK_ABA;
   var el=document.getElementById('s-ranking');
   var stats=calcStatsAll();
+  var rankAnt=calcRankAnterior(RANK_ABA);
   var onP=RANK_ABA==='pontos'?' on':'';
   var onD=RANK_ABA==='descarte'?' on':'';
   var onR=RANK_ABA==='rebuy'?' on':'';
@@ -1818,6 +1875,7 @@ function renderRanking(aba){
     sorted=stats.slice().sort(function(a,b){
       return b.total-a.total||b.totalSem-a.totalSem||a.rodadasJogadas-b.rodadasJogadas;
     });
+    var setas=setaRank(sorted.map(function(s){return s.nome;}),rankAnt);
     // Agrupa por pontuação para empates reais
     var posAtual=0, ptxAnt=-1, countEmp=0;
     sorted.forEach(function(s,i){
@@ -1829,7 +1887,7 @@ function renderRanking(aba){
       html+='<div class="rank-item'+(me?' me':'')+'">';
       html+='<div class="rank-pos '+pc+'">'+pos+'</div>';
       html+='<div class="rank-info">';
-      html+='<div class="rank-nome">'+s.nome+(me?' <span style="font-size:10px;color:var(--verde)">(você)</span>':'')+'</div>';
+      html+='<div class="rank-nome">'+s.nome+(setas[s.nome]||'')+(me?' <span style="font-size:10px;color:var(--verde)">(você)</span>':'')+'</div>';
       html+='</div>';
       html+='<div style="text-align:right">';
       html+='<div class="rank-pts">'+s.total+' pts</div>';
@@ -1845,6 +1903,7 @@ function renderRanking(aba){
       sorted=stats.slice().sort(function(a,b){
         return b.totalSem-a.totalSem||b.total-a.total;
       });
+      var setasD=setaRank(sorted.map(function(s){return s.nome;}),rankAnt);
       var posD=0,antD=-1;
       sorted.forEach(function(s,i){
         if(s.totalSem!==antD){posD=i+1;} antD=s.totalSem;
@@ -1867,7 +1926,7 @@ function renderRanking(aba){
         html+='<div class="rank-item'+(me?' me':'')+'">';
         html+='<div class="rank-pos '+(posD===1?'ouro':posD===2?'prata':posD===3?'bronze':'')+'">'+(s.totalSem>0?posD:'--')+'</div>';
         html+='<div class="rank-info">';
-        html+='<div class="rank-nome">'+s.nome+(me?' <span style="font-size:10px;color:var(--verde)">(você)</span>':'')+'</div>';
+        html+='<div class="rank-nome">'+s.nome+(setasD[s.nome]||'')+(me?' <span style="font-size:10px;color:var(--verde)">(você)</span>':'')+'</div>';
         if(rodDescartada){
           html+='<div style="font-size:10px;color:#DC2626;margin-top:2px">&#x2702; descartou '+rodDescartada+'</div>';
         }
@@ -1882,6 +1941,7 @@ function renderRanking(aba){
     sorted=stats.slice().sort(function(a,b){
       return b.rebuys-a.rebuys||a.knockouts-b.knockouts||a.rodadasJogadas-b.rodadasJogadas;
     });
+    var setasR=setaRank(sorted.map(function(s){return s.nome;}),rankAnt);
     var posRB=0,antRB=-1;
     sorted.forEach(function(s,i){
       if(s.rebuys!==antRB){posRB=i+1;} antRB=s.rebuys;
@@ -1889,7 +1949,7 @@ function renderRanking(aba){
       html+='<div class="rank-item'+(me?' me':'')+'">';
       html+='<div class="rank-pos '+(posRB===1?'ouro':posRB===2?'prata':posRB===3?'bronze':'')+'">'+posRB+'</div>';
       html+='<div class="rank-info">';
-      html+='<div class="rank-nome">'+s.nome+'</div>';
+      html+='<div class="rank-nome">'+s.nome+(setasR[s.nome]||'')+'</div>';
       html+='<div class="rank-sub">'+s.rodadasJogadas+' rodadas jogadas</div>';
       html+='</div>';
       html+='<div style="text-align:right">';
@@ -1901,6 +1961,7 @@ function renderRanking(aba){
     sorted=stats.slice().sort(function(a,b){
       return b.knockouts-a.knockouts||a.koPerdidos-b.koPerdidos||a.rodadasJogadas-b.rodadasJogadas;
     });
+    var setasK=setaRank(sorted.map(function(s){return s.nome;}),rankAnt);
     var posKO=0,antKO=-1,antKOPerd=-1;
     sorted.forEach(function(s,i){
       if(s.knockouts!==antKO||s.koPerdidos!==antKOPerd){posKO=i+1;} antKO=s.knockouts; antKOPerd=s.koPerdidos;
@@ -1908,7 +1969,7 @@ function renderRanking(aba){
       html+='<div class="rank-item'+(me?' me':'')+'">';
       html+='<div class="rank-pos '+(posKO===1?'ouro':posKO===2?'prata':posKO===3?'bronze':'')+'">'+posKO+'</div>';
       html+='<div class="rank-info">';
-      html+='<div class="rank-nome">'+s.nome+'</div>';
+      html+='<div class="rank-nome">'+s.nome+(setasK[s.nome]||'')+'</div>';
       html+='<div class="rank-sub">'+s.rodadasJogadas+' rodadas jogadas</div>';
       html+='</div>';
       html+='<div style="text-align:right">';
@@ -2259,6 +2320,7 @@ function copiarTexto(txt){
     toast('Copiado!','ok');
   });
 }
+function copiarPix(txt){ copiarTexto(txt); }
 
 
 function _gerarRelatorioOLD(){
