@@ -1744,7 +1744,10 @@ function renderRodadas(){
 
     // Botão + tabela expandível de resultados
     if(r.realizada){
-      html+='<button data-rid="'+r.id+'" onclick="toggleDetalhesRodada(this.dataset.rid)" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #BFDBFE;background:#DBEAFE;color:#1D4ED8;cursor:pointer;margin-top:4px">📊 Ver resultados</button>';
+      html+='<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">';
+      html+='<button data-rid="'+r.id+'" onclick="toggleDetalhesRodada(this.dataset.rid)" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #BFDBFE;background:#DBEAFE;color:#1D4ED8;cursor:pointer">📊 Ver resultados</button>';
+      html+='<button data-rid="'+r.id+'" onclick="mostrarTabelaCompleta(this.dataset.rid)" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #DDD6FE;background:#EDE9FE;color:#6D28D9;cursor:pointer">📋 Tabela Completa</button>';
+      html+='</div>';
       var todosResT=(RESULTADOS[r.id]||[]).slice().sort(function(a,b){return a.posicao-b.posicao;});
       var njtT=todosResT.length;
       html+='<div id="det-rod-'+r.id+'" style="display:none;margin-top:10px;overflow-x:auto">';
@@ -1959,7 +1962,7 @@ function renderRanking(aba){
     });
   } else {
     sorted=stats.slice().sort(function(a,b){
-      return b.knockouts-a.knockouts||a.koPerdidos-b.koPerdidos||a.rodadasJogadas-b.rodadasJogadas;
+      return b.knockouts-a.knockouts||a.koPerdidos-b.koPerdidos||b.totalSem-a.totalSem||a.rodadasJogadas-b.rodadasJogadas;
     });
     var setasK=setaRank(sorted.map(function(s){return s.nome;}),rankAnt);
     var posKO=0,antKO=-1,antKOPerd=-1;
@@ -3082,6 +3085,127 @@ function renderAcertoAdmin(){
 async function adminConfirmarPgto(rodId, nome, saldo){
   await confirmarPagamentoAdmin(rodId, nome, parseFloat(saldo), '');
   renderAcertoAdmin();
+}
+
+function mostrarTabelaCompleta(rodadaId){
+  var rod=RODADAS.find(function(r){return r.id===parseInt(rodadaId);});
+  if(!rod){toast('Rodada não encontrada','err');return;}
+  var res=(RESULTADOS[rod.id]||[]).slice().sort(function(a,b){return a.posicao-b.posicao;});
+  if(!res.length){toast('Sem resultados','err');return;}
+  var nj=res.length;
+  var isRod1=rod.numero===1;
+
+  var thC='border:1px solid #334155;padding:6px 8px;font-size:11px;font-weight:700;color:#FFD700;background:#0F172A;white-space:nowrap;text-align:center';
+  var thR='border:1px solid #334155;padding:6px 8px;font-size:11px;font-weight:700;color:#FFD700;background:#0F172A;white-space:nowrap;text-align:right';
+  var thL='border:1px solid #334155;padding:6px 8px;font-size:11px;font-weight:700;color:#FFD700;background:#0F172A;white-space:nowrap;text-align:left';
+
+  function tdc(v,al,cor){
+    var s='border:1px solid #e5e7eb;padding:5px 8px;font-size:11px;white-space:nowrap;text-align:'+(al||'center');
+    if(cor) s+=';color:'+cor+';font-weight:700';
+    return '<td style="'+s+'">'+v+'</td>';
+  }
+  function neg(v){return v>0?'- R$ '+v.toFixed(2).replace('.',','):'--';}
+  function posp(v){return v>0?'+ R$ '+v.toFixed(2).replace('.',','):'--';}
+
+  var html='<div style="font-size:13px;font-weight:700;margin-bottom:8px;color:var(--texto)">Rodada '+rod.numero+' — '+fmtData(rod.data)+' — '+nj+' jogadores</div>';
+  html+='<div style="overflow-x:auto;margin-bottom:10px">';
+  html+='<table style="border-collapse:collapse;background:#fff">';
+  html+='<thead><tr>';
+  html+='<th style="'+thC+'">#</th>';
+  html+='<th style="'+thL+'">Jogador</th>';
+  html+='<th style="'+thC+'">RB</th>';
+  html+='<th style="'+thC+'">AD</th>';
+  html+='<th style="'+thC+'">KO+</th>';
+  html+='<th style="'+thC+'">KO-</th>';
+  html+='<th style="'+thC+'">Fichas</th>';
+  html+='<th style="'+thC+'">Pts</th>';
+  html+='<th style="'+thR+'">Fichas R$</th>';
+  html+='<th style="'+thR+'">Buy-in</th>';
+  html+='<th style="'+thR+'">Rebuy R$</th>';
+  html+='<th style="'+thR+'">Addon R$</th>';
+  html+='<th style="'+thR+'">Rateio</th>';
+  html+='<th style="'+thR+'">Cred.Rateio</th>';
+  if(isRod1){
+    html+='<th style="'+thR+'">Inscr.</th>';
+    html+='<th style="'+thR+'">CredAnt.</th>';
+  }
+  html+='<th style="border:1px solid #334155;padding:6px 8px;font-size:11px;font-weight:700;color:#FFD700;background:#1e3a5f;white-space:nowrap;text-align:right">TOTAL</th>';
+  html+='</tr></thead><tbody>';
+
+  var totRb=0,totAd=0,totKo=0,totKoPerd=0,totFi=0,totSaldo=0;
+  res.forEach(function(r,ri){
+    var fin=calcFinanceiro(r,rod);
+    var pts=getPts(nj,r.posicao);
+    var bg=ri%2===0?'#fff':'#f8fafc';
+    var saldoCor=fin.saldo>=0?'#16A34A':'#DC2626';
+    totRb+=r.rebuy||0;totAd+=r.addon||0;totKo+=r.knockout||0;totKoPerd+=r.ko_perdidos||0;totFi+=r.fichas||0;totSaldo+=fin.saldo;
+    html+='<tr style="background:'+bg+'">';
+    html+=tdc(r.posicao+'°','center');
+    html+=tdc(r.nome,'left');
+    html+=tdc(r.rebuy||0,'center');
+    html+=tdc(r.addon||0,'center');
+    html+=tdc(r.knockout||0,'center');
+    html+=tdc(r.ko_perdidos||0,'center');
+    html+=tdc((r.fichas||0).toLocaleString('pt-BR'),'center');
+    html+=tdc(pts,'center','#1D4ED8');
+    html+=tdc(posp(fin.premio),'right','#16A34A');
+    html+=tdc('- R$ 15,00','right','#DC2626');
+    html+=tdc(neg(fin.custoRebuy),'right',fin.custoRebuy>0?'#DC2626':'#9ca3af');
+    html+=tdc(neg(fin.custoAddon),'right',fin.custoAddon>0?'#DC2626':'#9ca3af');
+    html+=tdc(neg(fin.rateio_ind),'right',fin.rateio_ind>0?'#DC2626':'#9ca3af');
+    html+=tdc(posp(fin.credito),'right',fin.credito>0?'#16A34A':'#9ca3af');
+    if(isRod1){
+      html+=tdc(neg(fin.inscricao),'right',fin.inscricao>0?'#DC2626':'#9ca3af');
+      html+=tdc(posp(fin.cred_anterior),'right',fin.cred_anterior>0?'#16A34A':'#9ca3af');
+    }
+    html+=tdc((fin.saldo>=0?'+ ':'- ')+'R$ '+Math.abs(fin.saldo).toFixed(2).replace('.',','),'right',saldoCor);
+    html+='</tr>';
+  });
+
+  var totCor=totSaldo>=0?'#16A34A':'#DC2626';
+  var totBuyin=res.length*15;
+  var totRebuyR=totRb*20;
+  var totAddonR=totAd*30;
+  var totFichasR=res.reduce(function(s,r){return s+(calcFinanceiro(r,rod).premio||0);},0);
+  var totRateio=res.reduce(function(s,r){return s+(parseFloat(r.rateio_ind)||0);},0);
+  var totCred=res.reduce(function(s,r){return s+(parseFloat(r.credito)||0);},0);
+  var totInscr=isRod1?res.reduce(function(s,r){return s+(parseFloat(r.inscricao)||0);},0):0;
+  var totCredAnt=isRod1?res.reduce(function(s,r){return s+(parseFloat(r.cred_anterior)||0);},0):0;
+  var tdT='border:1px solid #334155;padding:5px 8px;font-size:11px;font-weight:700;color:#e2e8f0;text-align:';
+  html+='<tr style="background:#0F172A">';
+  html+='<td style="'+tdT+'left" colspan="2">TOTAIS</td>';
+  html+='<td style="'+tdT+'center">'+totRb+'</td>';
+  html+='<td style="'+tdT+'center">'+totAd+'</td>';
+  html+='<td style="'+tdT+'center">'+totKo+'</td>';
+  html+='<td style="'+tdT+'center">'+totKoPerd+'</td>';
+  html+='<td style="'+tdT+'center">'+totFi.toLocaleString('pt-BR')+'</td>';
+  html+='<td style="'+tdT+'center">--</td>';
+  html+='<td style="'+tdT+'right;color:#4ade80">+ R$ '+totFichasR.toFixed(2).replace('.',',')+'</td>';
+  html+='<td style="'+tdT+'right;color:#f87171">- R$ '+totBuyin.toFixed(2).replace('.',',')+'</td>';
+  html+='<td style="'+tdT+'right;color:'+(totRebuyR>0?'#f87171':'#94a3b8')+'">'+( totRebuyR>0?'- R$ '+totRebuyR.toFixed(2).replace('.',','):'--' )+'</td>';
+  html+='<td style="'+tdT+'right;color:'+(totAddonR>0?'#f87171':'#94a3b8')+'">'+( totAddonR>0?'- R$ '+totAddonR.toFixed(2).replace('.',','):'--' )+'</td>';
+  html+='<td style="'+tdT+'right;color:'+(totRateio>0?'#f87171':'#94a3b8')+'">'+( totRateio>0?'- R$ '+totRateio.toFixed(2).replace('.',','):'--' )+'</td>';
+  html+='<td style="'+tdT+'right;color:'+(totCred>0?'#4ade80':'#94a3b8')+'">'+( totCred>0?'+ R$ '+totCred.toFixed(2).replace('.',','):'--' )+'</td>';
+  if(isRod1){
+    html+='<td style="'+tdT+'right;color:'+(totInscr>0?'#f87171':'#94a3b8')+'">'+( totInscr>0?'- R$ '+totInscr.toFixed(2).replace('.',','):'--' )+'</td>';
+    html+='<td style="'+tdT+'right;color:'+(totCredAnt>0?'#4ade80':'#94a3b8')+'">'+( totCredAnt>0?'+ R$ '+totCredAnt.toFixed(2).replace('.',','):'--' )+'</td>';
+  }
+  var totFinal=totSaldo;
+  html+='<td style="border:1px solid #334155;padding:5px 8px;font-size:12px;font-weight:900;color:'+(totFinal>=0?'#4ade80':'#f87171')+';text-align:right">'+(totFinal>=0?'+ ':'- ')+'R$ '+Math.abs(totFinal).toFixed(2).replace('.',',')+'</td>';
+  html+='</tr>';
+  html+='</tbody></table></div>';
+
+  // Exibe em modal/popup
+  var overlay=document.createElement('div');
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9000;display:flex;align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto';
+  var box=document.createElement('div');
+  box.style.cssText='background:var(--fundo2);border-radius:14px;padding:18px;max-width:100%;width:100%;margin:auto;box-shadow:0 20px 60px rgba(0,0,0,.5);position:relative';
+  var closeBtn='<button onclick="this.closest(\'[data-overlay]\').remove()" style="position:absolute;top:10px;right:12px;background:none;border:none;font-size:20px;cursor:pointer;color:var(--texto3);line-height:1">✕</button>';
+  box.innerHTML=closeBtn+html;
+  overlay.setAttribute('data-overlay','1');
+  overlay.appendChild(box);
+  overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.remove();});
+  document.body.appendChild(overlay);
 }
 
 function gerarTabelaAdminRodada(){
