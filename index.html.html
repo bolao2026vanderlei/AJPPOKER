@@ -3034,6 +3034,49 @@ async function cancelarResultados(){
   renderAdmin();
 }
 
+function gerarTextoAcertoJogador(r, rod, fin){
+  var saldo=fin.saldo;
+  var positivo=saldo>=0;
+  var nj=(RESULTADOS[rod.id]||[]).length;
+  var pts=getPts(nj,r.posicao);
+  var linhas=[];
+  linhas.push('🃏 *AJP Poker — Rodada '+rod.numero+'* ('+fmtData(rod.data)+')');
+  linhas.push('');
+  linhas.push('Olá, *'+r.nome+'*! Segue seu extrato:');
+  linhas.push('');
+  linhas.push('📍 '+r.posicao+'° lugar · '+pts+' pts');
+  linhas.push('');
+  linhas.push('💰 *Extrato financeiro:*');
+  linhas.push('Fichas: '+(r.fichas||0)+' → + R$ '+fin.premio.toFixed(2).replace('.',','));
+  linhas.push('Buy-in: - R$ 15,00');
+  if(fin.custoRebuy>0) linhas.push('Rebuy ('+r.rebuy+'×): - R$ '+fin.custoRebuy.toFixed(2).replace('.',','));
+  if(fin.custoAddon>0) linhas.push('Addon ('+r.addon+'×): - R$ '+fin.custoAddon.toFixed(2).replace('.',','));
+  if(fin.rateio_ind>0) linhas.push('Rateio intervalo: - R$ '+fin.rateio_ind.toFixed(2).replace('.',','));
+  if(fin.inscricao>0) linhas.push('Inscrição torneio: - R$ '+fin.inscricao.toFixed(2).replace('.',','));
+  if(fin.credito>0) linhas.push('Crédito rateio: + R$ '+fin.credito.toFixed(2).replace('.',','));
+  if(fin.cred_anterior>0) linhas.push('Crédito anterior: + R$ '+fin.cred_anterior.toFixed(2).replace('.',','));
+  linhas.push('');
+  linhas.push('*'+(positivo?'✅ Você tem a RECEBER: + R$ ':'⚠️ Você tem a PAGAR: - R$ ')+Math.abs(saldo).toFixed(2).replace('.',',')+'*');
+  if(!positivo){
+    linhas.push('');
+    linhas.push('💳 PIX: *02015855963* (Juliano Sakamoto)');
+    linhas.push('Após pagar, avise pelo WhatsApp! 🙏');
+  } else {
+    linhas.push('');
+    linhas.push('Aguarde o pagamento do organizador! 💸');
+  }
+  return linhas.join('\n');
+}
+
+function enviarWhatsAppAcerto(nome, rod, fin){
+  var txt=gerarTextoAcertoJogador({nome:nome,posicao:0,fichas:0,rebuy:0,addon:0,knockout:0,ko_perdidos:0},rod,fin);
+  // tenta pegar o resultado real
+  var res=(RESULTADOS[rod.id]||[]).find(function(x){return x.nome===nome;});
+  if(res) txt=gerarTextoAcertoJogador(res,rod,fin);
+  var enc=encodeURIComponent(txt);
+  window.open('https://wa.me/?text='+enc,'_blank');
+}
+
 function renderAcertoAdmin(){
   var rodId=document.getElementById('acerto-rod-sel').value;
   var el=document.getElementById('painel-acerto');
@@ -3041,7 +3084,22 @@ function renderAcertoAdmin(){
   var res=RESULTADOS[parseInt(rodId)]||[];
   var rod=RODADAS.find(function(r){return r.id===parseInt(rodId);});
   if(!res.length){el.innerHTML='<div style="color:var(--texto3);font-size:13px">Nenhum resultado.</div>';return}
-  var html='';
+
+  // Campo para enviar para não-cadastrado
+  var htmlTop='<div style="background:var(--cinza2);border-radius:10px;padding:12px;margin-bottom:14px;border:1px solid var(--borda)">';
+  htmlTop+='<div style="font-size:11px;font-weight:700;color:var(--texto3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">📲 Enviar extrato para pessoa sem cadastro</div>';
+  htmlTop+='<div style="display:flex;gap:6px;flex-wrap:wrap">';
+  htmlTop+='<select id="acerto-nao-cad-nome" class="ainput" style="flex:1;min-width:120px;padding:7px;font-size:12px">';
+  htmlTop+='<option value="">Selecione o jogador...</option>';
+  res.slice().sort(function(a,b){return a.posicao-b.posicao;}).forEach(function(r){
+    var fin=calcFinanceiro(r,rod);
+    htmlTop+='<option value="'+r.nome+'">'+r.posicao+'° '+r.nome+' ('+(fin.saldo>=0?'+':'')+fmtMoeda(fin.saldo)+')</option>';
+  });
+  htmlTop+='</select>';
+  htmlTop+='<button onclick="(function(){var nm=document.getElementById(\'acerto-nao-cad-nome\').value;if(!nm){toast(\'Selecione um jogador\',\'err\');return;}var res2=(RESULTADOS[parseInt(\''+rodId+'\')]||[]).find(function(x){return x.nome===nm;});if(!res2){toast(\'Não encontrado\',\'err\');return;}var fin2=calcFinanceiro(res2,RODADAS.find(function(r){return r.id===parseInt(\''+rodId+'\');}));var txt=gerarTextoAcertoJogador(res2,RODADAS.find(function(r){return r.id===parseInt(\''+rodId+'\');}),fin2);window.open(\'https://wa.me/?text=\'+encodeURIComponent(txt),\'_blank\');})()" style="padding:7px 14px;border-radius:8px;border:none;background:#25D366;color:#fff;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">📲 WhatsApp</button>';
+  htmlTop+='</div></div>';
+
+  var html=htmlTop;
   res.slice().sort(function(a,b){return a.posicao-b.posicao;}).forEach(function(r){
     var fin=calcFinanceiro(r,rod);
     var saldo=fin.saldo;
@@ -3049,35 +3107,65 @@ function renderAcertoAdmin(){
     var pagoJ=acerto&&acerto.pago_jogador;
     var pagoA=acerto&&acerto.confirmado_admin;
     var positivo=saldo>=0;
-    var cor=positivo?'var(--verde)':'var(--vermelho)';
+    var bgCard=positivo?'linear-gradient(135deg,#14532D,#052e16)':'linear-gradient(135deg,#450a0a,#1a0505)';
+    var corBorda=positivo?'rgba(74,222,128,.3)':'rgba(248,113,113,.3)';
+    var corLabel=positivo?'#4ade80':'#f87171';
     var jogObj=JOGADORES.find(function(j){return j.nome===r.nome;});
     var pixJog=jogObj&&jogObj.pix?jogObj.pix:null;
-    html+='<div style="padding:10px 0;border-bottom:1px solid var(--borda)">';
-    html+='<div style="display:flex;align-items:center;gap:8px">';
-    html+='<div style="flex:1">';
-    html+='<div style="font-size:13px;font-weight:700">'+r.posicao+'o '+r.nome+'</div>';
-    html+='<div style="font-size:14px;font-weight:900;color:'+cor+'">'+(positivo?'+ ':'- ')+'R$ '+Math.abs(saldo).toFixed(2).replace('.',',')+'</div>';
-    if(pagoJ||pagoA) html+='<div style="font-size:11px;color:var(--verde);margin-top:2px">Pago</div>';
+    var nj=(RESULTADOS[parseInt(rodId)]||[]).length;
+    var pts=getPts(nj,r.posicao);
+
+    html+='<div style="background:'+bgCard+';border-radius:12px;padding:14px;margin-bottom:10px;border:1px solid '+corBorda+'">';
+
+    // Cabeçalho: nome + status
+    html+='<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px">';
+    html+='<div>';
+    html+='<div style="font-size:14px;font-weight:700;color:#fff">'+r.posicao+'° '+r.nome+'</div>';
+    html+='<div style="font-size:11px;color:rgba(255,255,255,.5);margin-top:1px">'+pts+' pts</div>';
     html+='</div>';
-    html+='<div style="text-align:right;flex-shrink:0">';
+    html+='<div style="text-align:right">';
+    html+='<div style="font-size:22px;font-weight:900;color:'+corLabel+'">'+(positivo?'+ ':'- ')+'R$ '+Math.abs(saldo).toFixed(2).replace('.',',')+'</div>';
+    if(pagoA) html+='<div style="font-size:11px;color:#4ade80;font-weight:700">✅ Confirmado</div>';
+    else if(pagoJ&&!positivo) html+='<div style="font-size:11px;color:#fde047;font-weight:700">⏳ Jogador pagou</div>';
+    html+='</div></div>';
+
+    // Extrato detalhado
+    html+='<div style="background:rgba(0,0,0,.3);border-radius:8px;padding:10px;font-size:11px;color:rgba(255,255,255,.8);line-height:2">';
+    html+='<div style="display:flex;justify-content:space-between"><span>Fichas ('+( r.fichas||0 )+')</span><span style="color:#4ade80">+ R$ '+fin.premio.toFixed(2).replace('.',',')+'</span></div>';
+    html+='<div style="display:flex;justify-content:space-between"><span>Buy-in</span><span style="color:#f87171">- R$ 15,00</span></div>';
+    if(fin.custoRebuy>0) html+='<div style="display:flex;justify-content:space-between"><span>Rebuy ('+r.rebuy+'×)</span><span style="color:#f87171">- R$ '+fin.custoRebuy.toFixed(2).replace('.',',')+'</span></div>';
+    if(fin.custoAddon>0) html+='<div style="display:flex;justify-content:space-between"><span>Addon ('+r.addon+'×)</span><span style="color:#f87171">- R$ '+fin.custoAddon.toFixed(2).replace('.',',')+'</span></div>';
+    if(fin.rateio_ind>0) html+='<div style="display:flex;justify-content:space-between"><span>Rateio</span><span style="color:#f87171">- R$ '+fin.rateio_ind.toFixed(2).replace('.',',')+'</span></div>';
+    if(fin.inscricao>0) html+='<div style="display:flex;justify-content:space-between"><span>Inscrição</span><span style="color:#f87171">- R$ '+fin.inscricao.toFixed(2).replace('.',',')+'</span></div>';
+    if(fin.credito>0) html+='<div style="display:flex;justify-content:space-between"><span>Crédito rateio</span><span style="color:#4ade80">+ R$ '+fin.credito.toFixed(2).replace('.',',')+'</span></div>';
+    if(fin.cred_anterior>0) html+='<div style="display:flex;justify-content:space-between"><span>Crédito anterior</span><span style="color:#4ade80">+ R$ '+fin.cred_anterior.toFixed(2).replace('.',',')+'</span></div>';
+    html+='<div style="border-top:1px solid rgba(255,255,255,.2);margin-top:4px;padding-top:4px;display:flex;justify-content:space-between;font-weight:700;font-size:12px">';
+    html+='<span>Total</span><span style="color:'+corLabel+'">'+(positivo?'+ ':'- ')+'R$ '+Math.abs(saldo).toFixed(2).replace('.',',')+'</span></div>';
+    html+='</div>';
+
+    // Rodapé: ações
+    html+='<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">';
+
+    // Botão confirmar/pix
     if(pagoA){
-      html+='<span style="font-size:18px;color:var(--verde)">OK</span>';
-    } else if(saldo>=0){
+      html+='<span style="font-size:12px;color:#4ade80;font-weight:700;padding:6px 0">✅ Acerto OK</span>';
+    } else if(positivo){
       if(pixJog){
-        html+='<div style="font-size:9px;color:var(--texto3)">PIX do jogador:</div>';
-        html+='<div style="font-size:11px;font-weight:700;color:var(--verde);max-width:120px;word-break:break-all">'+pixJog+'</div>';
-        html+='<button data-pix="'+pixJog+'" onclick="copiarPix(this.dataset.pix)" style="font-size:10px;padding:3px 8px;border-radius:6px;border:1px solid var(--verde);background:var(--verde-light);color:var(--verde-dark);cursor:pointer;margin-top:4px;font-weight:700">Copiar PIX</button>';
+        html+='<button data-pix="'+pixJog+'" onclick="copiarPix(this.dataset.pix)" style="font-size:11px;padding:6px 10px;border-radius:8px;border:1px solid var(--verde);background:rgba(22,163,74,.15);color:#4ade80;cursor:pointer;font-weight:700">📋 PIX: '+pixJog+'</button>';
       } else {
-        html+='<div style="font-size:10px;color:var(--texto3)">PIX nao cadastrado</div>';
+        html+='<span style="font-size:11px;color:rgba(255,255,255,.4)">PIX não cadastrado</span>';
       }
-    } else if(!pagoJ){
-      html+='<div style="font-size:10px;color:var(--texto3);margin-bottom:4px">PIX Juliano:</div>';
-      html+='<div style="font-size:11px;font-weight:700;color:#FCD34D">02015855963</div>';
-      html+='<button data-pix="02015855963" onclick="copiarPix(this.dataset.pix)" style="font-size:10px;padding:3px 8px;border-radius:6px;border:1px solid var(--amarelo);background:rgba(252,211,77,.1);color:#FCD34D;cursor:pointer;margin-top:4px;font-weight:700">Copiar</button>';
-    } else {
-      html+='<span style="font-size:18px;color:var(--verde)">OK</span>';
+      html+='<button data-rid="'+rodId+'" data-nome="'+r.nome+'" data-saldo="'+saldo+'" onclick="adminConfirmarPgto(parseInt(this.dataset.rid),this.dataset.nome,parseFloat(this.dataset.saldo))" style="font-size:11px;padding:6px 10px;border-radius:8px;border:none;background:#16A34A;color:#fff;cursor:pointer;font-weight:700">✅ Confirmar pago</button>';
+    } else if(!pagoA){
+      html+='<button data-rid="'+rodId+'" data-nome="'+r.nome+'" data-saldo="'+saldo+'" onclick="adminConfirmarPgto(parseInt(this.dataset.rid),this.dataset.nome,parseFloat(this.dataset.saldo))" style="font-size:11px;padding:6px 10px;border-radius:8px;border:none;background:#16A34A;color:#fff;cursor:pointer;font-weight:700">✅ Confirmar recebido</button>';
     }
-    html+='</div></div></div>';
+
+    // Botão WhatsApp para enviar extrato
+    var jogCad=jogObj&&jogObj.telefone?jogObj.telefone:null;
+    var rNome=r.nome, rRodId=rodId;
+    html+='<button data-nome="'+rNome+'" data-rid="'+rRodId+'" onclick="(function(){var nm=this.dataset.nome;var rid=this.dataset.rid;var res2=(RESULTADOS[parseInt(rid)]||[]).find(function(x){return x.nome===nm;});if(!res2)return;var rod2=RODADAS.find(function(r){return r.id===parseInt(rid);});var fin2=calcFinanceiro(res2,rod2);var txt=gerarTextoAcertoJogador(res2,rod2,fin2);window.open(\'https://wa.me/?text=\'+encodeURIComponent(txt),\'_blank\');}).call(this)" style="font-size:11px;padding:6px 10px;border-radius:8px;border:none;background:#25D366;color:#fff;cursor:pointer;font-weight:700;margin-left:auto">📲 WhatsApp</button>';
+
+    html+='</div></div>';
   });
   el.innerHTML=html;
 }
