@@ -1572,10 +1572,10 @@ function calcStats(nome){
   var total=pontosPorRodada.reduce(function(a,b){return a+b},0);
   // Descarta a pior campanha (1 pior resultado)
   var ordenado=pontosPorRodada.slice().sort(function(a,b){return a-b});
-  var totalSem=pontosPorRodada.length>1
+  var totalSem=pontosPorRodada.length>1&&ordenado[0]>0
     ?total-ordenado[0]
     :total;
-  var piorPts=pontosPorRodada.length>1?ordenado[0]:0;
+  var piorPts=pontosPorRodada.length>1&&ordenado[0]>0?ordenado[0]:0;
   return{total:total,totalSem:totalSem,piorPts:piorPts,rebuys:rebuys,addons:addons,
     knockouts:knockouts,koPerdidos:koPerdidos,rodadasJogadas:rodadasJogadas,rank:0};
 }
