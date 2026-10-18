@@ -992,7 +992,7 @@ async function _renderInicioInterno(el){
   html+='<div class="hero-label" style="color:rgba(255,255,255,.7);font-size:10px">C/ Descarte</div>';
   html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:44px;font-weight:900;color:#fff;line-height:1">'+(rodsRealizadas>=2&&stats.totalSem>0?posSem+'º':'--')+'</div>';
   html+='<div style="font-family:Barlow Condensed,sans-serif;font-size:20px;font-weight:700;color:rgba(255,255,255,.9)">'+stats.totalSem+' pts</div>';
-  if(rodsRealizadas>=2&&stats.piorPts>0){
+  if(rodsRealizadas>=2&&stats.piorPts!==null){
     html+='<div style="font-size:9px;color:rgba(255,255,255,.5);margin-top:2px">-'+stats.piorPts+'pts descartado</div>';
   } else if(rodsRealizadas<2){
     html+='<div style="font-size:9px;color:rgba(255,255,255,.5);margin-top:2px">a partir da 2ª rodada</div>';
@@ -1553,8 +1553,10 @@ async function confirmarPresenca(rodadaId, status){
 function calcStats(nome){
   var pontosPorRodada=[];
   var rebuys=0,addons=0,knockouts=0,koPerdidos=0,rodadasJogadas=0;
+  var totalRodadasRealizadas=0;
   RODADAS.forEach(function(r){
     if(!r.realizada) return;
+    totalRodadasRealizadas++;
     var res=RESULTADOS[r.id]?RESULTADOS[r.id].find(function(x){return x.nome===nome}):null;
     if(res){
       rodadasJogadas++;
@@ -1566,18 +1568,20 @@ function calcStats(nome){
       knockouts+=(res.knockout||0);
       koPerdidos+=(res.ko_perdidos||0);
     } else {
-      // Não participou -- não conta pontos (0 implícito mas não descarta)
+      // Não participou -- conta como 0 pts e é elegível para descarte
+      pontosPorRodada.push(0);
     }
   });
   var total=pontosPorRodada.reduce(function(a,b){return a+b},0);
-  // Descarta a pior campanha (1 pior resultado)
+  // Descarta a pior campanha (1 pior resultado) a partir da 2ª rodada realizada
   var ordenado=pontosPorRodada.slice().sort(function(a,b){return a-b});
-  var totalSem=pontosPorRodada.length>1&&ordenado[0]>0
+  var totalSem=totalRodadasRealizadas>1
     ?total-ordenado[0]
     :total;
-  var piorPts=pontosPorRodada.length>1&&ordenado[0]>0?ordenado[0]:0;
+  var piorPts=totalRodadasRealizadas>1?ordenado[0]:null;
   return{total:total,totalSem:totalSem,piorPts:piorPts,rebuys:rebuys,addons:addons,
-    knockouts:knockouts,koPerdidos:koPerdidos,rodadasJogadas:rodadasJogadas,rank:0};
+    knockouts:knockouts,koPerdidos:koPerdidos,rodadasJogadas:rodadasJogadas,
+    totalRodadasRealizadas:totalRodadasRealizadas,rank:0};
 }
 
 function calcStatsAll(){
@@ -1711,7 +1715,7 @@ function renderRodadas(){
       var nj=res.length;
       var pts=getPts(nj,meuRes.posicao);
       var fin=calcFinanceiro(meuRes,r);
-      var isPior=stats&&stats.piorPts>0&&pts===stats.piorPts&&stats.rodadasJogadas>1;
+      var isPior=stats&&stats.piorPts!==null&&pts===stats.piorPts&&stats.totalRodadasRealizadas>1;
       html+='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">';
       html+='<span style="background:#DBEAFE;color:#1D4ED8;font-size:12px;font-weight:700;padding:4px 10px;border-radius:20px">'+meuRes.posicao+'º lugar</span>';
       html+='<span style="background:'+(isPior?'#FEE2E2':'#DCFCE7')+';color:'+(isPior?'#DC2626':'#16A34A')+';font-size:12px;font-weight:700;padding:4px 10px;border-radius:20px">'+pts+' pts'+(isPior?' ✕':'')+'</span>';
@@ -1911,20 +1915,19 @@ function renderRanking(aba){
       sorted.forEach(function(s,i){
         if(s.totalSem!==antD){posD=i+1;} antD=s.totalSem;
         var me=s.nome===USER.nome;
-        // Descobre qual rodada foi descartada
+        // Descobre qual rodada foi descartada (inclui ausências como 0pts)
         var rodDescartada=null;
-        if(s.piorPts>0&&s.rodadasJogadas>1){
-          // Busca a rodada com menor pontuação
-          var menorPts=999,menorRod=null;
+        if(s.piorPts!==null&&s.totalRodadasRealizadas>1){
+          // Busca a rodada com menor pontuação (ausência = 0pts)
+          var menorPts=999,menorRod=null,menorFalta=false;
           RODADAS.forEach(function(r){
             if(!r.realizada) return;
             var res=(RESULTADOS[r.id]||[]).find(function(x){return x.nome===s.nome;});
-            if(res){
-              var pts=getPts((RESULTADOS[r.id]||[]).length,res.posicao);
-              if(pts<menorPts){menorPts=pts;menorRod=r;}
-            }
+            var pts=res?getPts((RESULTADOS[r.id]||[]).length,res.posicao):0;
+            var falta=!res;
+            if(pts<menorPts){menorPts=pts;menorRod=r;menorFalta=falta;}
           });
-          if(menorRod) rodDescartada='Rodada '+menorRod.numero+' ('+menorPts+'pts)';
+          if(menorRod) rodDescartada='Rodada '+menorRod.numero+' ('+(menorFalta?'falta':menorPts+'pts')+')';
         }
         html+='<div class="rank-item'+(me?' me':'')+'">';
         html+='<div class="rank-pos '+(posD===1?'ouro':posD===2?'prata':posD===3?'bronze':'')+'">'+(s.totalSem>0?posD:'--')+'</div>';
@@ -2297,7 +2300,7 @@ function gerarRelatorio(){
   var rankK=stats.slice().sort(function(a,b){return b.knockouts-a.knockouts||a.koPerdidos-b.koPerdidos;});
 
   var txtP=gerarTextoWpp('Classificacao Sem Descarte',rankP,function(s){return s.total+' pts';},null);
-  var txtD=rodsReal>=2?gerarTextoWpp('Classificacao C/ Descarte',rankD,function(s){return s.totalSem+' pts';},function(s){return s.piorPts>0?'(-'+s.piorPts+')':'';}):'';
+  var txtD=rodsReal>=2?gerarTextoWpp('Classificacao C/ Descarte',rankD,function(s){return s.totalSem+' pts';},function(s){return s.piorPts!==null?'(-'+s.piorPts+')':'';}):'';
   var txtR=gerarTextoWpp('King of Rebuy',rankR,function(s){return s.rebuys+' rebuys';},null);
   var txtK=gerarTextoWpp('Knockout',rankK,function(s){return s.knockouts+' KOs';},null);
   var txtTudo=txtP+(rodsReal>=2?String.fromCharCode(10)+txtD:'')+String.fromCharCode(10)+txtR+String.fromCharCode(10)+txtK;
@@ -2308,7 +2311,7 @@ function gerarRelatorio(){
   html+='</div>';
 
   html+=tabelaRanking('Classificacao Sem Descarte',rankP,'Pontos',function(s){return s.total+' pts';},null,txtP);
-  if(rodsReal>=2) html+=tabelaRanking('Classificacao C/ Descarte',rankD,'Pontos',function(s){return s.totalSem+' pts';},function(s){return s.piorPts>0?'(-'+s.piorPts+' desc)':'';},txtD);
+  if(rodsReal>=2) html+=tabelaRanking('Classificacao C/ Descarte',rankD,'Pontos',function(s){return s.totalSem+' pts';},function(s){return s.piorPts!==null?'(-'+s.piorPts+' desc)':'';},txtD);
   html+=tabelaRanking('King of Rebuy',rankR,'Rebuys',function(s){return s.rebuys;},null,txtR);
   html+=tabelaRanking('Knockout',rankK,'KOs',function(s){return s.knockouts;},null,txtK);
 
@@ -2355,7 +2358,7 @@ function _gerarRelatorioOLD(){
     rankD.forEach(function(s,i){
       if(s.totalSem!==antD){posD=i+1;} antD=s.totalSem;
       var m=posD<=3?posD+'o':'  '+posD+'o';
-      linhas.push(m+' '+s.nome+' - '+s.totalSem+' pts'+(s.piorPts>0?' (-'+s.piorPts+')':''));
+      linhas.push(m+' '+s.nome+' - '+s.totalSem+' pts'+(s.piorPts!==null?' (-'+s.piorPts+')':''));
     });
   }
 
