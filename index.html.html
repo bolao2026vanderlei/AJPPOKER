@@ -2666,6 +2666,16 @@ function renderAdmin(){
     html+='</div>';
   }
 
+  html+='<div class="admin-card"><h3>Correcao de Dados</h3>';
+  html+='<div style="font-size:12px;color:var(--texto3);margin-bottom:8px">Corrige KO- de jogadores que zeraram fichas mas ficaram sem o registro de eliminação.</div>';
+  html+='<select class="ainput" id="corr-rod-sel" style="width:100%;margin-bottom:8px">';
+  html+='<option value="">Selecione a rodada...</option>';
+  rodsRealizadasAdm.forEach(function(r){ html+='<option value="'+r.id+'">Rodada '+r.numero+' - '+fmtData(r.data)+'</option>'; });
+  html+='</select>';
+  html+='<button onclick="corrigirKoPerdidosRodada()" style="width:100%;padding:10px;border-radius:8px;border:1px solid #dc2626;background:rgba(220,38,38,.08);color:#dc2626;font-weight:700;cursor:pointer;font-size:13px">🔧 Corrigir KO- da Rodada</button>';
+  html+='<div id="corr-output" style="margin-top:8px;font-size:12px"></div>';
+  html+='</div>';
+
   html+='<div class="admin-card"><h3>Relatorios WhatsApp</h3>';
   html+='<button onclick="gerarRelatorio()" class="btn-sv" style="width:100%;margin-bottom:8px">Gerar Ranking (4 tabelas)</button>';
   html+='<button onclick="gerarRelatorioRodada()" style="width:100%;margin-bottom:8px;padding:10px;border-radius:8px;border:1px solid var(--azul);background:var(--azul-light);color:var(--azul);font-weight:700;cursor:pointer;font-size:13px">Relatorio da Ultima Rodada</button>';
@@ -2875,7 +2885,7 @@ function gerarLinhasJogadores(){
     html+='<td style="padding:2px"><input class="ainput" id="jog-nome-'+i+'" list="jog-list" placeholder="Nome..." style="padding:5px 4px;font-size:12px;width:100%"></td>';
     html+='<td style="padding:2px"><input class="ainput" id="jog-rebuy-'+i+'" type="number" min="0" max="8" value="0" style="'+inN+'"></td>';
     html+='<td style="padding:2px"><input class="ainput" id="jog-addon-'+i+'" type="number" min="0" max="1" value="1" style="'+inN+'"></td>';
-    html+='<td style="padding:2px"><input class="ainput" id="jog-fichas-'+i+'" type="number" min="0" value="0" style="'+inN+'"></td>';
+    html+='<td style="padding:2px"><input class="ainput" id="jog-fichas-'+i+'" type="number" min="0" placeholder="elim" style="'+inN+'"></td>';
     html+='<td style="padding:2px"><input class="ainput" id="jog-ko-'+i+'" type="number" min="0" value="0" style="'+inN+'" title="KO ganhos"></td>';
     html+='<td style="padding:2px"><input class="ainput" id="jog-kop-'+i+'" type="number" min="0" value="0" style="'+inN+'" title="KO perdidos"></td>';
     html+='<td style="padding:2px"><input class="ainput" id="jog-cred-'+i+'" type="number" min="0" value="0" step="0.01" style="'+inN+'"></td>';
@@ -2892,6 +2902,39 @@ function gerarLinhasJogadores(){
 }
 
 
+
+async function corrigirKoPerdidosRodada(){
+  var rodadaId=document.getElementById('corr-rod-sel').value;
+  if(!rodadaId){toast('Selecione uma rodada','err');return;}
+  var out=document.getElementById('corr-output');
+  out.textContent='Verificando...';
+  var res=RESULTADOS[parseInt(rodadaId)]||[];
+  if(!res.length){out.textContent='Nenhum resultado nessa rodada.';return;}
+  // Identifica jogadores eliminados sem ko_perdidos registrado:
+  // posicao > 1 (não é o campeão) e fichas=0 e ko_perdidos=0
+  var corrigir=res.filter(function(r){return r.posicao>1&&(r.fichas||0)===0&&(r.ko_perdidos||0)===0;});
+  if(!corrigir.length){out.innerHTML='<span style="color:#16a34a">✅ Todos os KO- já estão corretos nessa rodada.</span>';return;}
+  out.textContent='Corrigindo '+corrigir.length+' jogador(es)...';
+  var erros=0;
+  for(var k=0;k<corrigir.length;k++){
+    var r=corrigir[k];
+    try{
+      var resp=await fetch('https://gpnrixcftsjzufnygisa.supabase.co/rest/v1/poker_resultados?rodada_id=eq.'+rodadaId+'&nome=eq.'+encodeURIComponent(r.nome),{
+        method:'PATCH',
+        headers:Object.assign({},RHDR,{'Prefer':'return=minimal','Content-Type':'application/json'}),
+        body:JSON.stringify({ko_perdidos:1})
+      });
+      if(!resp.ok) erros++;
+      else r.ko_perdidos=1; // atualiza em memória
+    }catch(e){erros++;}
+  }
+  if(erros===0){
+    out.innerHTML='<span style="color:#16a34a">✅ '+corrigir.length+' jogador(es) corrigido(s): '+corrigir.map(function(r){return r.nome;}).join(', ')+'</span>';
+    await carregarDados();
+  } else {
+    out.innerHTML='<span style="color:#dc2626">⚠️ '+erros+' erro(s) ao salvar. Tente novamente.</span>';
+  }
+}
 
 async function salvarResultados(){
   var rodadaId=document.getElementById('res-rodada').value;
@@ -2912,7 +2955,13 @@ async function salvarResultados(){
       addon:parseInt(document.getElementById('jog-addon-'+i).value)||0,
       fichas:parseFloat(document.getElementById('jog-fichas-'+i).value)||0,
       knockout:parseInt(document.getElementById('jog-ko-'+i).value)||0,
-      ko_perdidos:(function(){var ficEl=document.getElementById('jog-fichas-'+i);var ficVal=ficEl?ficEl.value.trim():'';return ficVal!==''&&parseFloat(ficVal)===0?1:(parseInt(document.getElementById('jog-kop-'+i)?document.getElementById('jog-kop-'+i).value:0)||0);})(),
+      ko_perdidos:(function(){
+        var ficEl=document.getElementById('jog-fichas-'+i);
+        var ficVal=ficEl?ficEl.value.trim():'';
+        // Vazio = eliminado = ko_perdidos 1
+        // Preenchido com qualquer valor = sobreviveu = ko_perdidos 0
+        return ficVal===''?1:0;
+      })(),
       credito:parseFloat(document.getElementById('jog-cred-'+i)?document.getElementById('jog-cred-'+i).value:0)||0,
       rateio_ind:parseFloat(document.getElementById('jog-rateio-'+i)?document.getElementById('jog-rateio-'+i).value:0)||0,
       inscricao:isRod1?parseFloat(document.getElementById('jog-inscricao-'+i)?document.getElementById('jog-inscricao-'+i).value:0)||0:0,
@@ -2963,7 +3012,8 @@ function carregarEdicao(){
   html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:40px">RB</th>';
   html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:40px">AD</th>';
   html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:64px">Fichas</th>';
-  html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:40px">KO</th>';
+  html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:40px">KO+</th>';
+  html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:40px">KO-</th>';
   html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:45px">Cred.</th>';
   html+='<th style="color:#FFD700;padding:6px 4px;font-size:11px;text-align:center;width:50px">Rateio</th>';
   if(isRod1E){
@@ -2980,6 +3030,7 @@ function carregarEdicao(){
     html+='<td style="padding:3px"><input class="ainput" id="edit-addon-'+r.posicao+'" type="number" min="0" max="1" value="'+(r.addon||0)+'" style="padding:6px;text-align:center;width:100%"></td>';
     html+='<td style="padding:3px"><input class="ainput" id="edit-fichas-'+r.posicao+'" type="number" min="0" value="'+(r.fichas||0)+'" style="padding:6px;width:100%"></td>';
     html+='<td style="padding:3px"><input class="ainput" id="edit-ko-'+r.posicao+'" type="number" min="0" value="'+(r.knockout||0)+'" style="padding:6px;text-align:center;width:100%"></td>';
+    html+='<td style="padding:3px"><input class="ainput" id="edit-kop-'+r.posicao+'" type="number" min="0" value="'+(r.ko_perdidos||0)+'" style="padding:6px;text-align:center;width:100%"></td>';
     html+='<td style="padding:3px"><input class="ainput" id="edit-cred-'+r.posicao+'" type="number" min="0" step="0.01" value="'+(r.credito||0)+'" style="padding:6px;text-align:center;width:100%"></td>';
     html+='<td style="padding:3px"><input class="ainput" id="edit-rateio-'+r.posicao+'" type="number" min="0" step="0.01" value="'+(r.rateio_ind||0)+'" style="padding:6px;text-align:center;width:100%"></td>';
     if(isRod1E){
@@ -3009,6 +3060,7 @@ async function salvarEdicaoResultados(rodadaId, nj, rod1){
       addon:parseInt(document.getElementById('edit-addon-'+i).value)||0,
       fichas:parseFloat(document.getElementById('edit-fichas-'+i).value)||0,
       knockout:parseInt(document.getElementById('edit-ko-'+i).value)||0,
+      ko_perdidos:parseInt(document.getElementById('edit-kop-'+i)?document.getElementById('edit-kop-'+i).value:0)||0,
       credito:parseFloat(document.getElementById('edit-cred-'+i)?document.getElementById('edit-cred-'+i).value:0)||0,
       rateio_ind:rateioEl?parseFloat(rateioEl.value)||0:0,
       inscricao:rod1?parseFloat(document.getElementById('edit-inscricao-'+i)?document.getElementById('edit-inscricao-'+i).value:0)||0:0,
