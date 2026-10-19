@@ -1826,8 +1826,9 @@ function calcRankAnterior(aba){
         koPerdidos+=(res.ko_perdidos||0);
       }
     });
-    // descarte
-    if(pts.length>1){ var mn=Math.min.apply(null,pts); totalSem=total-mn; } else { totalSem=total; }
+    // descarte (ausência = 0pts, elegível para descarte a partir de 2 rodadas realizadas)
+    var nRodsAnt=rodsReal.filter(function(r){return r.id!==ultimaRod.id;}).length;
+    if(nRodsAnt>1){ var mn=Math.min.apply(null,pts.length>0?pts:[0]); totalSem=total-mn; } else { totalSem=total; }
     return{nome:j.nome,total:total,totalSem:totalSem,rebuys:rebuys,knockouts:knockouts,koPerdidos:koPerdidos};
   });
   var sorted;
@@ -1968,9 +1969,10 @@ function renderRanking(aba){
       return b.knockouts-a.knockouts||a.koPerdidos-b.koPerdidos||b.totalSem-a.totalSem||a.rodadasJogadas-b.rodadasJogadas;
     });
     var setasK=setaRank(sorted.map(function(s){return s.nome;}),rankAnt);
-    var posKO=0,antKO=-1,antKOPerd=-1;
+    var posKO=0,antKO=-1,antKOPerd=-1,antKOSem=-1,antKORods=-1;
     sorted.forEach(function(s,i){
-      if(s.knockouts!==antKO||s.koPerdidos!==antKOPerd){posKO=i+1;} antKO=s.knockouts; antKOPerd=s.koPerdidos;
+      if(s.knockouts!==antKO||s.koPerdidos!==antKOPerd||s.totalSem!==antKOSem||s.rodadasJogadas!==antKORods){posKO=i+1;}
+      antKO=s.knockouts; antKOPerd=s.koPerdidos; antKOSem=s.totalSem; antKORods=s.rodadasJogadas;
       var me=s.nome===USER.nome;
       html+='<div class="rank-item'+(me?' me':'')+'">';
       html+='<div class="rank-pos '+(posKO===1?'ouro':posKO===2?'prata':posKO===3?'bronze':'')+'">'+posKO+'</div>';
